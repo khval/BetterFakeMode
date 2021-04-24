@@ -36,6 +36,15 @@ struct NewScreen myscr =
 		NULL
 	};
 
+void set_colors( struct Screen *src )
+{
+	struct BitMap *bm = src -> RastPort.BitMap;
+	int colors = 1L << bm -> Depth;
+	int c;
+
+	for (c=0;c<colors;c++) SetRGB32( &src -> ViewPort, 0xFFFFFFFF, 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF );
+}
+
 int main()
 {
 	struct Screen *src;
@@ -51,6 +60,7 @@ int main()
 
 	if (src)
 	{
+		set_colors( src );		
 
 		getchar();
 		CloseScreen( src ) ;
