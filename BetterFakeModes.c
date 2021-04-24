@@ -36,6 +36,10 @@ struct Screen **screens_end = screens + 100;
 
 bool monitor = false;
 
+
+#define new_struct(x) 	(struct x *) IExec->AllocVecTags( sizeof(struct x), AVT_Type, MEMF_SHARED,AVT_ClearWithValue, 0, TAG_END)
+
+
 /*
 struct Screen
 {
@@ -63,6 +67,24 @@ struct Screen
     UBYTE *UserData;    
 };
 
+struct ViewPort
+{
+    struct ViewPort *Next;
+    struct ColorMap *ColorMap; [****]
+    struct CopList  *DspIns;
+    struct CopList  *SprIns;
+    struct CopList  *ClrIns;
+    struct UCopList *UCopIns;
+    WORD             DWidth;
+    WORD             DHeight;
+    WORD             DxOffset;
+    WORD             DyOffset;
+    UWORD            Modes;
+    UBYTE            SpritePriorities;
+    UBYTE            ExtendedModes;
+    struct RasInfo  *RasInfo;
+};
+
 struct BitMap
 {
     uint16   BytesPerRow;
@@ -73,11 +95,70 @@ struct BitMap
     PLANEPTR Planes[8];
 };
 
+struct ColorMap
+{
+    UBYTE                 Flags;
+    UBYTE                 Type;
+    UWORD                 Count; [***]
+    APTR                  ColorTable; [***]
+    struct ViewPortExtra *cm_vpe;
+    APTR                  LowColorBits;
+    UBYTE                 TransparencyPlane;
+    UBYTE                 SpriteResolution;
+    UBYTE                 SpriteResDefault; 
+    UBYTE                 AuxFlags;
+    struct ViewPort      *cm_vp;
+    APTR                  NormalDisplayInfo;
+    APTR                  CoerceDisplayInfo;
+    struct TagItem       *cm_batch_items;
+    ULONG                 VPModeID;
+    struct PaletteExtra  *PalExtra;
+    UWORD                 SpriteBase_Even;
+    UWORD                 SpriteBase_Odd;
+    UWORD                 Bp_0_base;
+    UWORD                 Bp_1_base;
+};
+
 */
+
+void fake_initColorMap( struct ViewPort *vp, int depth)
+{
+	struct ColorMap *cm = vp -> ColorMap;
+
+	cm -> Count = 1L << depth;
+	cm -> ColorTable = IExec->AllocVecTags( sizeof(uint32) * 4  * cm -> Count, 
+			AVT_Type, MEMF_SHARED, AVT_ClearWithValue, 0, TAG_END); 
+	cm -> cm_vp = vp;
+}
+
+void fake_initViewPort(struct ViewPort *vp, int depth )
+{
+	vp -> ColorMap =  new_struct( ColorMap );
+	if (vp -> ColorMap) fake_initColorMap( vp, depth );
+}
+
+struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
+{
+	int d;
+	struct BitMap *bm = new_struct( BitMap);
+
+	if (bm == NULL) return NULL;
+
+	bm -> BytesPerRow = Width / 8;
+	bm -> Rows = Height;
+	bm -> Depth = Depth;
+
+	for (d=0;d<Depth;d++)
+	{
+		bm -> Planes[d] =  IExec->AllocVecTags( bm -> BytesPerRow *  bm -> Rows, 
+			AVT_Type, MEMF_SHARED, AVT_ClearWithValue, 0, TAG_END); 
+	}
+
+	return bm;
+}
 
 struct Screen *_new_fake_screen(int Width, int Height, int Depth)
 {
-	int d;
 	struct Screen *s;
 	struct BitMap *bm;
 
@@ -88,28 +169,15 @@ struct Screen *_new_fake_screen(int Width, int Height, int Depth)
 
 	if (s)
 	{
-		s -> Width = Width & 7 ? Width + 8 & 0xFFF8 : Width ;	// Round up closes 8 pixels.
+		s -> Width = Width & 7 ? (Width + 8) & 0xFFF8 : Width ;	// Round up closes 8 pixels.
 		s -> Height = Height;
 
 		IGraphics -> InitVPort( &s-> ViewPort );
 		IGraphics -> InitRastPort( & s -> RastPort );
 
-		s -> RastPort.BitMap = bm = (struct BitMap *) IExec->AllocVecTags( sizeof(struct BitMap), 
-			AVT_Type, MEMF_SHARED,
-			AVT_ClearWithValue, 0,
-			TAG_END); 
+		s -> RastPort.BitMap = _new_fake_bitmap( s-> Width, s -> Height, Depth );
 
-		bm -> BytesPerRow = s -> Width / 8;
-		bm -> Rows = Height;
-		bm -> Depth = Depth;
-
-		for (d=0;d<Depth;d++)
-		{
-			bm -> Planes[d] =  IExec->AllocVecTags( bm -> BytesPerRow *  bm -> Rows, 
-				AVT_Type, MEMF_SHARED,
-				AVT_ClearWithValue, 0,
-				TAG_END); 
-		}
+		 fake_initViewPort( &s-> ViewPort, Depth );
 
 		// need to fill in the struct as best as I can.
 		return s;
@@ -118,12 +186,25 @@ struct Screen *_new_fake_screen(int Width, int Height, int Depth)
 	return NULL;
 }
 
+void _detete_colormap( struct ColorMap *cm )
+{
+	if (cm -> ColorTable)	IExec->FreeVec( cm -> ColorTable );
+	cm -> ColorTable = NULL;
+}
+
+void _cleanup_fake_ViewPort( struct ViewPort *vp )
+{
+	_detete_colormap( vp -> ColorMap );
+}
+
 void _delete_fake_screen( struct Screen *s )
 {
 	int d;
 	int depth;
 	struct BitMap *bm;
 	
+	_cleanup_fake_ViewPort( &s -> ViewPort );
+
 	bm = s -> RastPort.BitMap;
 	if (bm)
 	{
@@ -133,6 +214,7 @@ void _delete_fake_screen( struct Screen *s )
 			IExec -> FreeVec( bm -> Planes[d] );
 			bm -> Planes[d] = NULL;
 		}
+
 		IExec -> FreeVec(bm);
 	}
 	IExec -> FreeVec(s);
