@@ -1,5 +1,7 @@
 
-files = init.c 
+files = init.c \
+	OpenScreen.c \
+	CloseScreen.c
 
 files_o = ${files:.c=.o}
 
