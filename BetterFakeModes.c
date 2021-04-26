@@ -14,6 +14,7 @@
 #include "init.h"
 #include "patch.h"
 #include "common.h"
+#include "spawn.h"
 
 APTR old_68k_stub_OpenScreen = NULL;
 APTR old_68k_stub_CloseScreen = NULL;
@@ -29,7 +30,9 @@ APTR old_ppc_func_CloseScreen = NULL;
 #define Printf IDOS->Printf
 #define FPrintf IDOS->FPrintf
 
-struct Task *me;
+extern APTR video_mutex ;
+
+struct Task *main_task = NULL;
 BPTR output;
 
 struct Screen *screens[100];
@@ -161,6 +164,8 @@ struct Screen * ppc_func_OpenScreenTags(struct IntuitionIFace *Self, const struc
 	return NULL;
 }
 
+struct Screen *lazy_screen_hack = NULL;
+
 static struct Screen *ppc_func_OpenScreen( void *libBase, struct NewScreen *newScreen )
 {
 	char stdTXT[256];
@@ -187,7 +192,11 @@ static struct Screen *ppc_func_OpenScreen( void *libBase, struct NewScreen *newS
 	}
 	else
 	{
-		return _new_fake_screen(newScreen -> Width,newScreen -> Height,newScreen -> Depth);
+		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we allocate screen.
+		lazy_screen_hack = _new_fake_screen(newScreen -> Width,newScreen -> Height,newScreen -> Depth);
+		IExec->MutexRelease(video_mutex);
+
+		return lazy_screen_hack ;
 	}
 }
 
@@ -201,7 +210,10 @@ static void ppc_func_CloseScreen( void *libBase, struct Screen *screen )
 	}
 	else
 	{
+		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we free screen.
 		_delete_fake_screen( screen );
+		lazy_screen_hack = NULL;		// we only have one screen, so no worry... yet...
+		IExec->MutexRelease(video_mutex);
 	}
 }
 
@@ -230,8 +242,8 @@ BOOL set_patches( void )
 	set_new_68k_patch(OpenScreen);
 	set_new_68k_patch(CloseScreen);
 
-	set_new_ppc_patch(OpenScreen);
-	set_new_ppc_patch(OpenScreenTags);
+	set_new_ppc_patch(OpenScreen);			// this points to OpenScreenTagList, but for now this is the one we hack.
+//	set_new_ppc_patch(OpenScreenTags);		// don't need should point to OpenScreenTagList
 	set_new_ppc_patch(OpenScreenTagList);
 	set_new_ppc_patch(CloseScreen);
 	
@@ -243,20 +255,81 @@ void undo_patches( void )
 	undo_68k_patch(OpenScreen);
 	undo_68k_patch(CloseScreen);
 
-	undo_ppc_patch(OpenScreen);
-	undo_ppc_patch(OpenScreenTags);
+	undo_ppc_patch(OpenScreen);			// this points to OpenScreenTagList, but for now this is the one we hack.
+//	undo_ppc_patch(OpenScreenTags);			// don't need should point to OpenScreenTagList
 	undo_ppc_patch(OpenScreenTagList);
 	undo_ppc_patch(CloseScreen);
 }
 
+bool quit = false;
+
+extern unsigned char *bits2bytes[256];
+
+
+void draw_bw( struct RastPort *rp, struct BitMap *bm )
+{
+	int x,y;
+	unsigned char *end_of_line;
+	unsigned char *ptr;
+	unsigned char *b;
+	unsigned char *be;
+	 
+	ptr = bm -> Planes[0];
+	end_of_line = bm -> Planes[0] + bm -> BytesPerRow;
+
+	for (y=0;y<bm -> Rows; y++)
+	{
+		x = 0;
+		for ( ;ptr < end_of_line; ptr++ )
+		{
+			b = bits2bytes[ *ptr ];
+			be = b+8;
+
+			for (;b<be;b++,x++)		// bx = byte x
+			{
+				IGraphics->WritePixelColor(rp,  x,  y,  *b ? 0xFFFFFFFF : 0xFF000000 );
+			}
+		}
+		end_of_line += bm -> BytesPerRow;	// end of next line...
+	}
+}
+
+
+void dump_screen()
+{
+	struct Window *win = IIntuition -> OpenWindowTags( NULL, 
+			WA_InnerWidth, 640,
+			WA_InnerHeight, 480,
+			TAG_END);
+
+
+	if (!win) return ;
+
+	do
+	{
+		IExec->MutexObtain(video_mutex);
+		if (lazy_screen_hack)
+		{
+			draw_bw( win -> RPort, lazy_screen_hack -> RastPort.BitMap );
+		}
+		IExec->MutexRelease(video_mutex);
+
+		IDOS -> Delay(1);
+	} while (!quit);
+
+	IIntuition -> CloseWindow( win );
+}
 
 int main( void )
 {
-	me = IExec->FindTask(NULL);
+	struct Process *display_proc;
+	BPTR disp_output;
 
-	if (IS_PROCESS(me))
+	main_task = IExec->FindTask(NULL);
+
+	if (IS_PROCESS(main_task))
 	{
-		output = ((struct Process *) me) -> pr_COS;
+		output = ((struct Process *) main_task) -> pr_COS;
 	}
 
 	if (open_libs()==FALSE)
@@ -265,6 +338,10 @@ int main( void )
 		close_libs();
 		return 0;
 	}
+
+	disp_output = IDOS -> Open("CON:660/32/320/200/display debug", MODE_NEWFILE );
+
+	display_proc = spawn( dump_screen, "dump screen", disp_output );
 
 	if (set_patches())
 	{
@@ -280,6 +357,9 @@ int main( void )
 	{
 		Printf("failed to patch\n");
 	}
+
+	quit = true;
+	wait_spawns();
 
 	close_libs();
 
