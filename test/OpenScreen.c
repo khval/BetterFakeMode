@@ -45,9 +45,19 @@ void set_colors( struct Screen *src )
 	for (c=0;c<colors;c++) SetRGB32( &src -> ViewPort, 0xFFFFFFFF, 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF );
 }
 
+
+void pplot( struct BitMap *bm, int x, int y)
+{
+	int bx = 7- (x&7) ;
+	x /= 8;
+
+	*(bm -> Planes[0] + x + y * bm -> BytesPerRow ) |= 1L<<bx;
+}
+
 int main()
 {
 	struct Screen *src;
+	struct RastPort *rp;
 
 	if (open_libs()==FALSE)
 	{
@@ -60,12 +70,39 @@ int main()
 
 	if (src)
 	{
-		set_colors( src );		
+		int x,y;
+
+		set_colors( src );
+
+		rp = &src -> RastPort;
+		SetAPen(rp, 1);
+		SetBPen(rp,2);
+
+
+		for (y=0;y<50;y++)
+		{
+			for (x=0;x<50;x++)
+			{
+				pplot( src -> RastPort.BitMap , x,y);
+				pplot( src -> RastPort.BitMap , y,x);
+
+			}
+			Delay(1);
+
+		}
+
+		Move(rp,50,50);
+		Draw(rp,100,100);
+		Move(rp,100,50);
+		Draw(rp,50,100);
+
+		Move(rp,50,20);
+		Text(rp,"Amiga",5);
+
 
 		getchar();
 		CloseScreen( src ) ;
 	}
-
 
 	close_libs();
 }
