@@ -95,7 +95,7 @@ void fake_initColorMap( struct ViewPort *vp, int depth)
 	struct ColorMap *cm = vp -> ColorMap;
 
 	cm -> Count = 1L << depth;
-	cm -> ColorTable = IExec->AllocVecTags( sizeof(uint32) * 4  * cm -> Count, 
+	cm -> ColorTable = AllocVecTags( sizeof(uint32) * 4  * cm -> Count, 
 			AVT_Type, MEMF_SHARED, AVT_ClearWithValue, 0, TAG_END); 
 	cm -> cm_vp = vp;
 }
@@ -113,13 +113,17 @@ struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
 
 	if (bm == NULL) return NULL;
 
+	InitBitMap( bm, Depth, Width, Height );
+
+/*
 	bm -> BytesPerRow = Width / 8;
 	bm -> Rows = Height;
 	bm -> Depth = Depth;
+*/
 
 	for (d=0;d<Depth;d++)
 	{
-		bm -> Planes[d] =  IExec->AllocVecTags( bm -> BytesPerRow *  bm -> Rows, 
+		bm -> Planes[d] =  AllocVecTags( bm -> BytesPerRow *  bm -> Rows, 
 			AVT_Type, MEMF_SHARED, AVT_ClearWithValue, 0, TAG_END); 
 	}
 
@@ -131,20 +135,29 @@ struct Screen *_new_fake_screen(int Width, int Height, int Depth)
 	struct Screen *s;
 	struct BitMap *bm;
 
-	s = (struct Screen *) IExec->AllocVecTags( sizeof(struct Screen), 
+	s = (struct Screen *) AllocVecTags( sizeof(struct Screen), 
 		AVT_Type, MEMF_SHARED,
 		AVT_ClearWithValue, 0,
 		TAG_END); 
 
 	if (s)
 	{
-		s -> Width = Width & 7 ? (Width + 8) & 0xFFF8 : Width ;	// Round up closes 8 pixels.
+		s -> Width = Width & 15 ? (Width + 16) & 0xFFFE : Width ;	// Round up closes 16 pixels.
 		s -> Height = Height;
 
-		IGraphics -> InitVPort( &s-> ViewPort );
-		IGraphics -> InitRastPort( & s -> RastPort );
+		InitVPort( &s-> ViewPort );
+		InitRastPort( & s -> RastPort );
 
+#if use_fake_bitmap == 1
 		s -> RastPort.BitMap = _new_fake_bitmap( s-> Width, s -> Height, Depth );
+#else
+		s -> RastPort.BitMap = AllocBitMapTags(	s-> Width, s -> Height, Depth,
+				BMATags_PixelFormat, PIXF_NONE,
+				BMATags_UserPrivate, TRUE,
+				TAG_END	 );
+#endif
+
+		FPrintf( output, "%ld\n", s ->RastPort.BitMap -> BytesPerRow );
 
 		 fake_initViewPort( &s-> ViewPort, Depth );
 
