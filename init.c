@@ -15,6 +15,25 @@ struct GraphicsIFace		*IGraphics = NULL;
 
 APTR video_mutex = NULL;
 
+
+unsigned char bits2bytes_data[256*8];		// 8 bits, 256 values.
+
+unsigned char *bits2bytes[256];
+
+
+void initBits2Bytes()
+{
+	int n = 0;
+	int b = 0;
+
+	for (n=0;n<256;n++) 
+	{
+		bits2bytes[n] = bits2bytes_data+(n*8);
+		for (b=0; b<8;b++)	bits2bytes[n][7-b] = n & 1L<<b ? 1: 0;		// we revere the bits.
+	}
+}
+
+
 BOOL open_lib( const char *name, int ver , const char *iname, int iver, struct Library **base, struct Interface **interface)
 {
 	*interface = NULL;
@@ -41,6 +60,7 @@ bool open_libs()
 	video_mutex = (APTR) AllocSysObjectTags(ASOT_MUTEX, TAG_DONE);
 	if ( ! video_mutex) return FALSE;
 
+	initBits2Bytes();
 
 	return TRUE;
 }
