@@ -30,7 +30,6 @@ void initBits2Bytes()
 	int p,n,b;
 	unsigned char *page;
 	unsigned char *at;
-	unsigned char *c;
 
 	for (p=0;p<8;p++)
 	{
