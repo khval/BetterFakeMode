@@ -15,6 +15,7 @@
 #include "patch.h"
 #include "common.h"
 #include "spawn.h"
+#include "helper/screen.h"
 
 APTR old_68k_stub_OpenScreen = NULL;
 APTR old_68k_stub_CloseScreen = NULL;
@@ -23,6 +24,10 @@ APTR old_ppc_func_OpenScreen = NULL;
 APTR old_ppc_func_OpenScreenTags = NULL;
 APTR old_ppc_func_OpenScreenTagList = NULL;
 APTR old_ppc_func_CloseScreen = NULL;
+
+APTR old_ppc_func_OpenWindowTagList = NULL;
+APTR old_ppc_func_CloseWindow = NULL;
+
 
 #define _LVOOpenScreen	-198
 #define _LVOCloseScreen	-66
@@ -189,6 +194,18 @@ static void ppc_func_CloseScreen( void *libBase, struct Screen *screen )
 	}
 }
 
+static struct Window * ppc_func_OpenWindowTagList (struct IntuitionIFace *Self, const struct NewWindow * newWindow, const struct TagItem * tagList)
+{
+	FPrintf( output,"OpenWindow\n");
+	return NULL;
+}
+
+static void ppc_func_CloseWindow( void *libBase, struct Window *w )
+{
+	FPrintf( output,"CloseWindow\n");
+}
+
+
 static VOID stub_68k_OpenScreen_func( uint32 *regarray )
 {
 	regarray[REG68K_D0/4] =(uint32) ppc_func_OpenScreen( IntuitionBase, (struct NewScreen *) regarray[REG68K_A0/4] );
@@ -211,24 +228,30 @@ BOOL set_patches( void )
 
 	Printf("libs is open, time to patch\n");
 
-	set_new_68k_patch(Intuition,OpenScreen);
+	set_new_68k_patch(Intuition,OpenScreen);			// maybe not needed, as it will end up in PPC routines.
 	set_new_68k_patch(Intuition,CloseScreen);
 
 	set_new_ppc_patch(Intuition,OpenScreen);			// this points to OpenScreenTagList, but for now this is the one we hack.
 	set_new_ppc_patch(Intuition,OpenScreenTagList);
 	set_new_ppc_patch(Intuition,CloseScreen);
+
+	set_new_ppc_patch(Intuition,OpenWindowTagList);
+	set_new_ppc_patch(Intuition,CloseWindow);
 	
 	return TRUE;
 }
 
 void undo_patches( void )
 {
-	undo_68k_patch(Intuition,OpenScreen);
+	undo_68k_patch(Intuition,OpenScreen);			// maybe not needed, as it will end up in PPC routines.
 	undo_68k_patch(Intuition,CloseScreen);
 
 	undo_ppc_patch(Intuition,OpenScreen);			// this points to OpenScreenTagList, but for now this is the one we hack.
 	undo_ppc_patch(Intuition,OpenScreenTagList);
 	undo_ppc_patch(Intuition,CloseScreen);
+
+	undo_ppc_patch(Intuition,OpenWindowTagList);
+	undo_ppc_patch(Intuition,CloseWindow);
 }
 
 bool quit = false;
@@ -352,6 +375,8 @@ int main( void )
 {
 	struct Process *display_proc;
 	BPTR disp_output;
+
+	printf("sizeof(screens) %d\n",sizeof(screens));
 
 	main_task = IExec->FindTask(NULL);
 
