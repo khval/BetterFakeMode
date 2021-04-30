@@ -1,4 +1,5 @@
 
+#include <stdio.h>
 #include <stdbool.h>
 
 #include <proto/exec.h>
@@ -8,6 +9,7 @@
 #include <exec/emulation.h>
 
 #include "common.h"
+#include "helper/screen.h"
 
 /*
 struct Screen
@@ -119,7 +121,7 @@ struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
 	int d;
 	struct BitMap *bm = new_struct( BitMap);
 	int sizeOfPlane;
-	char *data;
+	unsigned char *data;
 
 	if (bm == NULL) return NULL;
 
@@ -164,15 +166,16 @@ void _init_fake_screen(struct Screen *s,int Width, int Height, int Depth)
 
 struct Screen *_new_fake_screen(int Width, int Height, int Depth)
 {
+	int i;
 	struct Screen *s;
 
-	s = (struct Screen *) AllocVecTags( sizeof(struct Screen), 
-		AVT_Type, MEMF_SHARED,
-		AVT_ClearWithValue, 0,
-		TAG_END); 
+	i = alloc_screen_in_list();
+	s = i>-1 ? screens+i : NULL;
 
 	if (s)
 	{
+		printf("at index: %d\n",i);
+
 		_init_fake_screen(s,Width, Height,Depth);
 		return s;
 	}

@@ -35,37 +35,9 @@ extern APTR video_mutex ;
 struct Task *main_task = NULL;
 BPTR output;
 
-struct Screen *screens[100];
-struct Screen **screens_end = screens + 100;
+char *screens_end_ptr = (char *) screens +sizeof(screens);
 
 bool monitor = false;
-
-int find_free_index()
-{
-	int i = 0;
-	struct Screen **item;
-
-	for (item = screens; item < screens_end ; item++,i++ )
-	{
-		if (*item == NULL) return i;
-	}
-	return -1;
-}
-
-void remove_screen_from_track(struct Screen *screen)
-{
-	struct Screen **item;
-
-	for (item = screens; item < screens_end ; item++ )
-	{
-		if (*item == screen) 
-		{
-			item = NULL;
-			return;
-		}
-	}
-}
-
 
 struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const struct NewScreen * newScreen, const struct TagItem * tagList)
 {

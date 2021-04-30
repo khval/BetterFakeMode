@@ -8,6 +8,7 @@
 #include <exec/emulation.h>
 
 #include "common.h"
+#include "helper/screen.h"
 
 void _cleanup_colormap( struct ColorMap *cm )
 {
@@ -36,18 +37,14 @@ void _cleanup_fake_ViewPort( struct ViewPort *vp )
 
 void _free_fake_bitmap( struct BitMap *bm )
 {
-	int d;
-	int depth = bm -> Depth;
-
 	// memory is allocated as large chunk.
 
 	FreeVec( bm -> Planes[0] );
 	bm -> Planes[0] = NULL;
-
 	FreeVec(bm);
 }
 
-void _delete_fake_screen( struct Screen *s )
+void _cleanup_fake_screen( struct Screen *s )
 {
 
 	struct BitMap *bm;
@@ -63,7 +60,12 @@ void _delete_fake_screen( struct Screen *s )
 		FreeBitMap(bm);
 #endif
 	}
-	FreeVec(s);
+}
+
+void _delete_fake_screen( struct Screen *s )
+{
+	_cleanup_fake_screen( s );
+	remove_screen_from_list( s );
 }
 
 
