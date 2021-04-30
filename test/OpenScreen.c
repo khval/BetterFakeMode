@@ -26,7 +26,7 @@ struct NewScreen myscr =
 		0,0,
 		320,
 		200,
-		2,
+		3,
 		0,1,
 		(ULONG) NULL,
 		CUSTOMSCREEN,
@@ -38,11 +38,13 @@ struct NewScreen myscr =
 
 void set_colors( struct Screen *src )
 {
-	struct BitMap *bm = src -> RastPort.BitMap;
-	int colors = 1L << bm -> Depth;
-	int c;
+	 SetRGB32( &src -> ViewPort, 0, 0x55555555,0x99999999,0xDDDDDDD );
+	 SetRGB32( &src -> ViewPort, 1, 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF );
+	 SetRGB32( &src -> ViewPort, 2, 0x00000000,0x00000000,0x00000000 );
+	 SetRGB32( &src -> ViewPort, 3, 0xFFFFFFFF,0x00000000,0x00000000 );
+	 SetRGB32( &src -> ViewPort, 4, 0x00000000,0xFFFFFFFF,0x00000000 );
+	 SetRGB32( &src -> ViewPort, 5, 0x00000000,0x00000000,0xFFFFFFFF );
 
-	for (c=0;c<colors;c++) SetRGB32( &src -> ViewPort, 0xFFFFFFFF, 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF );
 }
 
 
@@ -98,6 +100,7 @@ int main()
 
 		Move(rp,50,20);
 		Text(rp,"Amiga",5);
+
 
 
 		getchar();
