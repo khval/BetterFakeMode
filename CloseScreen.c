@@ -33,11 +33,10 @@ void _free_fake_bitmap( struct BitMap *bm )
 	int d;
 	int depth = bm -> Depth;
 
-	for (d=0;d<depth;d++)
-	{
-		FreeVec( bm -> Planes[d] );
-		bm -> Planes[d] = NULL;
-	}
+	// memory is allocated as large chunk.
+
+	FreeVec( bm -> Planes[0] );
+	bm -> Planes[0] = NULL;
 
 	FreeVec(bm);
 }
