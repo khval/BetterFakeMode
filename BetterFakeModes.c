@@ -239,26 +239,24 @@ BOOL set_patches( void )
 
 	Printf("libs is open, time to patch\n");
 
-	set_new_68k_patch(OpenScreen);
-	set_new_68k_patch(CloseScreen);
+	set_new_68k_patch(Intuition,OpenScreen);
+	set_new_68k_patch(Intuition,CloseScreen);
 
-	set_new_ppc_patch(OpenScreen);			// this points to OpenScreenTagList, but for now this is the one we hack.
-//	set_new_ppc_patch(OpenScreenTags);		// don't need should point to OpenScreenTagList
-	set_new_ppc_patch(OpenScreenTagList);
-	set_new_ppc_patch(CloseScreen);
+	set_new_ppc_patch(Intuition,OpenScreen);			// this points to OpenScreenTagList, but for now this is the one we hack.
+	set_new_ppc_patch(Intuition,OpenScreenTagList);
+	set_new_ppc_patch(Intuition,CloseScreen);
 	
 	return TRUE;
 }
 
 void undo_patches( void )
 {
-	undo_68k_patch(OpenScreen);
-	undo_68k_patch(CloseScreen);
+	undo_68k_patch(Intuition,OpenScreen);
+	undo_68k_patch(Intuition,CloseScreen);
 
-	undo_ppc_patch(OpenScreen);			// this points to OpenScreenTagList, but for now this is the one we hack.
-//	undo_ppc_patch(OpenScreenTags);			// don't need should point to OpenScreenTagList
-	undo_ppc_patch(OpenScreenTagList);
-	undo_ppc_patch(CloseScreen);
+	undo_ppc_patch(Intuition,OpenScreen);			// this points to OpenScreenTagList, but for now this is the one we hack.
+	undo_ppc_patch(Intuition,OpenScreenTagList);
+	undo_ppc_patch(Intuition,CloseScreen);
 }
 
 bool quit = false;
