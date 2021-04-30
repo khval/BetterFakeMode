@@ -77,7 +77,7 @@ int main()
 			TAG_END);
 
 
-
+		printf("Press enter to quit\n");
 		getchar();
 
 		CloseWindow( win );

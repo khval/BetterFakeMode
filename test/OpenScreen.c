@@ -102,7 +102,7 @@ int main()
 		Text(rp,"Amiga",5);
 
 
-
+		printf("Press enter to quit\n");
 		getchar();
 		CloseScreen( src ) ;
 	}
