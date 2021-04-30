@@ -51,7 +51,7 @@ struct ViewPort
     UWORD            Modes;
     UBYTE            SpritePriorities;
     UBYTE            ExtendedModes;
-    struct RasInfo  *RasInfo;
+    struct RasInfo  *RasInfo;	[***]
 };
 
 struct BitMap
@@ -100,10 +100,18 @@ void fake_initColorMap( struct ViewPort *vp, int depth)
 	cm -> cm_vp = vp;
 }
 
-void fake_initViewPort(struct ViewPort *vp, int depth )
+void fake_initRasInfo( struct RasInfo *ri, struct BitMap *bm )
+{
+	ri -> BitMap = bm;
+}
+
+void fake_initViewPort(struct ViewPort *vp, int depth, struct BitMap *bm )
 {
 	vp -> ColorMap =  new_struct( ColorMap );
 	if (vp -> ColorMap) fake_initColorMap( vp, depth );
+
+	vp -> RasInfo = new_struct( RasInfo );
+	if (vp -> RasInfo) fake_initRasInfo( vp -> RasInfo, bm );
 }
 
 struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
