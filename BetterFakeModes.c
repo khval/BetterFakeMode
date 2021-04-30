@@ -261,34 +261,90 @@ void undo_patches( void )
 
 bool quit = false;
 
-extern unsigned char *bits2bytes[256];
+extern unsigned char *bits2bytes[256*8];
 
-
-void draw_bw( struct RastPort *rp, struct BitMap *bm )
+struct amiga_rgb
 {
-	int x,y;
-	unsigned char *end_of_line;
+	uint32 r;
+	uint32 g;
+	uint32 b;
+};
+
+uint32 argb[256];
+
+void draw_bits(struct RastPort *rp, unsigned char *b, int x,int  y )
+{
+	unsigned char *be = b+8;
+
+	for (;b<be;b++,x++)		// bx = byte x
+	{
+		IGraphics->WritePixelColor(rp,  x,  y,  argb[ *b ] );
+	}
+}
+
+typedef unsigned char u8;
+
+void update_argb_lookup( struct ColorMap *cm )
+{
+	int c;
+	uint32 r,g,b;
+	int colors = cm -> Count;
+	ULONG d[3];
+
+	printf("update colors\n");
+
+	for (c=0;c<colors;c++)
+	{
+
+		IGraphics -> GetRGB32( cm, c, 1, d );
+
+		printf("%d: %08x,%08x,%08x\n",c, d[0],d[1],d[2]);
+
+		r = *((u8 *) (d + 0))  << 16;
+		g = *((u8 *) (d + 1)) << 8;
+		b = *((u8 *) (d + 2)) ;
+		argb[ c ] = 0xFF000000 | r | g | b;
+	}
+}
+
+void draw_screen( struct RastPort *rp, struct BitMap *bm )
+{
+	int SizeOfPlane;
+	int x,y,p,d;
+	int bx,bpr;
+	int i;
+
+
 	unsigned char *ptr;
-	unsigned char *b;
-	unsigned char *be;
-	 
-	ptr = bm -> Planes[0];
-	end_of_line = bm -> Planes[0] + bm -> BytesPerRow;
+	uint64 *at;
+	uint64 data = 0;
+
+	d = bm -> Depth;
+
+	bpr = bm -> BytesPerRow;
+
+	SizeOfPlane = bm -> BytesPerRow * bm -> Rows;
 
 	for (y=0;y<bm -> Rows; y++)
 	{
 		x = 0;
-		for ( ;ptr < end_of_line; ptr++ )
+		for (bx=0;bx<bpr;bx++)
 		{
-			b = bits2bytes[ *ptr ];
-			be = b+8;
+			data = 0;
 
-			for (;b<be;b++,x++)		// bx = byte x
+			ptr = bm -> Planes[0] + bpr*y + bx;
+
+			for (p=0;p<d;p++)
 			{
-				IGraphics->WritePixelColor(rp,  x,  y,  *b ? 0xFFFFFFFF : 0xFF000000 );
+				at = (uint64 *) bits2bytes[256*p+*ptr];
+				data |= *at;
+				ptr += SizeOfPlane;			
 			}
+
+			draw_bits( rp, (char *) &data ,  x,  y );
+
+			x+=8;
 		}
-		end_of_line += bm -> BytesPerRow;	// end of next line...
 	}
 }
 
@@ -308,7 +364,9 @@ void dump_screen()
 		IExec->MutexObtain(video_mutex);
 		if (lazy_screen_hack)
 		{
-			draw_bw( win -> RPort, lazy_screen_hack -> RastPort.BitMap );
+			update_argb_lookup( lazy_screen_hack -> ViewPort.ColorMap );
+
+			draw_screen( win -> RPort, lazy_screen_hack -> RastPort.BitMap );
 		}
 		IExec->MutexRelease(video_mutex);
 

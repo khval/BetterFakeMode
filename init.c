@@ -1,4 +1,6 @@
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 #include <proto/exec.h>
@@ -6,6 +8,8 @@
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <exec/emulation.h>
+
+#include "common.h"
 
 struct Library			*IntuitionBase = NULL;
 struct IntuitionIFace		*IIntuition = NULL;
@@ -15,24 +19,53 @@ struct GraphicsIFace		*IGraphics = NULL;
 
 APTR video_mutex = NULL;
 
+#define lpage 256*8
 
-unsigned char bits2bytes_data[256*8];		// 8 bits, 256 values.
-
-unsigned char *bits2bytes[256];
+unsigned char bits2bytes_data[256*8*8];		// 256 values, 8pixels / bits, 8 plaines
+unsigned char *bits2bytes[256*8];			// 256 values. 
 
 
 void initBits2Bytes()
 {
-	int n = 0;
-	int b = 0;
+	int p,n,b;
+	unsigned char *page;
+	unsigned char *at;
+	unsigned char *c;
 
-	for (n=0;n<256;n++) 
+	for (p=0;p<8;p++)
 	{
-		bits2bytes[n] = bits2bytes_data+(n*8);
-		for (b=0; b<8;b++)	bits2bytes[n][7-b] = n & 1L<<b ? 1: 0;		// we revere the bits.
+		page = bits2bytes_data + lpage * p;
+
+		for (n=0;n<256;n++) 
+		{
+			at= page + n*8;
+			for (b=0; b<8;b++) at[7-b] = n & 1L<<b ? 1L<<p: 0;		// we revere the bits.
+			bits2bytes[256*p+n] = at;
+		}
 	}
 }
 
+/*
+void dump_num( int n, int p )
+{
+	unsigned char *c;
+	unsigned char *at ;
+
+	at = bits2bytes[256*p +n] ;
+
+	printf("%02x: ",n);
+	for (c = at; c < at +8 ; c++) printf("%02X",*c);
+
+	printf("\n");
+
+}
+
+void dump_page( int p )
+{
+	int n;
+	for (n=0;n<256;n++) dump_num(  n,  p );
+}
+*/
 
 BOOL open_lib( const char *name, int ver , const char *iname, int iver, struct Library **base, struct Interface **interface)
 {
@@ -61,6 +94,7 @@ bool open_libs()
 	if ( ! video_mutex) return FALSE;
 
 	initBits2Bytes();
+//	dump_page( 2 );
 
 	return TRUE;
 }
