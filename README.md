@@ -1,6 +1,5 @@
 # BetterFakeMode
 Make small patch to replace not so nice-looking fake modes in AmigaOS4.
-The things it should solve.
 
 # The problems, I like to solve.
 
