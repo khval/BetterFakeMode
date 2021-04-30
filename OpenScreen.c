@@ -39,7 +39,7 @@ struct Screen
 struct ViewPort
 {
     struct ViewPort *Next;
-    struct ColorMap *ColorMap; [****]
+    struct ColorMap *ColorMap; [***]
     struct CopList  *DspIns;
     struct CopList  *SprIns;
     struct CopList  *ClrIns;
@@ -137,18 +137,8 @@ struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
 	return bm;
 }
 
-struct Screen *_new_fake_screen(int Width, int Height, int Depth)
+void _init_fake_screen(struct Screen *s,int Width, int Height, int Depth)
 {
-	struct Screen *s;
-	struct BitMap *bm;
-
-	s = (struct Screen *) AllocVecTags( sizeof(struct Screen), 
-		AVT_Type, MEMF_SHARED,
-		AVT_ClearWithValue, 0,
-		TAG_END); 
-
-	if (s)
-	{
 		s -> Width = Width & 15 ? (Width + 16) & 0xFFFE : Width ;	// Round up closes 16 pixels.
 		s -> Height = Height;
 
@@ -166,9 +156,24 @@ struct Screen *_new_fake_screen(int Width, int Height, int Depth)
 
 		FPrintf( output, "%ld\n", s ->RastPort.BitMap -> BytesPerRow );
 
-		 fake_initViewPort( &s-> ViewPort, Depth );
+		 fake_initViewPort( &s-> ViewPort, Depth, s -> RastPort.BitMap );
 
 		// need to fill in the struct as best as I can.
+}
+
+
+struct Screen *_new_fake_screen(int Width, int Height, int Depth)
+{
+	struct Screen *s;
+
+	s = (struct Screen *) AllocVecTags( sizeof(struct Screen), 
+		AVT_Type, MEMF_SHARED,
+		AVT_ClearWithValue, 0,
+		TAG_END); 
+
+	if (s)
+	{
+		_init_fake_screen(s,Width, Height,Depth);
 		return s;
 	}
 
