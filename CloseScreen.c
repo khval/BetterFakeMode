@@ -26,6 +26,12 @@ void _cleanup_fake_ViewPort( struct ViewPort *vp )
 		FreeVec(vp -> ColorMap);
 		vp -> ColorMap = NULL;
 	}
+
+	if (vp->RasInfo)
+	{
+		FreeVec(vp -> RasInfo);
+		vp -> RasInfo = NULL;
+	}
 }
 
 void _free_fake_bitmap( struct BitMap *bm )
