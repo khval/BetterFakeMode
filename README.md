@@ -14,7 +14,8 @@ will allow old programs and games to be displayed correct.)
 
 # Current status.
 
-This is early days for the project, the only thing we do safely 
-is to monitor the activities, from programs trying to open screens.
+Many of problems might not be OpenScreen actually it can be in definitions of the fake modes as well.
 
-(We also use it simulate failure, that can be useful, to find unsuspected bugs in programs.)
+Currently it will render one screen, but not open the screen only display it in a window, it will not scale it, and will break if open more than one screen. So currently this project name is misleading as it not at all any better. This is experiment, Ad Hoc development, I do not know what I’m doing.
+
+This project is not for the end user, this project might be interesting to some who like contribute or know how to solve some of problems listed under issues, or have better ideas on how solve some of the problems, then what I have come up with.
