@@ -210,6 +210,19 @@ static struct Window * ppc_func_OpenWindowTagList (struct IntuitionIFace *Self, 
 static void ppc_func_CloseWindow( void *libBase, struct Window *w )
 {
 	FPrintf( output,"CloseWindow\n");
+
+	if (is_fake_screen( w -> WScreen ))
+	{
+		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we free screen.
+
+		FPrintf( output,"Fake CloseWindow... warning doing nothing...\n");
+
+		IExec->MutexRelease(video_mutex);
+	}
+	else
+	{
+		((void (*) ( void *libBase, struct Window *window )) old_ppc_func_CloseWindow) (libBase, w);
+	}
 }
 
 
