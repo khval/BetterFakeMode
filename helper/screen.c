@@ -41,3 +41,9 @@ void remove_screen_from_list(struct Screen *screen)
 }
 
 
+bool is_fake_screen( struct Screen *screen )
+{
+	if ((screen >= screens) && (screen <= screens + max_screens)) return true;
+	return false;
+}
+
