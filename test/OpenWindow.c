@@ -76,11 +76,12 @@ int main()
 			WA_CustomScreen, src,
 			TAG_END);
 
+		printf("Window open? %s\n", win ? "Yes" : "No");
 
 		printf("Press enter to quit\n");
 		getchar();
 
-		CloseWindow( win );
+		if (win) CloseWindow( win );
 
 		CloseScreen( src ) ;
 	}
