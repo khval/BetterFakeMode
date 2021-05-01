@@ -210,8 +210,38 @@ static void ppc_func_CloseScreen( struct IntuitionIFace *Self, struct Screen *sc
 
 static struct Window * ppc_func_OpenWindowTagList (struct IntuitionIFace *Self, const struct NewWindow * newWindow, const struct TagItem * tagList)
 {
+	bool has_a_fake_screen = false;
+
 	FPrintf( output,"OpenWindow\n");
-	return NULL;
+
+	if (newWindow)
+	{
+		if (is_fake_screen( newWindow -> Screen )) has_a_fake_screen = true;
+	}
+	else
+	{
+		const struct TagItem * tag;
+		for (tag = tagList; tag -> ti_Tag != TAG_DONE; tag++)
+		{
+			switch (tag -> ti_Tag)
+			{
+				case WA_CustomScreen:
+					if (is_fake_screen( (struct Screen *) tag -> ti_Data )) has_a_fake_screen = true;
+					break; 
+			}
+		}
+	}
+
+	if (has_a_fake_screen)
+	{
+			FPrintf( output,"Sorry we don't support fake windows yet...\n");
+			return  NULL;
+	}
+	else
+	{
+		return ((struct Window * (*) (struct IntuitionIFace *, const struct NewWindow *, const struct TagItem *)) old_ppc_func_OpenWindowTagList)	
+				 (Self,newWindow,tagList);
+	}
 }
 
 static void ppc_func_CloseWindow( struct IntuitionIFace *Self, struct Window *w )
