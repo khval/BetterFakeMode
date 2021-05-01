@@ -187,10 +187,17 @@ static void ppc_func_CloseScreen( void *libBase, struct Screen *screen )
 	}
 	else
 	{
-		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we free screen.
-		_delete_fake_screen( screen );
-		lazy_screen_hack = NULL;		// we only have one screen, so no worry... yet...
-		IExec->MutexRelease(video_mutex);
+		if (is_fake_screen( screen ))
+		{
+			IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we free screen.
+			_delete_fake_screen( screen );
+			lazy_screen_hack = NULL;		// we only have one screen, so no worry... yet...
+			IExec->MutexRelease(video_mutex);
+		}
+		else
+		{
+			((void (*) ( void *libBase, struct Screen *screen )) old_ppc_func_CloseScreen) (libBase, screen);
+		}
 	}
 }
 
