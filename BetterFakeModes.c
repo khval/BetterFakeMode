@@ -44,6 +44,8 @@ char *screens_end_ptr = (char *) screens +sizeof(screens);
 
 bool monitor = false;
 
+int num_of_open_screens = 0;
+
 struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const struct NewScreen * newScreen, const struct TagItem * tagList)
 {
 	FPrintf( output,"OpenScreenTagList()\n");
@@ -171,6 +173,8 @@ static struct Screen *ppc_func_OpenScreen( struct IntuitionIFace *Self, struct N
 	{
 		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we allocate screen.
 		src = _new_fake_screen(newScreen -> Width,newScreen -> Height,newScreen -> Depth);
+		if (src) num_of_open_screens ++;
+
 		IExec->MutexRelease(video_mutex);
 
 		return src;
@@ -191,7 +195,10 @@ static void ppc_func_CloseScreen( struct IntuitionIFace *Self, struct Screen *sc
 		{
 			IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we free screen.
 			_delete_fake_screen( screen );
+
 			allocatedScreen[ screens - screen ] = false;
+			num_of_open_screens --;
+
 			IExec->MutexRelease(video_mutex);
 		}
 		else
@@ -436,9 +443,20 @@ int main( void )
 	{
 		Printf("pacthes set\n");
 
+		Printf("If console window is behind, hold CTRL+LAMIGA to drag window...\n");
 		Printf("-- press enter to quit\n");
 
-		getchar();
+
+		for(;;) 
+		{
+			getchar();
+
+			if (num_of_open_screens)
+			{
+				printf("you can't quit before all fake screens are closed\n");
+			}
+			else break;
+		}
 
 		undo_patches();
 	}
