@@ -100,6 +100,23 @@ void fake_initColorMap( struct ViewPort *vp, int depth)
 	cm -> ColorTable = AllocVecTags( sizeof(uint32) * 4  * cm -> Count, 
 			AVT_Type, MEMF_SHARED, AVT_ClearWithValue, 0, TAG_END); 
 	cm -> cm_vp = vp;
+
+	 SetRGB32( vp, 0, 0x55555555,0x55555555,0x55555555 );
+	 SetRGB32( vp, 1, 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF );
+
+	if (cm -> Count>2)	// 4 colors or up.
+	{
+		 SetRGB32( vp, 2, 0x00000000,0x00000000,0x00000000 );
+		 SetRGB32( vp, 3, 0xFFFFFFFF,0x00000000,0x00000000 );
+	}
+
+	if (cm -> Count>4) // 8 colors or up.
+	{ 
+		 SetRGB32( vp, 4, 0x00000000,0xFFFFFFFF,0x00000000 );
+		 SetRGB32( vp, 5, 0x00000000,0x00000000,0xFFFFFFFF );
+		 SetRGB32( vp, 6, 0x00000000,0x00000000,0x00000000 );
+		 SetRGB32( vp, 7, 0x00000000,0x00000000,0x00000000 );
+	}
 }
 
 void fake_initRasInfo( struct RasInfo *ri, struct BitMap *bm )
