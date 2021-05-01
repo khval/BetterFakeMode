@@ -142,7 +142,7 @@ struct Screen * ppc_func_OpenScreenTags(struct IntuitionIFace *Self, const struc
 }
 
 
-static struct Screen *ppc_func_OpenScreen( void *libBase, struct NewScreen *newScreen )
+static struct Screen *ppc_func_OpenScreen( struct IntuitionIFace *Self, struct NewScreen *newScreen )
 {
 	struct Screen *src;
 	char stdTXT[256];
@@ -165,7 +165,7 @@ static struct Screen *ppc_func_OpenScreen( void *libBase, struct NewScreen *newS
 	{
 		// on AmigaOS4, this will result in OpenScreenTagList() being called.
 
-		return (( struct Screen *(*) ( void *, struct NewScreen * )) old_ppc_func_OpenScreen) (libBase, newScreen);
+		return (( struct Screen *(*) ( struct IntuitionIFace *, struct NewScreen * )) old_ppc_func_OpenScreen) (Self, newScreen);
 	}
 	else
 	{
@@ -177,13 +177,13 @@ static struct Screen *ppc_func_OpenScreen( void *libBase, struct NewScreen *newS
 	}
 }
 
-static void ppc_func_CloseScreen( void *libBase, struct Screen *screen )
+static void ppc_func_CloseScreen( struct IntuitionIFace *Self, struct Screen *screen )
 {
 	FPrintf( output,"CloseScreen\n");
 
 	if (monitor)
 	{
-		((void (*) ( void *libBase, struct Screen *screen )) old_ppc_func_CloseScreen) (libBase, screen);
+		((void (*) ( struct IntuitionIFace *, struct Screen *)) old_ppc_func_CloseScreen) (Self, screen);
 	}
 	else
 	{
@@ -196,7 +196,7 @@ static void ppc_func_CloseScreen( void *libBase, struct Screen *screen )
 		}
 		else
 		{
-			((void (*) ( void *libBase, struct Screen *screen )) old_ppc_func_CloseScreen) (libBase, screen);
+			((void (*) ( struct IntuitionIFace *, struct Screen *)) old_ppc_func_CloseScreen) (Self, screen);
 		}
 	}
 }
@@ -207,7 +207,7 @@ static struct Window * ppc_func_OpenWindowTagList (struct IntuitionIFace *Self, 
 	return NULL;
 }
 
-static void ppc_func_CloseWindow( void *libBase, struct Window *w )
+static void ppc_func_CloseWindow( struct IntuitionIFace *Self, struct Window *w )
 {
 	FPrintf( output,"CloseWindow\n");
 
@@ -221,19 +221,19 @@ static void ppc_func_CloseWindow( void *libBase, struct Window *w )
 	}
 	else
 	{
-		((void (*) ( void *libBase, struct Window *window )) old_ppc_func_CloseWindow) (libBase, w);
+		((void (*) ( struct IntuitionIFace *, struct Window *window )) old_ppc_func_CloseWindow) (Self, w);
 	}
 }
 
 
 static VOID stub_68k_OpenScreen_func( uint32 *regarray )
 {
-	regarray[REG68K_D0/4] =(uint32) ppc_func_OpenScreen( IntuitionBase, (struct NewScreen *) regarray[REG68K_A0/4] );
+	regarray[REG68K_D0/4] =(uint32) ppc_func_OpenScreen( IIntuition, (struct NewScreen *) regarray[REG68K_A0/4] );
 }
 
 static VOID stub_68k_CloseScreen_func( uint32 *regarray )
 {
-	ppc_func_CloseScreen( IntuitionBase, (struct Screen *) regarray[REG68K_A0/4] );
+	ppc_func_CloseScreen( IIntuition, (struct Screen *) regarray[REG68K_A0/4] );
 }
 
 
