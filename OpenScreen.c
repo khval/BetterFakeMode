@@ -174,8 +174,7 @@ struct Screen *_new_fake_screen(int Width, int Height, int Depth)
 
 	if (s)
 	{
-		printf("at index: %d\n",i);
-
+		allocatedScreen[i] = true;
 		_init_fake_screen(s,Width, Height,Depth);
 		return s;
 	}

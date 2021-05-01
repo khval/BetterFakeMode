@@ -141,10 +141,10 @@ struct Screen * ppc_func_OpenScreenTags(struct IntuitionIFace *Self, const struc
 	return NULL;
 }
 
-struct Screen *lazy_screen_hack = NULL;
 
 static struct Screen *ppc_func_OpenScreen( void *libBase, struct NewScreen *newScreen )
 {
+	struct Screen *src;
 	char stdTXT[256];
 
 	FPrintf( output, "OpenScreen\n");
@@ -170,10 +170,10 @@ static struct Screen *ppc_func_OpenScreen( void *libBase, struct NewScreen *newS
 	else
 	{
 		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we allocate screen.
-		lazy_screen_hack = _new_fake_screen(newScreen -> Width,newScreen -> Height,newScreen -> Depth);
+		src = _new_fake_screen(newScreen -> Width,newScreen -> Height,newScreen -> Depth);
 		IExec->MutexRelease(video_mutex);
 
-		return lazy_screen_hack ;
+		return src;
 	}
 }
 
@@ -191,7 +191,7 @@ static void ppc_func_CloseScreen( void *libBase, struct Screen *screen )
 		{
 			IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we free screen.
 			_delete_fake_screen( screen );
-			lazy_screen_hack = NULL;		// we only have one screen, so no worry... yet...
+			allocatedScreen[ screens - screen ] = false;
 			IExec->MutexRelease(video_mutex);
 		}
 		else
@@ -364,8 +364,21 @@ void draw_screen( struct RastPort *rp, struct BitMap *bm )
 }
 
 
+struct Screen *first_fake_screen()
+{
+	int n;
+	for (n=0;n<max_screens;n++)
+	{
+		if (allocatedScreen[n]) return screens+n;
+	}
+	return NULL;
+}
+
+
 void dump_screen()
 {
+	struct Screen *src;
+
 	struct Window *win = IIntuition -> OpenWindowTags( NULL, 
 			WA_InnerWidth, 640,
 			WA_InnerHeight, 480,
@@ -377,11 +390,14 @@ void dump_screen()
 	do
 	{
 		IExec->MutexObtain(video_mutex);
-		if (lazy_screen_hack)
-		{
-			update_argb_lookup( lazy_screen_hack -> ViewPort.ColorMap );
 
-			draw_screen( win -> RPort, lazy_screen_hack -> RastPort.BitMap );
+		src = first_fake_screen();
+
+		if (src)
+		{
+			update_argb_lookup( src -> ViewPort.ColorMap );
+
+			draw_screen( win -> RPort, src -> RastPort.BitMap );
 		}
 		IExec->MutexRelease(video_mutex);
 
