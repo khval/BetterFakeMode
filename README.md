@@ -25,3 +25,18 @@ This project is not for the end user, this project might be interesting to someo
 
 For the users, I put in some work to make sure does not  crash too badly, 
 but don’t expect it to work on anything else then the tests provided.
+
+# Priority
+
+Priority
+1st
+
+Because this is an Ad Hoc development project, first thing is to find out if this is doable? So, first order of business is quickly proto type something, that shows if we are able open some screens, if get windows working etc, if I can get windows to behave correct, and I can get normally draw commands to work. then 2en phase can start.
+
+2en
+
+When we can see if this project might work, the work on updating the code, so that it displays correct. remove any graphic glitches, and problems, user input, events. Etc.
+
+3rd
+
+Updated the engine: focus now shifts to making it display in full screen mode, fix the aspect ratio, preferences, and so on.
