@@ -15,6 +15,13 @@ will allow old programs and games to be displayed correct.)
 
 Many of problems might not be OpenScreen actually it can be in definitions of the fake modes as well.
 
-Currently it will render on one screen, but not open the screen only display it in a window, it will not scale it, and will break if you open more than one screen. So currently this project name is misleading as it not at all any better. This is experiment, Ad Hoc development, I do not know what I’m doing.
+The rendering engine is pretty stupid right now.
+
+Currently it will render on one screen, but not open the screen only display it in a window, it will not scale it, 
+Only the first fake screen you open will be displayed, 2en screen you open will be ignored, when you close the first screen, it will display the 2en screen.
+This is experiment, Ad Hoc development, I do not know what I’m doing.
 
 This project is not for the end user, this project might be interesting to someone who likes to contribute or know how to solve some of problems listed under issues, or have better ideas on how solve some of the problems, then what I have come up with.
+
+For the users, I put in some work to make sure does not  crash too badly, 
+but don’t expect it to work on anything else then the tests provided.
