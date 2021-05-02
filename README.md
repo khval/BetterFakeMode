@@ -28,6 +28,8 @@ but don’t expect it to work on anything else then the tests provided.
 
 # Priority
 
+Ok here is native plan for this project.
+
 1st
 
 Because this is an Ad Hoc development project, first thing is to find out if this is doable? So, first order of business is quickly proto type something, that shows if we are able open some screens, if get windows working etc, if I can get windows to behave correct, and I can get normally draw commands to work. then 2en phase can start.
