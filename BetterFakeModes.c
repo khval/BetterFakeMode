@@ -326,12 +326,16 @@ uint32 argb[256];
 
 void draw_bits(struct RastPort *rp, unsigned char *b, int x,int  y )
 {
-	unsigned char *be = b+8;
+	IGraphics->WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
+	IGraphics->WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
+	IGraphics->WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
+	IGraphics->WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
 
-	for (;b<be;b++,x++)		// bx = byte x
-	{
-		IGraphics->WritePixelColor(rp,  x,  y,  argb[ *b ] );
-	}
+	IGraphics->WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
+	IGraphics->WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
+	IGraphics->WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
+	IGraphics->WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
+
 }
 
 typedef unsigned char u8;
