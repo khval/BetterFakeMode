@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 #include <stdarg.h>
 
@@ -10,12 +11,15 @@
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <exec/emulation.h>
+#include <exec/ports.h>
 
 #include "init.h"
 #include "patch.h"
 #include "common.h"
 #include "spawn.h"
 #include "helper/screen.h"
+
+struct MsgPort *port;
 
 APTR old_68k_stub_OpenScreen = NULL;
 APTR old_68k_stub_CloseScreen = NULL;
@@ -416,9 +420,79 @@ struct Screen *first_fake_screen()
 }
 
 
+int frame_skip = 0;
+
+struct TimerContext
+{
+	struct MsgPort *timer_port ;
+	struct TimeRequest *timer_io ;
+	bool its_open;
+	ULONG timer_mask ;
+};
+
+void reset_timer(struct TimeRequest *timer_io)
+{
+	timer_io->Request.io_Command = TR_ADDREQUEST;
+	timer_io->Time.Seconds = 0;
+	timer_io->Time.Microseconds = 16667 * (frame_skip+1);
+	IExec->SendIO((struct IORequest *)timer_io);
+}
+
+bool open_timer_context( struct TimerContext *tc )
+{
+	tc -> timer_port = (struct MsgPort*) IExec->AllocSysObjectTags(ASOT_PORT, TAG_DONE);
+
+	if (tc -> timer_port)
+	{
+		tc -> timer_io = (struct TimeRequest *) 
+				IExec->AllocSysObjectTags(ASOT_IOREQUEST, 
+					ASOIOR_Size, sizeof(struct TimeRequest),
+					ASOIOR_ReplyPort, tc-> timer_port ,
+					TAG_DONE);
+
+		if (tc -> timer_io)
+		{
+			if (!IExec->OpenDevice( (char *) TIMERNAME, UNIT_MICROHZ, (struct IORequest *) tc -> timer_io, 0))
+			{
+				tc -> timer_mask = 1 << tc -> timer_port->mp_SigBit;
+				reset_timer( tc -> timer_io );
+				tc -> its_open = true;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void close_timer_context( struct TimerContext *tc )
+{
+	if (tc->its_open)
+	{
+		IExec->Wait( tc->timer_mask );
+		IExec->CloseDevice( (struct IORequest *) tc -> timer_io );
+		tc->its_open = false;
+	}
+
+	if (tc -> timer_io)
+	{
+     		IExec->FreeSysObject(ASOT_IOREQUEST, (APTR) tc -> timer_io);
+		tc -> timer_io = NULL;
+	}
+
+	if (tc -> timer_port)
+	{
+     		IExec->FreeSysObject(ASOT_PORT, (APTR) tc -> timer_port);
+		tc -> timer_port = NULL;
+	}
+}
+
 void dump_screen()
 {
+	struct TimerContext tc;
 	struct Screen *src;
+	ULONG win_mask = 0;
+
+	bzero( &tc , sizeof(struct TimerContext) );
 
 	struct Window *win = IIntuition -> OpenWindowTags( NULL, 
 			WA_InnerWidth, 640,
@@ -428,23 +502,38 @@ void dump_screen()
 
 	if (!win) return ;
 
+	if (open_timer_context( &tc)== false)
+	{
+		close_timer_context( &tc );
+		IIntuition -> CloseWindow( win );
+		return ;
+	}
+
+	win_mask = win -> UserPort ? 1 << win -> UserPort ->mp_SigBit : 0;
+
 	do
 	{
-		IExec->MutexObtain(video_mutex);
+		ULONG sig = IExec->Wait( win_mask | tc.timer_mask | SIGBREAKF_CTRL_C);
 
-		src = first_fake_screen();
+		if (sig & SIGBREAKF_CTRL_C)	break;
 
-		if (src)
+		if (sig & tc.timer_mask)
 		{
-			update_argb_lookup( src -> ViewPort.ColorMap );
+			IExec->MutexObtain(video_mutex);
+			src = first_fake_screen();
+			if (src)
+			{
+				update_argb_lookup( src -> ViewPort.ColorMap );
+				draw_screen( win -> RPort, src -> RastPort.BitMap );
+			}
+			IExec->MutexRelease(video_mutex);
 
-			draw_screen( win -> RPort, src -> RastPort.BitMap );
+			reset_timer( tc.timer_io );
 		}
-		IExec->MutexRelease(video_mutex);
 
-		IDOS -> Delay(1);
 	} while (!quit);
 
+	close_timer_context( &tc );
 	IIntuition -> CloseWindow( win );
 }
 
