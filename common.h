@@ -11,4 +11,7 @@ extern BPTR output;
 
 extern struct Screen *_new_fake_screen(int Width, int Height, int Depth);
 extern void _delete_fake_screen( struct Screen *s );
+extern struct Window * fake_OpenWindowTagList ( const struct NewWindow * newWindow, const struct TagItem * tagList);
+extern struct Window * fake_CloseWindow ( struct Window * window);
+
 

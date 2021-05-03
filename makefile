@@ -2,6 +2,8 @@
 files = init.c \
 	OpenScreen.c \
 	CloseScreen.c \
+	OpenWindow.c \
+	CloseWindow.c \
 	helper/screen.c \
 	spawn.c
 

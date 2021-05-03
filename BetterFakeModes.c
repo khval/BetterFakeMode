@@ -238,8 +238,7 @@ static struct Window * ppc_func_OpenWindowTagList (struct IntuitionIFace *Self, 
 
 	if (has_a_fake_screen)
 	{
-			FPrintf( output,"Sorry we don't support fake windows yet...\n");
-			return  NULL;
+		return  fake_OpenWindowTagList ( newWindow, tagList);
 	}
 	else
 	{
@@ -254,11 +253,7 @@ static void ppc_func_CloseWindow( struct IntuitionIFace *Self, struct Window *w 
 
 	if (is_fake_screen( w -> WScreen ))
 	{
-		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we free screen.
-
-		FPrintf( output,"Fake CloseWindow... warning doing nothing...\n");
-
-		IExec->MutexRelease(video_mutex);
+		fake_CloseWindow( w );
 	}
 	else
 	{
@@ -351,14 +346,9 @@ void update_argb_lookup( struct ColorMap *cm )
 	int colors = cm -> Count;
 	ULONG d[3];
 
-	printf("update colors\n");
-
 	for (c=0;c<colors;c++)
 	{
-
 		IGraphics -> GetRGB32( cm, c, 1, d );
-
-		printf("%d: %08x,%08x,%08x\n",c, d[0],d[1],d[2]);
 
 		r = *((u8 *) (d + 0))  << 16;
 		g = *((u8 *) (d + 1)) << 8;
@@ -373,7 +363,6 @@ void draw_screen( struct RastPort *rp, struct BitMap *bm )
 	int x,y,p,d;
 	int bx,bpr;
 	int i;
-
 
 	unsigned char *ptr;
 	uint64 *at;
