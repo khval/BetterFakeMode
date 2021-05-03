@@ -76,7 +76,36 @@ int main()
 			WA_CustomScreen, src,
 			TAG_END);
 
-		printf("Window open? %s\n", win ? "Yes" : "No");
+		printf("Window open? %s -- its at: %08x\n", win ? "Yes" : "No",win);
+		printf("src -> FirstWindow: %08x\n", src -> FirstWindow);
+		printf("src -> RastPort: %08x\n",&src -> RastPort);
+		printf("src -> RastPort -> BitMap: %08x\n",src->RastPort.BitMap);
+
+		if (win)
+		{
+			printf("win -> LeftEdge %d\n",win->LeftEdge);
+			printf("win -> TopEdge %d\n",win->TopEdge);
+			printf("win -> Width: %d\n",win->Width);
+			printf("win -> Height: %d\n",win->Height);
+
+			printf("win -> RastPort: %08x\n",win->RPort);
+
+			if (win->RPort)
+			{
+				struct RastPort *rp = win->RPort;
+
+				printf("win -> RastPort -> Layer: %08x\n", rp -> Layer);
+				printf("win -> RastPort -> BitMap: %08x\n", rp -> BitMap);
+				printf("win -> RastPort -> AreaPtrn: %08x\n", rp -> AreaPtrn);
+				printf("win -> RastPort -> TmpRas: %08x\n", rp -> TmpRas);
+				printf("win -> RastPort -> AreaInfo: %08x\n", rp -> AreaInfo);
+				printf("win -> RastPort -> GelsInfo: %08x\n", rp -> GelsInfo);
+	
+			}
+
+
+			printf("win -> UserPort: %08x\n",win->UserPort);
+		}
 
 		printf("Press enter to quit\n");
 		getchar();
