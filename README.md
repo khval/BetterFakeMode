@@ -11,6 +11,8 @@ will allow old programs and games to be displayed correct.)
 
 * Noticed problems with double buffered screens.
 
+* Too often AmigaOS4.1 thinks screens are true color screens when they are planar screens.
+
 # Current status.
 
 Many of problems might not be OpenScreen actually it can be in definitions of the fake modes as well.
