@@ -12,6 +12,7 @@
 #include "common.h"
 #include "helper/screen.h"
 
+extern void RenderWindow(struct Window *win);
 
 struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const struct TagItem * tagList)
 {
@@ -21,6 +22,13 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 	win =  new_struct( Window );
 
 	if (win == NULL) return NULL;
+
+	// Defaults....
+
+	win -> BorderLeft = 2;
+	win -> BorderTop = 0;
+	win -> BorderRight = 2;
+	win -> BorderBottom = 0;
 
 	if (nw)
 	{
@@ -83,6 +91,8 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 
 			case WA_MaxHeight:
 				win->MaxHeight= tag -> ti_Data; break; 
+				break;
+
 		}
 	}
 
@@ -98,6 +108,7 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 		{
 			InitRastPort( win -> RPort );
 			win -> RPort -> BitMap = win -> WScreen -> RastPort.BitMap;
+			RenderWindow(win);
 		}
 
 	}
