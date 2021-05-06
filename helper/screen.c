@@ -47,3 +47,64 @@ bool is_fake_screen( struct Screen *screen )
 	return false;
 }
 
+struct Screen *first_fake_screen()
+{
+	int n;
+	for (n=0;n<max_screens;n++)
+	{
+		if (allocatedScreen[n]) return screens+n;
+	}
+	return NULL;
+}
+
+bool is_leagcy_mode( ULONG id )
+{
+	FPrintf( output, "MODE ID: %08lx\n",id);
+
+	switch (id)
+	{
+		case 0x21000:	// LowRes
+		case 0x29000: // HighRes
+		case 0x29020: // SuperHighRes
+		case 0x21004: // LowResLaced
+		case 0x29004: // HighResLaced
+		case 0x29024: // SuperHighResLaced
+		case 0x29404: // HighResLaced DPF
+			return true;
+	}
+
+	return false;
+}
+
+bool legacy_in_tags( const struct TagItem * tagList, bool legacy_status_maybe )
+{
+	bool has_mode_id = false;
+	bool legacy_status = false;
+	const struct TagItem *tag;
+
+	if (tagList == NULL) return false;
+
+	for (tag = tagList; tag -> ti_Tag != TAG_DONE; tag++)
+	{
+		switch (tag -> ti_Tag)
+		{
+			case SA_Depth:
+				if (tag -> ti_Data < 9) legacy_status_maybe = true;
+				FPrintf( output, "Depth: %ld\n",tag -> ti_Data);
+				break;
+
+			case SA_DisplayID:
+				has_mode_id = true;
+				if (is_leagcy_mode( tag -> ti_Data )) legacy_status = true;
+				break;
+		}
+	}
+
+	if (has_mode_id == false)	// if we have no mode id, we most guess.
+	{
+		if (legacy_status_maybe) legacy_status=true;
+	}
+
+	return legacy_status;
+}
+
