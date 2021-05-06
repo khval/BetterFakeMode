@@ -6,7 +6,10 @@ files = init.c \
 	CloseWindow.c \
 	renderWindow.c \
 	helper/screen.c \
-	spawn.c
+	spawn.c \
+	engine.c \
+	EngineTimer.c
+	
 
 files_o = ${files:.c=.o}
 
