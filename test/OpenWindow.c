@@ -54,6 +54,38 @@ void pplot( struct BitMap *bm, int x, int y)
 	*(bm -> Planes[0] + x + y * bm -> BytesPerRow ) |= 1L<<bx;
 }
 
+
+void show_layer_Info(struct Layer_Info *li)
+{
+	printf(
+		" top_layer: %08x\n"
+		"resPtr1: %08x\n"
+		"resPtr2: %08x\n"
+		"FreeClipRects: %08x\n"
+		"PrivateReserve3: %d\n"
+		"ClipRectPool: %08x\n"
+   	 	"Flags: %08x\n"
+		"res_count: %d\n"
+		"LockLayersCount: %d\n"
+		"PrivateReserve5: %d\n"
+		"BlankHook: %08x\n"
+		"Extension: %08x\n",
+
+			li -> top_layer,
+			li -> resPtr1,
+			li -> resPtr2,
+			li -> FreeClipRects,
+			li ->PrivateReserve3,
+			li -> ClipRectPool,
+   		 	li -> Flags,
+			li -> res_count,
+			li -> LockLayersCount,
+			li -> PrivateReserve5,
+			li -> BlankHook,
+			li -> Extension);
+}
+
+
 int main()
 {
 	struct Screen *src;
@@ -71,6 +103,8 @@ int main()
 	if (src)
 	{
 		struct Window *win = OpenWindowTags( NULL, 
+			WA_Left, 10,
+			WA_Top, 10,
 			WA_Width, 100,
 			WA_Height, 100,
 			WA_CustomScreen, src,
@@ -80,6 +114,15 @@ int main()
 		printf("src -> FirstWindow: %08x\n", src -> FirstWindow);
 		printf("src -> RastPort: %08x\n",&src -> RastPort);
 		printf("src -> RastPort -> BitMap: %08x\n",src->RastPort.BitMap);
+
+		printf("src -> ViewPort.DWidth: %d\n",src->ViewPort.DWidth);
+		printf("src -> ViewPort.DHeight: %d\n",src->ViewPort.DHeight);
+		printf("src -> ViewPort.DxOffset: %d\n",src->ViewPort.DxOffset);
+		printf("src -> ViewPort.DyOffset: %d\n",src->ViewPort.DyOffset);
+		printf("src -> ViewPort.Modes: %08x\n",src->ViewPort.Modes);
+
+		show_layer_Info( &src -> LayerInfo );
+
 
 		if (win)
 		{
