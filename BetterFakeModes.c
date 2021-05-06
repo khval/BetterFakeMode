@@ -24,8 +24,6 @@ struct MsgPort *port;
 APTR old_68k_stub_OpenScreen = NULL;
 APTR old_68k_stub_CloseScreen = NULL;
 
-APTR old_ppc_func_OpenScreen = NULL;
-APTR old_ppc_func_OpenScreenTags = NULL;
 APTR old_ppc_func_OpenScreenTagList = NULL;
 APTR old_ppc_func_CloseScreen = NULL;
 
@@ -43,8 +41,6 @@ extern APTR video_mutex ;
 
 struct Task *main_task = NULL;
 BPTR output;
-
-char *screens_end_ptr = (char *) screens +sizeof(screens);
 
 bool monitor = false;
 
@@ -261,8 +257,8 @@ static void ppc_func_CloseWindow( struct IntuitionIFace *Self, struct Window *w 
 	}
 }
 
-
-static VOID stub_68k_OpenScreen_func( uint32 *regarray )
+/*
+static VOID stub_68k_OpenScreenTagList_func( uint32 *regarray )
 {
 	regarray[REG68K_D0/4] =(uint32) ppc_func_OpenScreen( IIntuition, (struct NewScreen *) regarray[REG68K_A0/4] );
 }
@@ -272,10 +268,9 @@ static VOID stub_68k_CloseScreen_func( uint32 *regarray )
 	ppc_func_CloseScreen( IIntuition, (struct Screen *) regarray[REG68K_A0/4] );
 }
 
-
 STATIC CONST struct EmuTrap stub_68k_OpenScreen      = { TRAPINST, TRAPTYPENR, (uint32 (*)(uint32 *)) stub_68k_OpenScreen_func };
 STATIC CONST struct EmuTrap stub_68k_CloseScreen      = { TRAPINST, TRAPTYPENR, (uint32 (*)(uint32 *)) stub_68k_CloseScreen_func };
-
+*/
 
 
 BOOL set_patches( void )
@@ -284,10 +279,9 @@ BOOL set_patches( void )
 
 	Printf("libs is open, time to patch\n");
 
-	set_new_68k_patch(Intuition,OpenScreen);			// maybe not needed, as it will end up in PPC routines.
-	set_new_68k_patch(Intuition,CloseScreen);
+//	set_new_68k_patch(Intuition,OpenScreen);			// maybe not needed, as it will end up in PPC routines.
+//	set_new_68k_patch(Intuition,CloseScreen);
 
-	set_new_ppc_patch(Intuition,OpenScreen);			// this points to OpenScreenTagList, but for now this is the one we hack.
 	set_new_ppc_patch(Intuition,OpenScreenTagList);
 	set_new_ppc_patch(Intuition,CloseScreen);
 
@@ -302,7 +296,6 @@ void undo_patches( void )
 	undo_68k_patch(Intuition,OpenScreen);			// maybe not needed, as it will end up in PPC routines.
 	undo_68k_patch(Intuition,CloseScreen);
 
-	undo_ppc_patch(Intuition,OpenScreen);			// this points to OpenScreenTagList, but for now this is the one we hack.
 	undo_ppc_patch(Intuition,OpenScreenTagList);
 	undo_ppc_patch(Intuition,CloseScreen);
 
