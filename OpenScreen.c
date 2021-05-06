@@ -1,9 +1,11 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>
+#include <proto/layers.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <exec/emulation.h>
@@ -124,13 +126,20 @@ void fake_initRasInfo( struct RasInfo *ri, struct BitMap *bm )
 	ri -> BitMap = bm;
 }
 
-void fake_initViewPort(struct ViewPort *vp, int depth, struct BitMap *bm )
+void fake_initViewPort( struct Screen *s , int depth )
 {
+	struct ViewPort *vp = &s-> ViewPort;
+
+	InitVPort( vp );
+
+	vp -> DWidth = s -> Width;
+	vp -> DHeight = s -> Height;
+
 	vp -> ColorMap =  new_struct( ColorMap );
 	if (vp -> ColorMap) fake_initColorMap( vp, depth );
 
 	vp -> RasInfo = new_struct( RasInfo );
-	if (vp -> RasInfo) fake_initRasInfo( vp -> RasInfo, bm );
+	if (vp -> RasInfo) fake_initRasInfo( vp -> RasInfo, s -> RastPort.BitMap );
 }
 
 struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
@@ -156,12 +165,10 @@ struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
 	return bm;
 }
 
-void _init_fake_screen(struct Screen *s,int Width, int Height, int Depth)
+void _init_fake_screen(struct Screen *s,int Depth)
 {
-		s -> Width = Width & 15 ? (Width + 16) & 0xFFFE : Width ;	// Round up closes 16 pixels.
-		s -> Height = Height;
+		s -> Width = s -> Width & 15 ? (s -> Width + 16) & 0xFFFE : s -> Width ;	// Round up closes 16 pixels.
 
-		InitVPort( &s-> ViewPort );
 		InitRastPort( & s -> RastPort );
 
 #if use_fake_bitmap == 1
@@ -175,14 +182,55 @@ void _init_fake_screen(struct Screen *s,int Width, int Height, int Depth)
 
 		FPrintf( output, "%ld\n", s ->RastPort.BitMap -> BytesPerRow );
 
-		 fake_initViewPort( &s-> ViewPort, Depth, s -> RastPort.BitMap );
+		 fake_initViewPort( s, Depth );
 
 		// need to fill in the struct as best as I can.
 }
 
-
-struct Screen *_new_fake_screen(int Width, int Height, int Depth)
+void add_LayerInfo( int i, struct Screen *s )
 {
+	allocatedScreen[i] = true;
+	LayerInfos[i] = NewLayerInfo();
+
+	if (LayerInfos[i])
+	{
+		memcpy( &s -> LayerInfo, LayerInfos[i] , sizeof(struct Layer_Info) );
+	}
+}
+
+void init_screen_from_newScreen( const struct NewScreen * newScreen, struct Screen *s, int *depth )
+{
+	s -> Width = newScreen -> Width;
+	s -> Height = newScreen -> Height;
+	*depth = newScreen -> Depth;
+}
+
+void update_screen_from_taglist(const struct TagItem * tagList, struct Screen *s, int *depth)
+{
+	const struct TagItem * tag;
+
+	for (tag = tagList; tag -> ti_Tag != TAG_DONE; tag++)
+	{
+		switch (tag -> ti_Tag)
+		{
+			case SA_Width:
+				s -> Width = tag -> ti_Data;
+				break;
+
+			case SA_Height:
+				s -> Height = tag -> ti_Data;
+				break;
+
+			case SA_Depth:
+				*depth = tag -> ti_Data;
+				break;
+		}
+	}
+}
+
+struct Screen * _new_fake_OpenScreenTagList( const struct NewScreen * newScreen, const struct TagItem * tagList)
+{
+	int depth;
 	int i;
 	struct Screen *s;
 
@@ -191,11 +239,15 @@ struct Screen *_new_fake_screen(int Width, int Height, int Depth)
 
 	if (s)
 	{
-		allocatedScreen[i] = true;
-		_init_fake_screen(s,Width, Height,Depth);
+		add_LayerInfo( i, s );
+
+		if (newScreen) init_screen_from_newScreen( newScreen, s, &depth );
+		if (tagList) update_screen_from_taglist(tagList, s, &depth);
+
+		_init_fake_screen(s,depth);
+
 		return s;
 	}
-
 	return NULL;
 }
 

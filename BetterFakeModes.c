@@ -18,6 +18,7 @@
 #include "common.h"
 #include "spawn.h"
 #include "helper/screen.h"
+#include "engine.h"
 
 struct MsgPort *port;
 
@@ -46,112 +47,27 @@ bool monitor = false;
 
 int num_of_open_screens = 0;
 
-struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const struct NewScreen * newScreen, const struct TagItem * tagList)
+struct KownLgacyModes
 {
-	FPrintf( output,"OpenScreenTagList()\n");
+	int w;
+	int h;
+};
 
-	if (monitor)
-	{
-		return (( struct Screen * (*)(struct IntuitionIFace *, const struct NewScreen * , const struct TagItem * )) old_ppc_func_OpenScreenTagList ) ( Self, newScreen, tagList );
-	}
-	else
-	{
-
-	}
-
-	return NULL;
-}
-
-struct Screen * ppc_func_OpenScreenTags(struct IntuitionIFace *Self, const struct NewScreen * newScreen, ...)
+struct KownLgacyModes LgacyModes[] =
 {
-	va_list ap;
-	ULONG tag;
-	ULONG value;
-
-	FPrintf( output, "OpenScreenTags()\n");
-	
-	va_start(ap, newScreen);
-
-	do
-	{
-		tag = va_arg(ap, ULONG);
+	{320,200},
+	{640,200},
+	{320,256},
+	{640,256},
+	{-1,-1}
+};
 
 
-		switch (tag)
-		{
-			case SA_Left:
-			case SA_Top:
-			case SA_Width:
-			case SA_Height:
-			case SA_Depth:
-			case SA_DetailPen:
-			case SA_BlockPen:
-			case SA_Title:
-			case SA_Colors:
-			case SA_ErrorCode:
-			case SA_Font:
-			case SA_SysFont:
-			case SA_Type:
-			case SA_BitMap:
-			case SA_PubName:
-			case SA_PubSig:
-			case SA_PubTask:
-			case SA_DisplayID:
-			case SA_DClip:
-			case SA_Overscan:
-			case SA_Obsolete1:
-			case SA_ShowTitle:
-			case SA_Behind:
-			case SA_Quiet:
-			case SA_AutoScroll:
-			case SA_Pens:
-			case SA_FullPalette:
-			case SA_ColorMapEntries:
-			case SA_Parent:
-			case SA_Draggable:
-			case SA_Exclusive:
-			case SA_SharePens:
-			case SA_BackFill:
-			case SA_Interleaved:
-			case SA_Colors32:
-			case SA_VideoControl:
-			case SA_FrontChild:
-			case SA_BackChild:
-			case SA_LikeWorkbench:
-			case SA_Reserved:
-			case SA_MinimizeISG:
-			case SA_OffScreenDragging:
-			case SA_Reserved2:
-			case SA_ActiveWindow:
-			case SA_MaxWindowBox:
-			case SA_Reserved3:
-			case SA_Compositing:
-			case SA_WindowDropShadows:
-
-				value = va_arg(ap, ULONG);
-
-				Printf("%08x: %08x\n",tag,value);
-
-				break;
-		}
-
-	} while (tag != TAG_END );
-
-	va_end(ap);
-
-
-	return NULL;
-}
-
-
-static struct Screen *ppc_func_OpenScreen( struct IntuitionIFace *Self, struct NewScreen *newScreen )
+void show_newScreenInfo(const struct NewScreen * newScreen)
 {
-	struct Screen *src;
 	char stdTXT[256];
 
-	FPrintf( output, "OpenScreen\n");
-
-	sprintf(stdTXT, "Width %ld, Height %ld, Depth %ld, Type %ld, CustomBitMap %08lx, DefaultTitle %08lx, Font %08lx, ViewModes %08lx",
+	sprintf(stdTXT, "Width %d, Height %d, Depth %d, Type %d, CustomBitMap %08x, DefaultTitle %08x, Font %08x, ViewModes %08x",
 		newScreen -> Width,
 		newScreen -> Height,
 		newScreen -> Depth,
@@ -162,24 +78,77 @@ static struct Screen *ppc_func_OpenScreen( struct IntuitionIFace *Self, struct N
 		newScreen -> ViewModes );
 
 	FPrintf( output, "%s\n",stdTXT);
+}
 
-	if (monitor)
+bool maybe_lagacy_mode(const struct NewScreen * newScreen)
+{
+	struct KownLgacyModes *lm;
+
+	if (newScreen -> Depth>8) return false;
+
+	for (lm = LgacyModes; lm -> w != -1; lm++ )
 	{
-		// on AmigaOS4, this will result in OpenScreenTagList() being called.
+		if ((newScreen -> Width == lm -> w) && (newScreen -> Height == lm -> h)) return true;
+	}
 
-		return (( struct Screen *(*) ( struct IntuitionIFace *, struct NewScreen * )) old_ppc_func_OpenScreen) (Self, newScreen);
+	return false;
+}
+
+struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const struct NewScreen * newScreen, const struct TagItem * tagList)
+{
+	int sw = 0,sh = 0,sd = 0;
+	bool maybe_lagacy = false;
+	bool is_lagacy = false;
+
+	FPrintf( output, "OpenScreenTagList\n");
+
+	if (newScreen)
+	{
+		show_newScreenInfo(newScreen);
+		maybe_lagacy = maybe_lagacy_mode(newScreen);
+		sw = newScreen -> Width;
+		sh = newScreen -> Height;
+		sd = newScreen -> Depth;
+	}
+
+	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
+	if ((newScreen) && (tagList == NULL))
+	{
+		is_lagacy = maybe_lagacy;
+	}
+	else 
+	{
+		is_lagacy =legacy_in_tags(  tagList, maybe_lagacy );
+	}
+
+	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
+	if (is_lagacy)
+	{
+		struct Screen *src;
+
+	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
+		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we allocate screen.
+
+		src = _new_fake_OpenScreenTagList( newScreen, tagList );
+
+		if (src) num_of_open_screens ++;
+		IExec->MutexRelease(video_mutex);
+		return src;
 	}
 	else
 	{
-		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we allocate screen.
-		src = _new_fake_screen(newScreen -> Width,newScreen -> Height,newScreen -> Depth);
-		if (src) num_of_open_screens ++;
+		FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
-		IExec->MutexRelease(video_mutex);
-
-		return src;
+		return (( struct Screen * (*)(struct IntuitionIFace *, const struct NewScreen * , const struct TagItem * )) old_ppc_func_OpenScreenTagList ) ( Self, newScreen, tagList );
 	}
+
+	return NULL;
 }
+
+
 
 static void ppc_func_CloseScreen( struct IntuitionIFace *Self, struct Screen *screen )
 {
