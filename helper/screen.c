@@ -3,6 +3,7 @@
 
 #include <proto/exec.h>
 #include <proto/dos.h>
+#include <proto/Layers.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <exec/emulation.h>
@@ -10,7 +11,10 @@
 #include "helper/screen.h"
 
 struct Screen screens[max_screens];
+struct Layer_Info *LayerInfos[max_screens];
 bool allocatedScreen[max_screens];
+
+extern BPTR output;
 
 int alloc_screen_in_list()
 {
@@ -36,6 +40,12 @@ void remove_screen_from_list(struct Screen *screen)
 		if (thisScreen == screen) 
 		{
 			allocatedScreen[i] = false;
+
+			if (LayerInfos[i])
+			{
+				DisposeLayerInfo(LayerInfos[i]);
+				LayerInfos[i] = NULL;
+			}
 		}
 	}
 }

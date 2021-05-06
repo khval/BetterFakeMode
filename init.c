@@ -11,6 +11,9 @@
 
 #include "common.h"
 
+struct Library			*LayersBase = NULL;
+struct LayersIFace		*ILayers = NULL;
+
 struct Library			*IntuitionBase = NULL;
 struct IntuitionIFace		*IIntuition = NULL;
 
@@ -86,6 +89,7 @@ BOOL open_lib( const char *name, int ver , const char *iname, int iver, struct L
 
 bool open_libs()
 {
+	if ( ! open_lib( "layers.library", 51L , "main", 1, &LayersBase, (struct Interface **) &ILayers ) ) return FALSE;
 	if ( ! open_lib( "intuition.library", 51L , "main", 1, &IntuitionBase, (struct Interface **) &IIntuition  ) ) return FALSE;
 	if ( ! open_lib( "graphics.library", 54L , "main", 1, &GraphicsBase, (struct Interface **) &IGraphics  ) ) return FALSE;
 
@@ -105,6 +109,9 @@ void close_libs()
 		FreeSysObject(ASOT_MUTEX, video_mutex); 
 		video_mutex = NULL;
 	}
+
+	if (LayersBase) CloseLibrary(LayersBase); LayersBase = 0;
+	if (ILayers) DropInterface((struct Interface*) ILayers); ILayers = 0;
 
 	if (IntuitionBase) CloseLibrary(IntuitionBase); IntuitionBase = 0;
 	if (IIntuition) DropInterface((struct Interface*) IIntuition); IIntuition = 0;

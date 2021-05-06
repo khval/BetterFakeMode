@@ -3,6 +3,7 @@
 
 #include <proto/exec.h>
 #include <proto/dos.h>
+#include <proto/layers.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <exec/emulation.h>
