@@ -3,7 +3,9 @@ deps = ../init.c
 
 files = ${deps}
 
-tests_c = OpenScreen.c OpenWindow.c
+tests_c = OpenScreen.c 
+tests_c += OpenWindow.c
+tests_c += dbuf.c
 
 incdir = -I../ -I./
 
