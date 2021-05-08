@@ -30,7 +30,8 @@ APTR old_ppc_func_CloseScreen = NULL;
 
 APTR old_ppc_func_OpenWindowTagList = NULL;
 APTR old_ppc_func_CloseWindow = NULL;
-
+APTR old_ppc_func_AllocScreenBuffer = NULL;
+APTR old_ppc_func_FreeScreenBuffer = NULL;
 
 #define _LVOOpenScreen	-198
 #define _LVOCloseScreen	-66
@@ -148,7 +149,17 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 	return NULL;
 }
 
-
+void ppc_func_FreeScreenBuffer( struct IntuitionIFace *Self, struct Screen *s, struct ScreenBuffer *sb )
+{
+	if (is_fake_screen( s ))
+	{
+		fake_FreeScreenBuffer( Self, s, sb );
+	}
+	else
+	{
+		((void (*) ( struct IntuitionIFace *, struct Screen *,struct ScreenBuffer *)) old_ppc_func_FreeScreenBuffer) (Self, s, sb);
+	}
+}
 
 static void ppc_func_CloseScreen( struct IntuitionIFace *Self, struct Screen *screen )
 {
@@ -226,6 +237,21 @@ static void ppc_func_CloseWindow( struct IntuitionIFace *Self, struct Window *w 
 	}
 }
 
+struct ScreenBuffer * ppc_func_AllocScreenBuffer (struct IntuitionIFace *Self, struct Screen * sc, struct BitMap * bm, ULONG flags)
+{
+	FPrintf( output,"ppc_func_AllocScreenBuffer\n");
+
+	if (is_fake_screen( sc ))
+	{
+		return fake_AllocScreenBuffer (Self, sc,  bm, flags);
+	}
+	else
+	{
+		return ((struct ScreenBuffer * (*) (struct IntuitionIFace *, struct Screen *, struct BitMap *, ULONG)) old_ppc_func_AllocScreenBuffer) (Self, sc, bm, flags);
+	}
+}
+
+
 /*
 static VOID stub_68k_OpenScreenTagList_func( uint32 *regarray )
 {
@@ -253,6 +279,8 @@ BOOL set_patches( void )
 
 	set_new_ppc_patch(Intuition,OpenScreenTagList);
 	set_new_ppc_patch(Intuition,CloseScreen);
+	set_new_ppc_patch(Intuition,AllocScreenBuffer);
+	set_new_ppc_patch(Intuition,FreeScreenBuffer);
 
 	set_new_ppc_patch(Intuition,OpenWindowTagList);
 	set_new_ppc_patch(Intuition,CloseWindow);
@@ -262,11 +290,13 @@ BOOL set_patches( void )
 
 void undo_patches( void )
 {
-	undo_68k_patch(Intuition,OpenScreen);			// maybe not needed, as it will end up in PPC routines.
-	undo_68k_patch(Intuition,CloseScreen);
+//	undo_68k_patch(Intuition,OpenScreen);			// maybe not needed, as it will end up in PPC routines.
+//	undo_68k_patch(Intuition,CloseScreen);
 
 	undo_ppc_patch(Intuition,OpenScreenTagList);
 	undo_ppc_patch(Intuition,CloseScreen);
+	undo_ppc_patch(Intuition,AllocScreenBuffer);
+	undo_ppc_patch(Intuition,FreeScreenBuffer);
 
 	undo_ppc_patch(Intuition,OpenWindowTagList);
 	undo_ppc_patch(Intuition,CloseWindow);
