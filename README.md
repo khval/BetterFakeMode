@@ -31,6 +31,10 @@ This project is not for the end user, this project might be interesting to someo
 For the users, I put in some work to make sure does not  crash too badly, 
 but don’t expect it to work on anything else then the tests provided.
 
+# What will work with this patch?
+
+Mostly nothing will wotk with this patch, don't use it :-)
+
 # Priority
 
 Ok here is native plan for this project.
