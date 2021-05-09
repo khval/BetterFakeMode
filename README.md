@@ -13,6 +13,8 @@ will allow old programs and games to be displayed correct.)
 
 * Too often AmigaOS4.1 thinks screens are true color screens when they are planar screens.
 
+* AmigaOS 4.1 does not allow you to use "Screen -> BitMap" is only "Screen -> RastPort -> BitMap"
+
 # Current status.
 
 Many of problems might not be OpenScreen actually it can be in definitions of the fake modes as well.
