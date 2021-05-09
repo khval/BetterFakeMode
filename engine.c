@@ -22,6 +22,7 @@
 extern unsigned char *bits2bytes[256*8];
 extern APTR video_mutex;
 extern bool quit;
+extern BPTR output;
 
 struct amiga_rgb
 {
@@ -32,7 +33,7 @@ struct amiga_rgb
 
 uint32 argb[256];
 
-void comp_window_update( struct BitMap *bitmap, struct Window *win);
+void comp_window_update( int sw, int sh, struct BitMap *bitmap, struct Window *win);
 
 void update_argb_lookup( struct ColorMap *cm )
 {
@@ -174,6 +175,7 @@ void draw_screen( struct Window *win, struct BitMap *bm, struct BitMap *dest_bm 
 	int bx,bpr;
 	unsigned char *yptr;
 	uint64 data = 0;
+	uint max_height;
 
 	ULONG dest_format;
 	unsigned char *dest_ptr;
@@ -193,7 +195,9 @@ void draw_screen( struct Window *win, struct BitMap *bm, struct BitMap *dest_bm 
 			LBM_BaseAddress, &dest_ptr,
 			TAG_END	 );
 
-	for (y=0;y<bm -> Rows; y++)
+	max_height = bm -> Rows > 480 ? 480 : bm -> Rows;	// must limit....
+
+	for (y=0;y<max_height; y++)
 	{
 		x = 0;
 		yptr = bm -> Planes[0] + bpr*y;
@@ -245,21 +249,30 @@ void dump_screen()
 	do
 	{
 		ULONG sig = Wait( win_mask | tc.timer_mask | SIGBREAKF_CTRL_C);
+		LONG src_width, src_height;
 
 		if (sig & SIGBREAKF_CTRL_C)	break;
 
 		if (sig & tc.timer_mask)
 		{
+			src_width = -1;
+			src_height = -1;
+
 			MutexObtain(video_mutex);
 			src = first_fake_screen();
 			if (src)
 			{
 				update_argb_lookup( src -> ViewPort.ColorMap );
 				draw_screen( win,  src -> RastPort.BitMap, dest_bitmap );
+				src_width = src -> Width;
+				src_height = src -> Height;
+
 			}
 			MutexRelease(video_mutex);
 
-			comp_window_update( dest_bitmap, win);
+			FPrintf( output,"Screen %ld, %ld\n", src_width,src_height);
+
+			if (src_width>-1) comp_window_update( src_width, src_height, dest_bitmap, win);
 
 			reset_timer( tc.timer_io );
 		}
@@ -277,56 +290,117 @@ float x, y;
 float s, t, w; 
 }; 
 
-void comp_window_update( struct BitMap *bitmap, struct Window *win)
-{
-	#define STEP(a,xx,yy,ss,tt,ww)   P[a].x= xx; P[a].y= yy; P[a].s= ss; P[a].t= tt; P[a].w= ww;  
+typedef struct CompositeHookData_s {
+	struct BitMap *srcBitMap; // The source bitmap
+	int32 srcWidth, srcHeight; // The source dimensions
+	int32 offsetX, offsetY; // The offsets to the destination area relative to the window's origin
+	int32 scaleX, scaleY; // The scale factors
+	uint32 retCode; // The return code from CompositeTags()
+} CompositeHookData;
 
-	int width,height;
+/*
+// New code I can't get to work yet....
 
-	int ww,wh;
-	int error;
-	float sx;
-	float sy;
+static ULONG compositeHookFunc(
+			struct Hook *hook, 
+			struct RastPort *rastPort, 
+			struct BackFillMessage *msg)
+ {
 
-	float wx;
-	float wy;
+	struct BitMap *bm = (struct BitMap *) hook->h_Data;
 
-	struct XYSTW_Vertex3D P[6];
+	int src_width = 640;
+	int src_height = 480;
+	int DestWidth = msg->Bounds.MaxX - msg->Bounds.MinX;
+	int DestHeight = msg->Bounds.MaxY - msg->Bounds.MinY;
+	int offsetX = 0;
+	int offsetY = 0;
 
-	width=640;
-	height=480;
+	CompositeTags(
+		COMPOSITE_Src, bm, rastPort->BitMap,
 
-	wx = win->BorderLeft + win -> LeftEdge;
-	wy = win->BorderTop + win -> TopEdge;
+		COMPTAG_SrcWidth,   src_width,
+		COMPTAG_SrcHeight,  src_height,
+		COMPTAG_ScaleX, 	COMP_FLOAT_TO_FIX( (float) DestWidth /  (float) src_width),
+		COMPTAG_ScaleY, 	COMP_FLOAT_TO_FIX( (float) DestHeight / (float) src_height),
+		COMPTAG_OffsetX,    msg->Bounds.MinX - (msg->OffsetX - msg->Bounds.MinX),
+		COMPTAG_OffsetY,    msg->Bounds.MinY - (msg->OffsetY - msg->Bounds.MinY),
+		COMPTAG_DestX,      msg->Bounds.MinX,
+		COMPTAG_DestY,      msg->Bounds.MinY,
+		COMPTAG_DestWidth, DestWidth,
+		COMPTAG_DestHeight, DestHeight ,
+		COMPTAG_Flags,      COMPFLAG_SrcFilter | COMPFLAG_IgnoreDestAlpha | COMPFLAG_HardwareOnly,
+		TAG_END);
 
-	ww = win->Width - win->BorderLeft - win->BorderRight;
-	wh = win->Height -  win->BorderTop - win->BorderBottom;
-
-	STEP(0, wx, wy ,0 ,0 ,1);
-	STEP(1, wx+ww,wy,width,0,1);
-	STEP(2, wx+ww,wy+wh,width,height,1);
-
-	STEP(3, wx,wy, 0,0,1);
-	STEP(4, wx+ww,wy+wh,width,height,1);
-	STEP(5, wx, wy+wh ,0 ,height ,1);
-
-	LockLayer( 0 , win -> RPort -> Layer);
-
-	error = CompositeTags(COMPOSITE_Src, 
-			bitmap, win->RPort -> BitMap,
-
-			COMPTAG_VertexArray, P, 
-			COMPTAG_VertexFormat,COMPVF_STW0_Present,
-		    	COMPTAG_NumTriangles,2,
-
-			COMPTAG_ScaleX, (uint32) ( (float) 0x0010000 * sx ),
-			COMPTAG_ScaleY, (uint32) ( (float) 0x0010000 * sy ),
-
-			COMPTAG_SrcAlpha, (uint32) (0x0010000 ),
-			COMPTAG_Flags, COMPFLAG_SrcAlphaOverride | COMPFLAG_HardwareOnly | COMPFLAG_SrcFilter ,
-			TAG_DONE);
-
-	UnlockLayer( win -> RPort -> Layer );
-
+	return 0;
 }
+*/
+
+
+static ULONG compositeHookFunc(
+			struct Hook *hook, 
+			struct RastPort *rastPort, 
+			struct BackFillMessage *msg)
+ {
+
+	CompositeHookData *hookData = (CompositeHookData*)hook->h_Data;
+
+	hookData->retCode = CompositeTags(
+		COMPOSITE_Src, 
+			hookData->srcBitMap, 
+			rastPort->BitMap,
+		COMPTAG_SrcWidth,   hookData->srcWidth,
+		COMPTAG_SrcHeight,  hookData->srcHeight,
+		COMPTAG_ScaleX, 	hookData->scaleX,
+		COMPTAG_ScaleY, 	hookData->scaleY,
+		COMPTAG_OffsetX,    msg->Bounds.MinX - (msg->OffsetX - hookData->offsetX),
+		COMPTAG_OffsetY,    msg->Bounds.MinY - (msg->OffsetY - hookData->offsetY),
+		COMPTAG_DestX,      msg->Bounds.MinX,
+		COMPTAG_DestY,      msg->Bounds.MinY,
+		COMPTAG_DestWidth,  msg->Bounds.MaxX - msg->Bounds.MinX + 1,
+		COMPTAG_DestHeight, msg->Bounds.MaxY - msg->Bounds.MinY + 1,
+		COMPTAG_Flags,      COMPFLAG_SrcFilter | COMPFLAG_IgnoreDestAlpha | COMPFLAG_HardwareOnly,
+		TAG_END);
+
+	return 0;
+}
+
+
+void comp_window_update( int src_width, int src_height, struct BitMap *bitmap, struct Window *win)
+{
+	struct Hook hook;
+	static CompositeHookData hookData;
+	struct Rectangle rect;
+	register struct RastPort *RPort = win->RPort;
+
+ 	rect.MinX = win->BorderLeft;
+ 	rect.MinY = win->BorderTop;
+ 	rect.MaxX = win->Width - win->BorderRight ;
+ 	rect.MaxY = win->Height - win->BorderBottom ;
+
+	hook.h_Entry = (HOOKFUNC) compositeHookFunc;
+	hook.h_Data = &hookData;
+
+	hookData.srcBitMap = bitmap;
+	hookData.srcWidth = src_width;
+	hookData.srcHeight = src_height > 480 ? 480 : src_height;
+	hookData.offsetX = win->BorderLeft;
+	hookData.offsetY = win->BorderTop;
+	hookData.retCode = COMPERR_Success;
+
+ 	float destWidth = rect.MaxX - rect.MinX + 1;
+ 	float destHeight = rect.MaxY - rect.MinY + 1;
+
+ 	float scaleX = (destWidth + 0.5f) / hookData.srcWidth;
+ 	float scaleY = (destHeight + 0.5f) / hookData.srcHeight;
+
+	hookData.scaleX = COMP_FLOAT_TO_FIX(scaleX);
+	hookData.scaleY = COMP_FLOAT_TO_FIX(scaleY);
+
+	LockLayer(0, RPort->Layer);
+	DoHookClipRects(&hook, win->RPort, &rect);
+	UnlockLayer( RPort->Layer);
+}
+
+
 
