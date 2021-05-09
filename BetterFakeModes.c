@@ -113,7 +113,7 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 		sd = newScreen -> Depth;
 	}
 
-	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 	if ((newScreen) && (tagList == NULL))
 	{
@@ -121,23 +121,35 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 	}
 	else 
 	{
+FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
 		is_lagacy =legacy_in_tags(  tagList, maybe_lagacy );
 	}
 
-	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 	if (is_lagacy)
 	{
 		struct Screen *src;
 
-	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we allocate screen.
 
+FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
 		src = _new_fake_OpenScreenTagList( newScreen, tagList );
 
+FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
 		if (src) num_of_open_screens ++;
+
+FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
 		IExec->MutexRelease(video_mutex);
+
+FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
 		return src;
 	}
 	else

@@ -77,31 +77,38 @@ ULONG fake_ChangeScreenBuffer( struct Screen * s, struct ScreenBuffer * sb)
 	{
 		MutexObtain(video_mutex);
 		s -> RastPort.BitMap = sb -> sb_BitMap;
+		s -> BitMap  = * (s -> RastPort.BitMap);
 		MutexRelease(video_mutex);
 	}
 
-	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-
 	me = FindTask(NULL);
 
-	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-
-	if (sb->sb_DBufInfo->dbi_SafeMessage.mn_ReplyPort)
+	if (me)
 	{
-		Signal( me,  sb->sb_DBufInfo->dbi_SafeMessage.mn_ReplyPort ->mp_SigBit);
+		if (sb->sb_DBufInfo)
+		{
+			if (sb->sb_DBufInfo->dbi_SafeMessage.mn_ReplyPort)
+			{
+				FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+				Signal( me,  1L << sb->sb_DBufInfo->dbi_SafeMessage.mn_ReplyPort ->mp_SigBit);
+			}
+			else	FPrintf( output,"no ReplyPort\n");
+
+			if (sb->sb_DBufInfo->dbi_DispMessage.mn_ReplyPort)
+			{
+				FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+				Signal( me,  1L << sb->sb_DBufInfo->dbi_DispMessage.mn_ReplyPort ->mp_SigBit);
+			}
+			else	FPrintf( output,"no ReplyPort\n");	
+		}
+		else
+		{
+			FPrintf( output,"Missing sb_DBufInfoin ScreenBuffer\n");	
+			getchar();
+		}
+
+		FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 	}
-	else	FPrintf( output,"no ReplyPort\n");
-
-	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-
-	if (sb->sb_DBufInfo->dbi_DispMessage.mn_ReplyPort)
-	{
-		Signal( me,  sb->sb_DBufInfo->dbi_DispMessage.mn_ReplyPort ->mp_SigBit);
-	}
-	else	FPrintf( output,"no ReplyPort\n");
-
-	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-
 
 	return TRUE;
 }
