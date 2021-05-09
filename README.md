@@ -33,7 +33,15 @@ but don’t expect it to work on anything else then the tests provided.
 
 # What will work with this patch?
 
-Mostly nothing will wotk with this patch, don't use it :-)
+Mostly nothing will work with this patch, don't use it :-)
+
+* Events are not sendt.
+
+* Double buffering is broken.
+
+* Layers is broken.
+
+* There pointers that are not set, that should be set, but I do not know what they are for.
 
 # What is working.
 
