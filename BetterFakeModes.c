@@ -32,6 +32,7 @@ APTR old_ppc_func_OpenWindowTagList = NULL;
 APTR old_ppc_func_CloseWindow = NULL;
 APTR old_ppc_func_AllocScreenBuffer = NULL;
 APTR old_ppc_func_FreeScreenBuffer = NULL;
+APTR old_ppc_func_ChangeScreenBuffer = NULL;
 
 #define _LVOOpenScreen	-198
 #define _LVOCloseScreen	-66
@@ -147,6 +148,19 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 	}
 
 	return NULL;
+}
+
+
+ULONG ppc_func_ChangeScreenBuffer(struct IntuitionIFace *Self, struct Screen * s, struct ScreenBuffer * sb)
+{
+	if (is_fake_screen(s))
+	{
+		fake_ChangeScreenBuffer( Self, s, sb );
+	}
+	else
+	{
+		return ((ULONG (*) ( struct IntuitionIFace *, struct Screen *,struct ScreenBuffer *)) old_ppc_func_ChangeScreenBuffer) (Self, s, sb);
+	}
 }
 
 void ppc_func_FreeScreenBuffer( struct IntuitionIFace *Self, struct Screen *s, struct ScreenBuffer *sb )
@@ -281,6 +295,7 @@ BOOL set_patches( void )
 	set_new_ppc_patch(Intuition,CloseScreen);
 	set_new_ppc_patch(Intuition,AllocScreenBuffer);
 	set_new_ppc_patch(Intuition,FreeScreenBuffer);
+	set_new_ppc_patch(Intuition,ChangeScreenBuffer);
 
 	set_new_ppc_patch(Intuition,OpenWindowTagList);
 	set_new_ppc_patch(Intuition,CloseWindow);
@@ -297,6 +312,7 @@ void undo_patches( void )
 	undo_ppc_patch(Intuition,CloseScreen);
 	undo_ppc_patch(Intuition,AllocScreenBuffer);
 	undo_ppc_patch(Intuition,FreeScreenBuffer);
+	undo_ppc_patch(Intuition,ChangeScreenBuffer);
 
 	undo_ppc_patch(Intuition,OpenWindowTagList);
 	undo_ppc_patch(Intuition,CloseWindow);

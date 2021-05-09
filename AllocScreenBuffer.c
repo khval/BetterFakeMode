@@ -14,7 +14,7 @@
 #include "common.h"
 #include "helper/screen.h"
 
-
+extern APTR video_mutex;
 
 // Yes I know, we should never alloc this buffer, but we must force it, because OS does allow it.
 
@@ -53,9 +53,56 @@ struct ScreenBuffer * fake_AllocScreenBuffer (struct IntuitionIFace *Self, struc
 
 void fake_FreeScreenBuffer( struct Screen *s, struct ScreenBuffer *sb )
 {
-	if (sb -> sb_DBufInfo) FreeVec( sb -> sb_DBufInfo );
-	if (sb -> sb_BitMap) _free_fake_bitmap( sb -> sb_BitMap );
+	if (sb -> sb_DBufInfo) 
+	{
+		FreeVec( sb -> sb_DBufInfo );
+		sb -> sb_DBufInfo = NULL;
+	}
+
+	if (sb -> sb_BitMap != s -> RastPort.BitMap)
+	{
+		 _free_fake_bitmap( sb -> sb_BitMap );
+		sb -> sb_BitMap = NULL;
+	}
+
 	FreeVec( sb );
 }
 
+ULONG fake_ChangeScreenBuffer( struct Screen * s, struct ScreenBuffer * sb)
+{
+	struct Task *me;
+	FPrintf( output,"fake_ChangeScreenBuffer\n");
+
+	if (sb -> sb_BitMap)
+	{
+		MutexObtain(video_mutex);
+		s -> RastPort.BitMap = sb -> sb_BitMap;
+		MutexRelease(video_mutex);
+	}
+
+	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
+	me = FindTask(NULL);
+
+	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
+	if (sb->sb_DBufInfo->dbi_SafeMessage.mn_ReplyPort)
+	{
+		Signal( me,  sb->sb_DBufInfo->dbi_SafeMessage.mn_ReplyPort ->mp_SigBit);
+	}
+	else	FPrintf( output,"no ReplyPort\n");
+
+	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
+	if (sb->sb_DBufInfo->dbi_DispMessage.mn_ReplyPort)
+	{
+		Signal( me,  sb->sb_DBufInfo->dbi_DispMessage.mn_ReplyPort ->mp_SigBit);
+	}
+	else	FPrintf( output,"no ReplyPort\n");
+
+	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
+
+	return TRUE;
+}
 
