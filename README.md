@@ -53,7 +53,10 @@ Mostly nothing will work with this patch, don't use it :-)
 
 # How can you help.
 
-* End users are useless here, but if you are a developer, and you have some example code, that you know is not working correct, then that will be really helpful.
+End users are useless here, but if you are a developer:
+
+* IF you have some example code, that you know is not working correct, then that will be really helpful.
+(Not interested in 1000 of lines of code, only small example of 100 to 200 lines or so.)
 
 * You also help directly contributing to the code, help fix bugs, and add missing features.
 
