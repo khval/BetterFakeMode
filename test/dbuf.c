@@ -99,6 +99,7 @@ void show_screenbuffer( struct ScreenBuffer *sb )
 	Printf("sb_DBufInfo: %08lx\n", sb -> sb_DBufInfo);
 }
 
+
 int main (void)
 {
 	struct Screen *scr;
@@ -121,8 +122,9 @@ int main (void)
 		struct MsgPort *safeport = CreateMsgPort();
 
 		sbuff[0] = AllocScreenBuffer (scr,NULL,SB_SCREEN_BITMAP);
-
 		sbuff[1] = AllocScreenBuffer (scr,NULL,SB_COPY_BITMAP);
+
+Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 		if (sbuff[0] && sbuff[1] && dispport && safeport)
 		{
@@ -138,7 +140,7 @@ int main (void)
 			show_screenbuffer( sbuff[0] );
 			show_screenbuffer( sbuff[1] );
 
-			getchar();
+Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 			do
 			{
@@ -156,6 +158,9 @@ int main (void)
 					}
 					SafeToWrite = TRUE;
 				}
+
+
+Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 				if (cont)
 				{
@@ -180,12 +185,16 @@ int main (void)
 					}
 				}
 
+Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
 				if (cont)
 				{
 					WaitBlit();
 					sbuff[CurBuffer]->sb_DBufInfo->dbi_SafeMessage.mn_ReplyPort = safeport;
 					sbuff[CurBuffer]->sb_DBufInfo->dbi_DispMessage.mn_ReplyPort = dispport;
 					Printf ("display %ld\n",CurBuffer);
+
+Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 					while (!ChangeScreenBuffer (scr,sbuff[CurBuffer]))
 					{
@@ -198,6 +207,9 @@ int main (void)
 							break;
 						}
 					}
+
+Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
 					SafeToChange = FALSE;
 					SafeToWrite  = FALSE;
 					CurBuffer ^= 1;
@@ -207,6 +219,7 @@ int main (void)
 				}
 			}
 			while (cont);
+
 
 			Printf ("*** Break\n");
 
@@ -223,6 +236,8 @@ int main (void)
 					}
 				}
 			}
+
+Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 			if (!SafeToChange)
 			{

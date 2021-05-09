@@ -25,7 +25,7 @@ all: ${all_files}
 		gcc -D__USE_INLINE__ ${incdir} ${libdir} $< $(deps_o) $(libs) -o $@
 
 %.o:	%.c
-		gcc -c ${incdir} ${libdir} $(opts) $<   -o $@
+		gcc -D__USE_INLINE__ ${incdir} ${libdir} $(opts) -c $<   -o $@
 
 
 
