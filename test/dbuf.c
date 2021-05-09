@@ -91,12 +91,12 @@ void set_colors( struct Screen *src )
 	 SetRGB32( &src -> ViewPort, 5, 0x00000000,0x00000000,0xFFFFFFFF );
 }
 
-void show_screenbuffer( struct ScreenBuffer *sb )
+void show_screenbuffer( const char *name, struct ScreenBuffer *sb )
 {
 	if (! sb) return;
 
-	Printf("sb_BitMap: %08lx\n", sb -> sb_BitMap);
-	Printf("sb_DBufInfo: %08lx\n", sb -> sb_DBufInfo);
+	Printf("%s sb_BitMap: %08lx\n", name, sb -> sb_BitMap);
+	Printf("%s sb_DBufInfo: %08lx\n", name, sb -> sb_DBufInfo);
 }
 
 
@@ -137,8 +137,8 @@ Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 			InitRastPort (&rp);
 
-			show_screenbuffer( sbuff[0] );
-			show_screenbuffer( sbuff[1] );
+			show_screenbuffer( "sbuf[0]", sbuff[0] );
+			show_screenbuffer( "sbuf[1]", sbuff[1] );
 
 Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
