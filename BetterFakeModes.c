@@ -155,7 +155,7 @@ ULONG ppc_func_ChangeScreenBuffer(struct IntuitionIFace *Self, struct Screen * s
 {
 	if (is_fake_screen(s))
 	{
-		fake_ChangeScreenBuffer( Self, s, sb );
+		fake_ChangeScreenBuffer( s, sb );
 	}
 	else
 	{

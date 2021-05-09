@@ -13,7 +13,8 @@ extern void _delete_fake_screen( struct Screen *s );
 
 extern struct Window * fake_OpenWindowTagList ( const struct NewWindow * newWindow, const struct TagItem * tagList);
 extern struct Window * fake_CloseWindow ( struct Window * window);
-extern struct ScreenBuffer * fake_AllocScreenBuffer (struct IntuitionIFace *Self, struct Screen * sc, struct BitMap * bm, ULONG flags);
 
+extern struct ScreenBuffer * fake_AllocScreenBuffer ( struct Screen * sc, struct BitMap * bm, ULONG flags);
+extern ULONG fake_ChangeScreenBuffer ( struct Screen * sc, struct ScreenBuffer * bm);
 
 

@@ -21,7 +21,7 @@ extern APTR video_mutex;
 extern struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth);
 extern void _free_fake_bitmap( struct BitMap *bm );
 
-struct ScreenBuffer * fake_AllocScreenBuffer (struct IntuitionIFace *Self, struct Screen * s, struct BitMap * bm, ULONG flags)
+struct ScreenBuffer * fake_AllocScreenBuffer ( struct Screen * s, struct BitMap * bm, ULONG flags)
 {
 	struct ScreenBuffer *sb;
 
