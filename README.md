@@ -60,6 +60,10 @@ End users are useless here, but if you are a developer:
 
 * You also help directly contributing to the code, help fix bugs, and add missing features.
 
+# How does it work?
+
+Well, think of BetterFakeMode as an engine, it redirects thing normal the OS does, and takes over, so in other words, the OS does not know what has happened, the OS does not know about BetterFakeMode fake screens, or fake windows, there is a chance this will cause confusion, any place where the OS get confused, we must take over. At this point in time, we don’t know what part of the OS that does not like this or what part that does. This why test cases are essential.
+
 # Priority
 
 Ok here is native plan for this project.
