@@ -270,8 +270,6 @@ void dump_screen()
 			}
 			MutexRelease(video_mutex);
 
-			FPrintf( output,"Screen %ld, %ld\n", src_width,src_height);
-
 			if (src_width>-1) comp_window_update( src_width, src_height, dest_bitmap, win);
 
 			reset_timer( tc.timer_io );
