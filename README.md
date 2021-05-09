@@ -51,6 +51,12 @@ Mostly nothing will work with this patch, don't use it :-)
 
 * It does scale fake screen to fit the window.
 
+# How can you help.
+
+* End users are useless here, but if you are a developer, and you have some example code, that you know is not working correct, then that will be really helpful.
+
+* You also help directly contributing to the code, help fix bugs, and add missing features.
+
 # Priority
 
 Ok here is native plan for this project.
