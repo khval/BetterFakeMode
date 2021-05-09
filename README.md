@@ -35,6 +35,14 @@ but don’t expect it to work on anything else then the tests provided.
 
 Mostly nothing will wotk with this patch, don't use it :-)
 
+# What is working.
+
+* it is able catch programs, trying to open old screen modes.
+ 
+* it is able display planar screens in a window. 
+
+* It does scale fake screen to fit the window.
+
 # Priority
 
 Ok here is native plan for this project.
