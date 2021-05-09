@@ -354,13 +354,14 @@ int main( void )
 		return 0;
 	}
 
-	disp_output = IDOS -> Open("CON:660/32/320/200/display debug", MODE_NEWFILE );
+//	disp_output = IDOS -> Open("CON:660/32/320/200/display debug", MODE_NEWFILE );
+	disp_output = IDOS -> Open("NIL:", MODE_NEWFILE );
 
 	display_proc = spawn( dump_screen, "dump screen", disp_output );
 
 	if (set_patches())
 	{
-		Printf("pacthes set\n");
+		Printf("patches set\n");
 
 		Printf("If console window is behind, hold CTRL+LAMIGA to drag window...\n");
 		Printf("-- press enter to quit\n");
