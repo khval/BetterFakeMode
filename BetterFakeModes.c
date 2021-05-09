@@ -269,7 +269,7 @@ struct ScreenBuffer * ppc_func_AllocScreenBuffer (struct IntuitionIFace *Self, s
 
 	if (is_fake_screen( sc ))
 	{
-		return fake_AllocScreenBuffer (Self, sc,  bm, flags);
+		return fake_AllocScreenBuffer ( sc,  bm, flags);
 	}
 	else
 	{
