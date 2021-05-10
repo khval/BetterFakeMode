@@ -96,6 +96,11 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 		}
 	}
 
+	if (win -> IDCMPFlags)
+	{
+		win -> UserPort = (APTR) AllocSysObjectTags(ASOT_PORT, TAG_DONE);
+	}
+
 	win -> RPort = new_struct( RastPort );
 
 	if (win->WScreen)
