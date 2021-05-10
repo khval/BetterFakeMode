@@ -27,6 +27,16 @@ APTR video_mutex = NULL;
 unsigned char bits2bytes_data[256*8*8];		// 256 values, 8pixels / bits, 8 plaines
 unsigned char *bits2bytes[256*8];			// 256 values. 
 
+unsigned char **bits2bytes0 = bits2bytes + 256*0;
+unsigned char **bits2bytes1 = bits2bytes + 256*1;
+unsigned char **bits2bytes2 = bits2bytes + 256*2;
+unsigned char **bits2bytes3 = bits2bytes + 256*3;
+unsigned char **bits2bytes4 = bits2bytes + 256*4;
+unsigned char **bits2bytes5 = bits2bytes + 256*5;
+unsigned char **bits2bytes6 = bits2bytes + 256*6;
+unsigned char **bits2bytes7 = bits2bytes + 256*7;
+
+
 
 void initBits2Bytes()
 {

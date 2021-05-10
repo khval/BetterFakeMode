@@ -20,6 +20,17 @@
 #include "helper/screen.h"
 
 extern unsigned char *bits2bytes[256*8];
+
+extern unsigned char **bits2bytes0 ;
+extern unsigned char **bits2bytes1 ;
+extern unsigned char **bits2bytes2 ;
+extern unsigned char **bits2bytes3 ;
+extern unsigned char **bits2bytes4 ;
+extern unsigned char **bits2bytes5 ;
+extern unsigned char **bits2bytes6 ;
+extern unsigned char **bits2bytes7 ;
+
+
 extern APTR video_mutex;
 extern bool quit;
 extern BPTR output;
@@ -90,65 +101,65 @@ uint64 draw_1p(unsigned char *ptr, int SizeOfPlane)
 
 uint64 draw_2p(unsigned char *ptr, int SizeOfPlane)
 {
-	uint64 data = *((uint64 *) bits2bytes[*ptr]);
-	return data | *((uint64 *) bits2bytes[256+*(ptr+SizeOfPlane)]);
+	uint64 data = *((uint64 *) bits2bytes0[*ptr]);
+	return data | *((uint64 *) bits2bytes1[*(ptr+SizeOfPlane)]);
 }
 
 uint64 draw_3p(unsigned char *ptr, int SizeOfPlane)
 {
-	uint64 data =	*((uint64 *) bits2bytes[*ptr]);			ptr+= SizeOfPlane;
-	data |=		*((uint64 *) bits2bytes[1*256+*ptr]);	ptr+= SizeOfPlane;
-	return data |	*((uint64 *) bits2bytes[2*256+*ptr]);
+	uint64 data =	*((uint64 *) bits2bytes0[*ptr]);	ptr+= SizeOfPlane;
+	data |=		*((uint64 *) bits2bytes1[*ptr]);	ptr+= SizeOfPlane;
+	return data |	*((uint64 *) bits2bytes2[*ptr]);
 }
 
 uint64 draw_4p(unsigned char *ptr, int SizeOfPlane)
 {
-	uint64 data = *((uint64 *) bits2bytes[*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[1*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[2*256+*ptr]); ptr+= SizeOfPlane;
-	return data | *((uint64 *) bits2bytes[3*256+*(ptr)]);
+	uint64 data = *((uint64 *) bits2bytes0[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes1[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes2[*ptr]); ptr+= SizeOfPlane;
+	return data | *((uint64 *) bits2bytes3[*(ptr)]);
 }
 
 uint64 draw_5p(unsigned char *ptr, int SizeOfPlane)
 {
-	uint64 data = *((uint64 *) bits2bytes[*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[1*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[2*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[3*256+*ptr]); ptr+= SizeOfPlane;
-	return data | *((uint64 *) bits2bytes[4*256+*(ptr)]);
+	uint64 data = *((uint64 *) bits2bytes0[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes1[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes2[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes3[*ptr]); ptr+= SizeOfPlane;
+	return data | *((uint64 *) bits2bytes4[*(ptr)]);
 }
 
 uint64 draw_6p(unsigned char *ptr, int SizeOfPlane)
 {
-	uint64 data = *((uint64 *) bits2bytes[*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[1*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[2*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[3*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[4*256+*ptr]); ptr+= SizeOfPlane;
-	return data | *((uint64 *) bits2bytes[5*256+*(ptr)]);
+	uint64 data = *((uint64 *) bits2bytes0[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes1[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes2[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes3[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes4[*ptr]); ptr+= SizeOfPlane;
+	return data | *((uint64 *) bits2bytes5[*(ptr)]);
 }
 
 uint64 draw_7p(unsigned char *ptr, int SizeOfPlane)
 {
-	uint64 data = *((uint64 *) bits2bytes[*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[1*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[2*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[3*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[4*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[5*256+*ptr]); ptr+= SizeOfPlane;
-	return data | *((uint64 *) bits2bytes[6*256+*(ptr)]);
+	uint64 data = *((uint64 *) bits2bytes0[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes1[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes2[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes3[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes4[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes5[*ptr]); ptr+= SizeOfPlane;
+	return data | *((uint64 *) bits2bytes6[*(ptr)]);
 }
 
 uint64 draw_8p(unsigned char *ptr, int SizeOfPlane)
 {
-	uint64 data = *((uint64 *) bits2bytes[*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[1*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[2*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[3*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[4*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[5*256+*ptr]); ptr+= SizeOfPlane;
-	data |= *((uint64 *) bits2bytes[6*256+*ptr]); ptr+= SizeOfPlane;
-	return data | *((uint64 *) bits2bytes[7*256+*(ptr)]);
+	uint64 data = *((uint64 *) bits2bytes0[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes1[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes2[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes3[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes4[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes5[*ptr]); ptr+= SizeOfPlane;
+	data |= *((uint64 *) bits2bytes6[*ptr]); ptr+= SizeOfPlane;
+	return data | *((uint64 *) bits2bytes7[*(ptr)]);
 };
 
 // basicly unrolled routines.
