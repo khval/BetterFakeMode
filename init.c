@@ -40,7 +40,7 @@ unsigned char **bits2bytes7 = bits2bytes + 256*7;
 
 void initBits2Bytes()
 {
-	int p,n,b;
+	unsigned int p,n,b;
 	unsigned char *page;
 	unsigned char *at;
 
@@ -51,7 +51,7 @@ void initBits2Bytes()
 		for (n=0;n<256;n++) 
 		{
 			at= page + n*8;
-			for (b=0; b<8;b++) at[7-b] = n & 1L<<b ? 1L<<p: 0;		// we revere the bits.
+			for (b=0; b<8;b++) at[7-b] = n & 1L<<b ? 1L<<p: 0;		// we reverse the bits.
 			bits2bytes[256*p+n] = at;
 		}
 	}
