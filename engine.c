@@ -30,10 +30,12 @@ extern unsigned char **bits2bytes5 ;
 extern unsigned char **bits2bytes6 ;
 extern unsigned char **bits2bytes7 ;
 
-
 extern APTR video_mutex;
 extern bool quit;
 extern BPTR output;
+
+extern ULONG host_sig;
+extern struct Task *host_task;
 
 struct amiga_rgb
 {
@@ -49,7 +51,6 @@ void comp_window_update( int sw, int sh, struct BitMap *bitmap, struct Window *w
 void update_argb_lookup( struct ColorMap *cm )
 {
 	int c;
-	uint32 r,g,b;
 	int colors = cm -> Count;
 	ULONG d[3];
 
@@ -57,10 +58,11 @@ void update_argb_lookup( struct ColorMap *cm )
 	{
 		GetRGB32( cm, c, 1, d );
 
-		r = *((u8 *) (d + 0))  << 16;
-		g = *((u8 *) (d + 1)) << 8;
-		b = *((u8 *) (d + 2)) ;
-		argb[ c ] = 0xFF000000 | r | g | b;
+		d[0] >>= 24;
+		d[1] >>= 24;
+		d[2] >>= 24;
+
+		argb[ c ] = 0xFF000000 | (d[0]<<16)| (d[1]<<8) | d[2];
 	}
 }
 
