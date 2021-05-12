@@ -57,10 +57,14 @@ struct KownLgacyModes
 
 struct KownLgacyModes LgacyModes[] =
 {
-	{320,200},
-	{640,200},
-	{320,256},
-	{640,256},
+	{320,200},	// NTSC, LOWRES
+	{320,400},	// NTSC, LOWRES + interlaced
+	{640,200},	// NTSC, HIRES
+	{640,400},	// NTSC, HIRES + interlaced
+	{320,256},	// PAL, LOWRES
+	{320,512},	// PAL, LOWRES + interlaced
+	{640,256},	// PAL, HIRES
+	{640,512},	// PAL, HIRES + interlaced
 	{-1,-1}
 };
 
@@ -332,6 +336,8 @@ void undo_patches( void )
 
 bool quit = false;
 
+ULONG host_sig;
+struct Task *host_task;
 
 int main( void )
 {
@@ -354,6 +360,9 @@ int main( void )
 		return 0;
 	}
 
+	host_sig = IExec -> AllocSignal(-1);
+	host_task = IExec -> FindTask(NULL);
+
 //	disp_output = IDOS -> Open("CON:660/32/320/200/display debug", MODE_NEWFILE );
 	disp_output = IDOS -> Open("NIL:", MODE_NEWFILE );
 
@@ -361,15 +370,9 @@ int main( void )
 
 	if (set_patches())
 	{
-		Printf("patches set\n");
-
-		Printf("If console window is behind, hold CTRL+LAMIGA to drag window...\n");
-		Printf("-- press enter to quit\n");
-
-
 		for(;;) 
 		{
-			getchar();
+			IExec -> Wait( 1L << host_sig  | SIGBREAKF_CTRL_C);
 
 			if (num_of_open_screens)
 			{
@@ -387,6 +390,8 @@ int main( void )
 
 	quit = true;
 	wait_spawns();
+
+	IExec->FreeSignal( host_sig );
 
 	close_libs();
 
