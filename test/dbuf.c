@@ -162,6 +162,10 @@ Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
+			show_screenbuffer( "sbuf[0]", sbuff[0] );
+			show_screenbuffer( "sbuf[1]", sbuff[1] );
+
+
 				if (cont)
 				{
 					Printf ("draw %ld\n",CurBuffer);
@@ -187,6 +191,10 @@ Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
+			show_screenbuffer( "sbuf[0]", sbuff[0] );
+			show_screenbuffer( "sbuf[1]", sbuff[1] );
+
+
 				if (cont)
 				{
 					WaitBlit();
@@ -195,6 +203,9 @@ Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 					Printf ("display %ld\n",CurBuffer);
 
 Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+			show_screenbuffer( "sbuf[0]", sbuff[0] );
+			show_screenbuffer( "sbuf[1]", sbuff[1] );
+
 
 					while (!ChangeScreenBuffer (scr,sbuff[CurBuffer]))
 					{

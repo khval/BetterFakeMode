@@ -126,6 +126,12 @@ int main()
 
 		if (win)
 		{
+			ActivateWindow( win );
+
+			Delay(5);
+
+			MoveWindow( win, 66,77);
+
 			printf("win -> LeftEdge %d\n",win->LeftEdge);
 			printf("win -> TopEdge %d\n",win->TopEdge);
 			printf("win -> Width: %d\n",win->Width);
@@ -143,9 +149,7 @@ int main()
 				printf("win -> RastPort -> TmpRas: %08x\n", rp -> TmpRas);
 				printf("win -> RastPort -> AreaInfo: %08x\n", rp -> AreaInfo);
 				printf("win -> RastPort -> GelsInfo: %08x\n", rp -> GelsInfo);
-	
 			}
-
 
 			printf("win -> UserPort: %08x\n",win->UserPort);
 		}

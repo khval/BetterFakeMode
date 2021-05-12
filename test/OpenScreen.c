@@ -25,7 +25,7 @@ struct NewScreen myscr =
 	{
 		0,0,
 		320,
-		200,
+		400,
 		3,
 		0,1,
 		(ULONG) NULL,
@@ -73,6 +73,31 @@ int main()
 	if (src)
 	{
 		int x,y;
+		ULONG Result;
+		ULONG is_interleaved;
+
+		Result = GetScreenAttr( src, SA_Interleaved, &is_interleaved, sizeof(ULONG) );
+
+		printf("Screen -> Flags: %08x\n", src->Flags );
+		printf("is_interleaved: %s\n", is_interleaved ? "Yes" : "No");
+
+		printf("src -> BarHeight: %d\n", src -> BarHeight );
+		printf("src -> BarVBorder: %d\n", src -> BarVBorder );
+		printf("src -> BarHBorder: %d\n", src -> BarHBorder );
+		printf("src -> MenuVBorder: %d\n", src -> MenuVBorder );
+		printf("src -> MenuHBorder: %d\n", src -> MenuHBorder );
+
+		printf("src -> WBorTop: %d\n", src -> WBorTop );
+		printf("src -> WBorLeft: %d\n", src -> WBorLeft );
+		printf("src -> WBorRight: %d\n", src -> WBorRight );
+		printf("src -> WBorBottom: %d\n", src -> WBorBottom );
+
+		printf("src -> NextScreen: %08x\n", src -> NextScreen );
+		printf("src -> FirstWindow: %08x\n", src -> FirstWindow );
+		printf("src -> FirstGadget: %08x\n", src -> FirstGadget );
+		printf("src -> BarLayer: %08x\n", src -> BarLayer );
+		printf("src -> ExtData: %08x\n", src -> ExtData );
+		printf("src -> UserData: %08x\n", src -> UserData );
 
 		set_colors( src );
 
