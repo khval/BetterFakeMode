@@ -19,7 +19,7 @@ void fake_initColorMap( struct ViewPort *vp, int depth)
 	struct ColorMap *cm = vp -> ColorMap;
 
 	cm -> Count = 1L << depth;
-	cm -> ColorTable = AllocVecTags( sizeof(uint32) * 4  * cm -> Count, 
+	cm -> ColorTable = AllocVecTags( sizeof(uint32) * 3  * cm -> Count, 
 			AVT_Type, MEMF_SHARED, AVT_ClearWithValue, 0, TAG_END); 
 	cm -> cm_vp = vp;
 
