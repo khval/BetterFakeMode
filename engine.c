@@ -46,7 +46,7 @@ struct amiga_rgb
 
 uint32 argb[256];
 
-void comp_window_update( int sw, int sh, struct BitMap *bitmap, struct Window *win);
+void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Window *win);
 
 void update_argb_lookup( struct ColorMap *cm )
 {
@@ -226,7 +226,16 @@ void draw_screen( struct Window *win, struct BitMap *bm, struct BitMap *dest_bm 
 	UnlockBitMap( lock );
 }
 
+void update_fake_window_mouse_xy(struct Screen *src)
+{
+	struct Window *win;
 
+	for(win = src -> FirstWindow;win;win = win -> NextWindow)
+	{
+		win -> MouseX = src -> MouseX - win -> LeftEdge;
+		win -> MouseY = src -> MouseX - win -> TopEdge;
+	}
+}
 
 
 void dump_screen()
@@ -242,6 +251,26 @@ void dump_screen()
 			WA_InnerWidth, 640,
 			WA_InnerHeight, 480,
 			WA_DragBar, TRUE,
+			WA_CloseGadget, TRUE,
+
+			WA_MinWidth,	320,
+		 	WA_MinHeight,	200,	
+
+			WA_MaxWidth,~0,
+			WA_MaxHeight,	~0,
+
+			WA_IDCMP, 
+				IDCMP_CLOSEWINDOW |
+				IDCMP_MOUSEBUTTONS | 
+				IDCMP_MOUSEMOVE |
+				IDCMP_GADGETUP
+			,
+			WA_RMBTrap, true,
+			WA_ReportMouse, true,
+			WA_DragBar, true,
+			WA_DepthGadget, true,
+			WA_SizeGadget, TRUE,
+			WA_SizeBBottom, TRUE,
 			TAG_END);
 
 	if (!win) return ;
@@ -262,28 +291,53 @@ void dump_screen()
 	do
 	{
 		ULONG sig = Wait( win_mask | tc.timer_mask | SIGBREAKF_CTRL_C);
-		LONG src_width, src_height;
 
 		if (sig & SIGBREAKF_CTRL_C)	break;
 
+		if (sig  & win_mask )
+		{
+			struct IntuiMessage *m;
+
+//			FPrintf( output, "GetMsg\n");
+
+			MutexObtain(video_mutex);
+			src = first_fake_screen();
+
+			m = (struct IntuiMessage *) GetMsg( win -> UserPort );
+			while (m)
+			{
+				switch (m -> Class)
+				{
+					case IDCMP_CLOSEWINDOW:
+						Signal( host_task, 1L << host_sig);
+						break;
+
+					case IDCMP_MOUSEMOVE:
+						src -> MouseX = win -> WScreen -> MouseX - win -> LeftEdge - win -> BorderLeft;
+						src -> MouseY = win -> WScreen -> MouseY - win -> TopEdge - win -> BorderTop;
+						update_fake_window_mouse_xy(src)	;
+						break;
+				}
+
+				ReplyMsg( (struct Message *) m );
+				m = (struct IntuiMessage *) GetMsg( win -> UserPort );
+			}
+
+			MutexRelease(video_mutex);
+		}
+
 		if (sig & tc.timer_mask)
 		{
-			src_width = -1;
-			src_height = -1;
-
 			MutexObtain(video_mutex);
 			src = first_fake_screen();
 			if (src)
 			{
 				update_argb_lookup( src -> ViewPort.ColorMap );
 				draw_screen( win,  src -> RastPort.BitMap, dest_bitmap );
-				src_width = src -> Width;
-				src_height = src -> Height;
+ 				comp_window_update( src, dest_bitmap, win);
 
 			}
 			MutexRelease(video_mutex);
-
-			if (src_width>-1) comp_window_update( src_width, src_height, dest_bitmap, win);
 
 			reset_timer( tc.timer_io );
 		}
@@ -377,7 +431,7 @@ static ULONG compositeHookFunc(
 }
 
 
-void comp_window_update( int src_width, int src_height, struct BitMap *bitmap, struct Window *win)
+void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Window *win)
 {
 	struct Hook hook;
 	static CompositeHookData hookData;
@@ -393,8 +447,8 @@ void comp_window_update( int src_width, int src_height, struct BitMap *bitmap, s
 	hook.h_Data = &hookData;
 
 	hookData.srcBitMap = bitmap;
-	hookData.srcWidth = src_width;
-	hookData.srcHeight = src_height > 480 ? 480 : src_height;
+	hookData.srcWidth = src -> Width;
+	hookData.srcHeight = src -> Height > 480 ? 480 : src -> Height;
 	hookData.offsetX = win->BorderLeft;
 	hookData.offsetY = win->BorderTop;
 	hookData.retCode = COMPERR_Success;
