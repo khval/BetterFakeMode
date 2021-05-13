@@ -298,24 +298,26 @@ void dump_screen()
 		{
 			struct IntuiMessage *m;
 
-//			FPrintf( output, "GetMsg\n");
-
 			MutexObtain(video_mutex);
 			src = first_fake_screen();
-
 			m = (struct IntuiMessage *) GetMsg( win -> UserPort );
 			while (m)
 			{
 				switch (m -> Class)
 				{
 					case IDCMP_CLOSEWINDOW:
+
 						Signal( host_task, 1L << host_sig);
 						break;
 
 					case IDCMP_MOUSEMOVE:
-						src -> MouseX = win -> WScreen -> MouseX - win -> LeftEdge - win -> BorderLeft;
-						src -> MouseY = win -> WScreen -> MouseY - win -> TopEdge - win -> BorderTop;
-						update_fake_window_mouse_xy(src)	;
+
+						if (src)
+						{
+							src -> MouseX = win -> WScreen -> MouseX - win -> LeftEdge - win -> BorderLeft;
+							src -> MouseY = win -> WScreen -> MouseY - win -> TopEdge - win -> BorderTop;
+							update_fake_window_mouse_xy(src)	;
+						}
 						break;
 				}
 
@@ -329,6 +331,7 @@ void dump_screen()
 		if (sig & tc.timer_mask)
 		{
 			MutexObtain(video_mutex);
+
 			src = first_fake_screen();
 			if (src)
 			{
