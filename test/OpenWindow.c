@@ -75,7 +75,7 @@ void show_layer_Info(struct Layer_Info *li)
 			li -> resPtr1,
 			li -> resPtr2,
 			li -> FreeClipRects,
-			li ->PrivateReserve3,
+			li -> PrivateReserve3,
 			li -> ClipRectPool,
    		 	li -> Flags,
 			li -> res_count,
@@ -102,6 +102,17 @@ int main()
 
 	if (src)
 	{
+		struct DrawInfo *di;
+
+		di = GetScreenDrawInfo( src );
+		if (di)
+		{
+			printf("we have DrawInfo\n");
+
+			FreeScreenDrawInfo( src, di );
+		}
+
+
 		struct Window *win = OpenWindowTags( NULL, 
 			WA_Left, 10,
 			WA_Top, 10,
