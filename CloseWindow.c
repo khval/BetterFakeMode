@@ -12,17 +12,21 @@
 #include "common.h"
 #include "helper/screen.h"
 
+extern APTR video_mutex;
+
 extern void _free_fake_bitmap( struct BitMap *bm );
 
 struct Window * fake_CloseWindow ( struct Window *w )
 {
+	MutexObtain(video_mutex);
+
 	if (w -> RPort)
 	{
 		if (w -> UserPort )
 		{
 			struct Message *msg;
 
-			// empty msg Queue, make sure all messages are handled.
+			// empty msg Queue, make sure, make sure all messages are handled.
 
 			msg = GetMsg( w-> UserPort );
 			while ( msg )
@@ -50,6 +54,8 @@ struct Window * fake_CloseWindow ( struct Window *w )
 	}
 
 	FreeVec( w );
+
+	MutexRelease(video_mutex);
 
 	return NULL;
 }

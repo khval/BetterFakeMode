@@ -161,6 +161,8 @@ struct Screen * _new_fake_OpenScreenTagList( const struct NewScreen * newScreen,
 
 	if (s)
 	{
+		s -> FirstWindow = NULL;
+
 		add_LayerInfo( i, s );
 
 		if (newScreen) init_screen_from_newScreen( newScreen, s, &depth );

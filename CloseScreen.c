@@ -11,6 +11,8 @@
 #include "common.h"
 #include "helper/screen.h"
 
+extern APTR video_mutex;
+
 void _cleanup_colormap( struct ColorMap *cm )
 {
 	if (cm -> ColorTable)	
