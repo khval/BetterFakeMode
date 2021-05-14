@@ -7,9 +7,11 @@
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
+#include <proto/diskfont.h>
 #include <exec/emulation.h>
 
 #include "common.h"
+#include "init.h"
 
 struct Library			*LayersBase = NULL;
 struct LayersIFace		*ILayers = NULL;
@@ -20,7 +22,12 @@ struct IntuitionIFace		*IIntuition = NULL;
 struct Library			*GraphicsBase = NULL;
 struct GraphicsIFace		*IGraphics = NULL;
 
+struct Library			*DiskfontBase = NULL;
+struct DiskfontIFace		*IDiskfont = NULL;
+
 APTR video_mutex = NULL;
+
+struct TextFont *default_font = NULL;
 
 #define lpage 256*8
 
@@ -96,15 +103,32 @@ BOOL open_lib( const char *name, int ver , const char *iname, int iver, struct L
 	return (*interface) ? TRUE : FALSE;
 }
 
+void close_lib_all( struct Library **Base, struct Interface **I )
+{
+	if (*Base) CloseLibrary(*Base); *Base = 0;
+	if (*I) DropInterface((struct Interface*) *I); *I = 0;
+}
 
 bool open_libs()
 {
+	struct TextAttr _font;
+
 	if ( ! open_lib( "layers.library", 51L , "main", 1, &LayersBase, (struct Interface **) &ILayers ) ) return FALSE;
 	if ( ! open_lib( "intuition.library", 51L , "main", 1, &IntuitionBase, (struct Interface **) &IIntuition  ) ) return FALSE;
 	if ( ! open_lib( "graphics.library", 54L , "main", 1, &GraphicsBase, (struct Interface **) &IGraphics  ) ) return FALSE;
+	if ( ! open_lib( "diskfont.library", 53L , "main", 1, &DiskfontBase, (struct Interface **) &IDiskfont  ) ) return FALSE;
 
 	video_mutex = (APTR) AllocSysObjectTags(ASOT_MUTEX, TAG_DONE);
 	if ( ! video_mutex) return FALSE;
+
+	_font.ta_Name = "topaz.font";
+	_font.ta_YSize = 8;
+	_font.ta_Style = 0;
+	_font.ta_Flags = 0;
+
+	default_font = OpenDiskFont( &_font );
+	if ( !default_font ) return FALSE;
+
 
 	initBits2Bytes();
 //	dump_page( 2 );
@@ -114,20 +138,22 @@ bool open_libs()
 
 void close_libs()
 {
+	if (default_font)
+	{
+		CloseFont( default_font );
+		default_font = NULL;
+	}
+
 	if (video_mutex) 
 	{
 		FreeSysObject(ASOT_MUTEX, video_mutex); 
 		video_mutex = NULL;
 	}
 
-	if (LayersBase) CloseLibrary(LayersBase); LayersBase = 0;
-	if (ILayers) DropInterface((struct Interface*) ILayers); ILayers = 0;
-
-	if (IntuitionBase) CloseLibrary(IntuitionBase); IntuitionBase = 0;
-	if (IIntuition) DropInterface((struct Interface*) IIntuition); IIntuition = 0;
-
-	if (GraphicsBase) CloseLibrary(GraphicsBase); GraphicsBase = 0;
-	if (IGraphics) DropInterface((struct Interface*) IGraphics); IGraphics = 0;
+	close_lib(Diskfont);
+	close_lib(Layers);
+	close_lib(Intuition);
+	close_lib(Graphics);
 }
 
 

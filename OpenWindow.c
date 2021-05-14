@@ -113,6 +113,13 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 		{
 			InitRastPort( win -> RPort );
 			win -> RPort -> BitMap = win -> WScreen -> RastPort.BitMap;
+			SetFont( &win -> RPort, default_font );
+
+			if (win -> Title)
+			{
+				win -> BorderTop = win -> RPort -> Font -> tf_YSize + 4;
+			}
+
 			RenderWindow(win);
 		}
 

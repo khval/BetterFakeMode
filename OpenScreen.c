@@ -100,6 +100,10 @@ void _init_fake_screen(struct Screen *s,int Depth)
 				TAG_END	 );
 #endif
 
+		s -> Font = default_font;
+
+		SetFont( &s -> RastPort , default_font );
+
 		s -> BitMap  = * (s -> RastPort.BitMap);
 
 		FPrintf( output, "%ld\n", s ->RastPort.BitMap -> BytesPerRow );
