@@ -6,6 +6,7 @@ files = ${deps}
 tests_c = OpenScreen.c 
 tests_c += OpenWindow.c
 tests_c += dbuf.c
+tests_c += Gadtools.c
 
 incdir = -I../ -I./
 
