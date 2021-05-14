@@ -38,7 +38,21 @@ void RenderWindow(struct Window *win)
 	SetAPen(rp,2);
 
 	box(rp,x0,y0,x1,y1);
-	box(rp,x0 + win->BorderLeft,y0 + win -> BorderTop,x1 + win -> BorderRight,y1 + win -> BorderBottom );
+	box(rp,x0 + win->BorderLeft,y0 + win -> BorderTop,x1 - win -> BorderRight,y1 - win -> BorderBottom );
+	
+	if (win -> Title)
+	{
+		int y;
+
+		y = win -> TopEdge;
+		y += win -> BorderTop;
+		y -= win -> RPort -> Font -> tf_YSize;
+		y += win -> RPort -> Font -> tf_Baseline;
+
+		Move(rp, win -> LeftEdge + win -> BorderLeft+2, y );
+
+		Text(rp,win -> Title, strlen(win->Title));
+	}
 
 	SetAPen(rp,tmp_DetailPen);
 }
