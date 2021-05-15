@@ -7,6 +7,7 @@
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
+#include <proto/layers.h>
 #include <exec/emulation.h>
 
 #include "common.h"
@@ -96,6 +97,7 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 		}
 	}
 
+
 	if (win -> IDCMPFlags)
 	{
 		win -> UserPort = (APTR) AllocSysObjectTags(ASOT_PORT, TAG_DONE);
@@ -111,6 +113,8 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 
 		if (win -> RPort)
 		{
+			ULONG i;
+
 			InitRastPort( win -> RPort );
 			win -> RPort -> BitMap = win -> WScreen -> RastPort.BitMap;
 			SetFont( &win -> RPort, default_font );
@@ -119,6 +123,22 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 			{
 				win -> BorderTop = win -> RPort -> Font -> tf_YSize + 4;
 			}
+
+			i = win -> WScreen - screens;	// get the index..
+
+			win -> RPort -> Layer = CreateLayer( LayerInfos[i], 
+				LAYA_BitMap,  win -> RPort -> BitMap ,
+				LAYA_MinX, win -> LeftEdge,
+				LAYA_MinY, win -> TopEdge,
+				LAYA_MaxX, win -> LeftEdge + win -> Width,
+				LAYA_MaxY, win -> TopEdge + win -> Height,
+				TAG_END);
+/*
+			if (win -> RPort -> Layer)
+			{
+				MoveLayer( 0, win -> RPort -> Layer, win -> LeftEdge, win -> TopEdge );
+			}
+*/
 
 			RenderWindow(win);
 		}
