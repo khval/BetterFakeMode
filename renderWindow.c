@@ -28,8 +28,8 @@ void RenderWindow(struct Window *win)
 	int tmp_DetailPen;
 	struct RastPort *rp = win -> RPort;
 	
-	x0 = win -> LeftEdge;
-	y0 = win -> TopEdge;
+	x0 = 0;
+	y0 = 0;
 	x1 = x0 + win -> Width;
 	y1 = y0 + win -> Height;
 
@@ -44,13 +44,11 @@ void RenderWindow(struct Window *win)
 	{
 		int y;
 
-		y = win -> TopEdge;
-		y += win -> BorderTop;
+		y = win -> BorderTop;
 		y -= win -> RPort -> Font -> tf_YSize;
 		y += win -> RPort -> Font -> tf_Baseline;
 
-		Move(rp, win -> LeftEdge + win -> BorderLeft+2, y );
-
+		Move(rp, 2, y );
 		Text(rp,win -> Title, strlen(win->Title));
 	}
 
