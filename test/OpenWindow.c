@@ -85,6 +85,64 @@ void show_layer_Info(struct Layer_Info *li)
 			li -> Extension);
 }
 
+void show_ArieaInfo(struct AreaInfo *ai)
+{
+	printf(
+		"AreaInfo-> *VctrTbl: %08x\n"
+    		"AreaInfo-> *VctrPtr: %08x\n"
+		"AreaInfo-> *FlagTbl: %08x\n"
+		"AreaInfo-> *FlagPtr: %08x\n"
+		"AreaInfo-> Count: %d\n"
+		"AreaInfo-> MaxCount: %d\n"
+		"AreaInfo-> FirstX: %d\n"
+		"AreaInfo-> FirstY: %d\n",
+			ai->VctrTbl,
+			ai->VctrPtr,
+			ai->FlagTbl,
+			ai->FlagPtr,
+			ai->Count,
+			ai->MaxCount,
+			ai->FirstX,
+			ai->FirstY);
+}
+
+void show_screen( struct Screen *src )
+{
+	printf("src -> FirstWindow: %08x\n", src -> FirstWindow);
+	printf("src -> RastPort: %08x\n",&src -> RastPort);
+	printf("src -> RastPort -> BitMap: %08x\n",src->RastPort.BitMap);
+
+	printf("src -> ViewPort.DWidth: %d\n",src->ViewPort.DWidth);
+	printf("src -> ViewPort.DHeight: %d\n",src->ViewPort.DHeight);
+	printf("src -> ViewPort.DxOffset: %d\n",src->ViewPort.DxOffset);
+	printf("src -> ViewPort.DyOffset: %d\n",src->ViewPort.DyOffset);
+	printf("src -> ViewPort.Modes: %08x\n",src->ViewPort.Modes);
+}
+
+void show_rp(struct RastPort *rp)
+{
+	printf("win -> RastPort -> Layer: %08x\n", rp -> Layer);
+	printf("win -> RastPort -> BitMap: %08x\n", rp -> BitMap);
+	printf("win -> RastPort -> AreaPtrn: %08x\n", rp -> AreaPtrn);
+	printf("win -> RastPort -> TmpRas: %08x\n", rp -> TmpRas);
+	printf("win -> RastPort -> AreaInfo: %08x\n", rp -> AreaInfo);
+	printf("win -> RastPort -> GelsInfo: %08x\n", rp -> GelsInfo);
+
+	printf("win -> RastPort -> cp_x: %d\n", rp -> cp_x);
+	printf("win -> RastPort -> cp_y: %d\n", rp -> cp_y);
+	printf("win -> RastPort -> PenWidth: %d\n", rp -> PenWidth);
+	printf("win -> RastPort -> PenHeight: %d\n", rp -> PenHeight);
+}
+
+void show_win( struct Window *win )
+{
+	printf("win -> LeftEdge %d\n",win->LeftEdge);
+	printf("win -> TopEdge %d\n",win->TopEdge);
+	printf("win -> Width: %d\n",win->Width);
+	printf("win -> Height: %d\n",win->Height);
+	printf("win -> RastPort: %08x\n",win->RPort);
+	printf("win -> UserPort: %08x\n",win->UserPort);
+}
 
 int main()
 {
@@ -102,7 +160,9 @@ int main()
 
 	if (src)
 	{
+		int n;
 		struct DrawInfo *di;
+		struct Window *win[2];
 
 		di = GetScreenDrawInfo( src );
 		if (di)
@@ -112,64 +172,57 @@ int main()
 			FreeScreenDrawInfo( src, di );
 		}
 
+		win[0] = OpenWindowTags( NULL, 
+			WA_Left, 10, WA_Top, 10,
+			WA_Width, 100, WA_Height, 100,
+			WA_CustomScreen, src, TAG_END);
 
-		struct Window *win = OpenWindowTags( NULL, 
-			WA_Left, 10,
-			WA_Top, 10,
-			WA_Width, 100,
-			WA_Height, 100,
-			WA_CustomScreen, src,
-			TAG_END);
+		win[1] = OpenWindowTags( NULL, 
+			WA_Title, "Front Win",
+			WA_Left, 50, WA_Top, 50,
+			WA_Width, 100, WA_Height, 100,
+			WA_CustomScreen, src, TAG_END);
+
 
 		printf("Window open? %s -- its at: %08x\n", win ? "Yes" : "No",win);
-		printf("src -> FirstWindow: %08x\n", src -> FirstWindow);
-		printf("src -> RastPort: %08x\n",&src -> RastPort);
-		printf("src -> RastPort -> BitMap: %08x\n",src->RastPort.BitMap);
-
-		printf("src -> ViewPort.DWidth: %d\n",src->ViewPort.DWidth);
-		printf("src -> ViewPort.DHeight: %d\n",src->ViewPort.DHeight);
-		printf("src -> ViewPort.DxOffset: %d\n",src->ViewPort.DxOffset);
-		printf("src -> ViewPort.DyOffset: %d\n",src->ViewPort.DyOffset);
-		printf("src -> ViewPort.Modes: %08x\n",src->ViewPort.Modes);
 
 		show_layer_Info( &src -> LayerInfo );
 
-
-		if (win)
+		if (win[0])
 		{
-			ActivateWindow( win );
+			int x,y;
 
-			Delay(5);
+			ActivateWindow( win[0] );
 
-			MoveWindow( win, 66,77);
-
-			printf("win -> LeftEdge %d\n",win->LeftEdge);
-			printf("win -> TopEdge %d\n",win->TopEdge);
-			printf("win -> Width: %d\n",win->Width);
-			printf("win -> Height: %d\n",win->Height);
-
-			printf("win -> RastPort: %08x\n",win->RPort);
-
-			if (win->RPort)
+			for (x=30;x<60;x++)
 			{
-				struct RastPort *rp = win->RPort;
-
-				printf("win -> RastPort -> Layer: %08x\n", rp -> Layer);
-				printf("win -> RastPort -> BitMap: %08x\n", rp -> BitMap);
-				printf("win -> RastPort -> AreaPtrn: %08x\n", rp -> AreaPtrn);
-				printf("win -> RastPort -> TmpRas: %08x\n", rp -> TmpRas);
-				printf("win -> RastPort -> AreaInfo: %08x\n", rp -> AreaInfo);
-				printf("win -> RastPort -> GelsInfo: %08x\n", rp -> GelsInfo);
+				Delay(5);
+				MoveWindow( win[0], x,77);
+				printf("xy %d,%d\n",x,77);
 			}
 
-			printf("win -> UserPort: %08x\n",win->UserPort);
+			SetAPen( win[0] -> RPort, 2);
+
+			x = rand()%200;
+			y = rand()%200;
+			Move( win[0] -> RPort,x,y );
+
+			for (n=0;n<100;n++)
+			{
+				x = rand()%200;
+				y = rand()%200;
+				Draw( win[0] -> RPort,x,y );
+				printf("xy %d,%d\n",x,y);
+			}
 		}
 
 		printf("Press enter to quit\n");
 		getchar();
 
-		if (win) CloseWindow( win );
-
+		for (n=0;n<2;n++)
+		{
+			if (win[n]) CloseWindow( win[n] );
+		}
 		CloseScreen( src ) ;
 	}
 
