@@ -133,12 +133,9 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 				LAYA_MaxX, win -> LeftEdge + win -> Width,
 				LAYA_MaxY, win -> TopEdge + win -> Height,
 				TAG_END);
-/*
-			if (win -> RPort -> Layer)
-			{
-				MoveLayer( 0, win -> RPort -> Layer, win -> LeftEdge, win -> TopEdge );
-			}
-*/
+
+			win -> IFont = default_font;
+			win -> WLayer = win -> RPort -> Layer;
 
 			RenderWindow(win);
 		}
