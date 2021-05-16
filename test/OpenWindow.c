@@ -194,11 +194,10 @@ int main()
 
 			ActivateWindow( win[0] );
 
-			for (x=30;x<60;x++)
+			for (x=30;x<65;x++)
 			{
-				Delay(5);
-				MoveWindow( win[0], x,77);
-				printf("xy %d,%d\n",x,77);
+				Delay(1);
+				MoveWindow( win[0], 7,0);
 			}
 
 			SetAPen( win[0] -> RPort, 2);
@@ -213,6 +212,12 @@ int main()
 				y = rand()%200;
 				Draw( win[0] -> RPort,x,y );
 				printf("xy %d,%d\n",x,y);
+			}
+
+			for (x=30;x<65;x++)
+			{
+				Delay(1);
+				MoveWindow( win[0], -7,0);
 			}
 		}
 
