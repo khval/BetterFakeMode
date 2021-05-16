@@ -4,6 +4,7 @@ files = init.c \
 	CloseScreen.c \
 	OpenWindow.c \
 	CloseWindow.c \
+	MoveWindow.c \
 	AllocScreenBuffer.c \
 	renderWindow.c \
 	helper/screen.c \

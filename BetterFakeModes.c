@@ -33,6 +33,7 @@ APTR old_ppc_func_CloseWindow = NULL;
 APTR old_ppc_func_AllocScreenBuffer = NULL;
 APTR old_ppc_func_FreeScreenBuffer = NULL;
 APTR old_ppc_func_ChangeScreenBuffer = NULL;
+APTR old_ppc_func_MoveWindow = NULL;
 
 #define _LVOOpenScreen	-198
 #define _LVOCloseScreen	-66
@@ -267,6 +268,20 @@ static void ppc_func_CloseWindow( struct IntuitionIFace *Self, struct Window *w 
 	}
 }
 
+static void ppc_func_MoveWindow( struct IntuitionIFace *Self, struct Window *w, LONG x, LONG y  )
+{
+	FPrintf( output,"CloseWindow\n");
+
+	if (is_fake_screen( w -> WScreen ))
+	{
+		fake_MoveWindow( w,x,y );
+	}
+	else
+	{
+		((void (*) ( struct IntuitionIFace *, struct Window *window, LONG x,  LONG y )) old_ppc_func_MoveWindow) (Self, w,x,y);
+	}
+}
+
 struct ScreenBuffer * ppc_func_AllocScreenBuffer (struct IntuitionIFace *Self, struct Screen * sc, struct BitMap * bm, ULONG flags)
 {
 	FPrintf( output,"ppc_func_AllocScreenBuffer\n");
@@ -312,9 +327,12 @@ BOOL set_patches( void )
 	set_new_ppc_patch(Intuition,AllocScreenBuffer);
 	set_new_ppc_patch(Intuition,FreeScreenBuffer);
 	set_new_ppc_patch(Intuition,ChangeScreenBuffer);
+	set_new_ppc_patch(Intuition,MoveWindow);
 
 	set_new_ppc_patch(Intuition,OpenWindowTagList);
 	set_new_ppc_patch(Intuition,CloseWindow);
+
+
 	
 	return TRUE;
 }
@@ -376,9 +394,13 @@ int main( void )
 
 			if (num_of_open_screens)
 			{
-				printf("you can't quit before all fake screens are closed\n");
+				Printf("you can't quit before all fake screens are closed\n");
 			}
-			else break;
+			else 
+			{
+				Printf("Quit..\n");
+				break;
+			}
 		}
 
 		undo_patches();

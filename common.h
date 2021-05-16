@@ -25,3 +25,6 @@ extern struct Window * fake_CloseWindow ( struct Window * window);
 extern struct ScreenBuffer * fake_AllocScreenBuffer ( struct Screen * sc, struct BitMap * bm, ULONG flags);
 extern ULONG fake_ChangeScreenBuffer ( struct Screen * sc, struct ScreenBuffer * bm);
 
+extern void fake_MoveWindow( struct Window *w, LONG x, LONG y  );
+extern void no_block_MoveWindow ( struct Window *win, LONG dx, LONG dy );
+
