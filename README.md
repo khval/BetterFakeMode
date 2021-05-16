@@ -39,6 +39,9 @@ Mostly nothing will work with this patch, don't use it :-)
 
 * Double buffering is broken.
 
+* Intuition Windows are not rendered correct yet.
+(Resize windoe, close window, depth gadget.)
+
 * There pointers that are not set, that should be set, but I do not know what they are for.
 
 # What is working.
