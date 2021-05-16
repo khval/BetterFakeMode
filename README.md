@@ -39,8 +39,6 @@ Mostly nothing will work with this patch, don't use it :-)
 
 * Double buffering is broken.
 
-* Layers is broken.
-
 * There pointers that are not set, that should be set, but I do not know what they are for.
 
 # What is working.
@@ -68,11 +66,11 @@ Well, think of BetterFakeMode as an engine, it redirects thing normal the OS doe
 
 Ok here is native plan for this project.
 
-1st
+1st - Done
 
 Because this is an Ad Hoc development project, first thing is to find out if this is doable? So, first order of business is quickly proto type something, that shows if we are able open some screens, if get windows working etc, if I can get windows to not crash, and I can get normally draw commands to work. then 2en phase can start.
 
-2en
+2en - in progress
 
 Work on user input, events, make sure windows and user input is forwarded to the correct fake window inside the fake screen.
 
