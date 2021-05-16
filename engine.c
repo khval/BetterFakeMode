@@ -237,6 +237,81 @@ void update_fake_window_mouse_xy(struct Screen *src)
 	}
 }
 
+enum 
+{
+	no_action = 0,
+	drag_action
+};
+
+
+LONG mouse_state = 0;
+struct Window *drag_win=NULL;
+LONG drag_x,drag_y;
+
+void dialog_click( struct Screen *src )
+{
+	struct Window *win;
+
+	FPrintf( output, "%s\n",__FUNCTION__);
+
+	for(win = src -> FirstWindow;win;win = win -> NextWindow)
+	{
+		win -> MouseX = src -> MouseX - win -> LeftEdge;
+		win -> MouseY = src -> MouseY - win -> TopEdge;
+
+
+		FPrintf( output, "win %ld, %ld\n", win -> MouseX, win -> MouseY);
+
+		if ((win -> MouseX>=0) && (win -> MouseX<=win -> Width))
+		{
+			FPrintf( output, "X\n");
+
+			if ((win -> MouseY>=0) && (win -> MouseY<=win -> BorderTop))		// window title, drag bar.
+			{
+				FPrintf( output, "Drag\n");
+
+				mouse_state = drag_action;
+				drag_win = win;
+				drag_x = win -> MouseX;
+				drag_y = win -> MouseY;
+				break;
+			}
+		}
+	}
+}
+
+void drag_window(struct Screen *src)
+{
+	LONG dx,dy;
+	bool window_exists = false;
+	struct Window *win;
+
+	FPrintf( output, "%s\n",__FUNCTION__);
+
+	for(win = src -> FirstWindow;win;win = win -> NextWindow)
+	{
+		win -> MouseX = src -> MouseX - win -> LeftEdge;
+		win -> MouseY = src -> MouseY - win -> TopEdge;
+
+		if (win == drag_win)
+		{
+			window_exists = true;
+			break;
+		}
+	}
+
+	if (window_exists)
+	{
+		dx = drag_win -> MouseX - drag_x;
+		dy = drag_win -> MouseY - drag_y;
+
+		if (dx | dy)
+		{
+			FPrintf( output, "dx %ld dy %ld\n",dx,dy);
+			no_block_MoveWindow( drag_win, dx, dy  );
+		}
+	}
+}
 
 void dump_screen()
 {
@@ -290,6 +365,8 @@ void dump_screen()
 
 	do
 	{
+		ULONG host_w,host_h;
+		ULONG host_mx,host_my;
 		ULONG sig = Wait( win_mask | tc.timer_mask | SIGBREAKF_CTRL_C);
 
 		if (sig & SIGBREAKF_CTRL_C)	break;
@@ -299,26 +376,81 @@ void dump_screen()
 			struct IntuiMessage *m;
 
 			MutexObtain(video_mutex);
+
 			src = first_fake_screen();
+
+			host_w = win -> Width;
+			host_w -= win -> BorderLeft;
+			host_w -= win -> BorderRight;
+
+			host_h = win -> Height;
+			host_h -= win -> BorderTop;
+			host_h -= win -> BorderBottom;
+
 			m = (struct IntuiMessage *) GetMsg( win -> UserPort );
 			while (m)
 			{
-				switch (m -> Class)
+				if (m -> Class)
 				{
-					case IDCMP_CLOSEWINDOW:
+					switch (m -> Class)
+					{
+						case IDCMP_CLOSEWINDOW:
 
-						Signal( host_task, 1L << host_sig);
-						break;
+							Signal( host_task, 1L << host_sig);
+							break;
+					}
+				}
 
-					case IDCMP_MOUSEMOVE:
+				if (src)
+				{
+					switch (m -> Class)
+					{
+						case IDCMP_MOUSEMOVE:
 
-						if (src)
-						{
-							src -> MouseX = win -> WScreen -> MouseX - win -> LeftEdge - win -> BorderLeft;
-							src -> MouseY = win -> WScreen -> MouseY - win -> TopEdge - win -> BorderTop;
+							host_mx = win -> WScreen -> MouseX - win -> LeftEdge - win -> BorderLeft;
+							host_my = win -> WScreen -> MouseY - win -> TopEdge - win -> BorderTop;
+
+							src -> MouseX = host_mx * src -> Width / host_w;
+							src -> MouseY = host_my * src -> Height / host_h;
+
+
+							FPrintf( output, "host %ld, %ld, mouse %ld, %ld\n", host_w, host_h, host_mx, host_my);
+
+
 							update_fake_window_mouse_xy(src)	;
-						}
-						break;
+						
+							switch (mouse_state)
+							{
+								case drag_action:
+										drag_window( src );
+										break;
+							}
+							break;
+
+						case IDCMP_MOUSEBUTTONS:
+
+							FPrintf( output, "IDCMP_MOUSEBUTTONS\n");
+
+							FPrintf( output, "Code: %lx\n", m->Code &~IECODE_UP_PREFIX);
+
+							if ( m->Code & IECODE_UP_PREFIX)
+							{
+								mouse_state = 0;
+							}
+							else
+							{
+								FPrintf( output, "mouse_state: %lx\n", mouse_state);
+
+								switch (mouse_state)
+								{
+									case no_action:
+											dialog_click( src );
+											break;
+								}
+							}
+							break;
+
+					}
 				}
 
 				ReplyMsg( (struct Message *) m );
