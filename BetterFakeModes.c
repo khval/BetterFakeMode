@@ -347,6 +347,7 @@ void undo_patches( void )
 	undo_ppc_patch(Intuition,AllocScreenBuffer);
 	undo_ppc_patch(Intuition,FreeScreenBuffer);
 	undo_ppc_patch(Intuition,ChangeScreenBuffer);
+	undo_ppc_patch(Intuition,MoveWindow);
 
 	undo_ppc_patch(Intuition,OpenWindowTagList);
 	undo_ppc_patch(Intuition,CloseWindow);
