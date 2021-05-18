@@ -142,12 +142,16 @@ void show_win( struct Window *win )
 	printf("win -> Height: %d\n",win->Height);
 	printf("win -> RastPort: %08x\n",win->RPort);
 	printf("win -> UserPort: %08x\n",win->UserPort);
+	printf("win -> Flags: %08x\n",win->Flags);
 }
 
 int main()
 {
 	struct Screen *src;
 	struct RastPort *rp;
+	bool quit = false;
+	ULONG win_mask;
+	struct IntuiMessage *m;
 
 	if (open_libs()==FALSE)
 	{
@@ -172,12 +176,24 @@ int main()
 			FreeScreenDrawInfo( src, di );
 		}
 
+/*
+#define WFLG_SIZEGADGET       include sizing system-gadget?     
+#define WFLG_DRAGBAR          include dragging system-gadget?   
+#define WFLG_DEPTHGADGET      include depth arrangement gadget? 
+#define WFLG_CLOSEGADGET      include close-box system-gadget?  
+#define WFLG_SIZEBRIGHT       size gadget uses right border     
+#define WFLG_SIZEBBOTTOM      size gadget uses bottom border   
+*/
+
 		win[0] = OpenWindowTags( NULL, 
+			WA_Title, "Back Win",
 			WA_Left, 10, WA_Top, 10,
 			WA_Width, 100, WA_Height, 100,
 			WA_CustomScreen, src, TAG_END);
 
 		win[1] = OpenWindowTags( NULL, 
+			WA_IDCMP, IDCMP_CLOSEWINDOW,
+			WA_Flags, WFLG_DRAGBAR | WFLG_CLOSEGADGET,
 			WA_Title, "Front Win",
 			WA_Left, 50, WA_Top, 50,
 			WA_Width, 100, WA_Height, 100,
@@ -221,12 +237,47 @@ int main()
 			}
 		}
 
-		printf("Press enter to quit\n");
-		getchar();
+
+		win_mask = win[1] -> UserPort ? 1 << win[1] -> UserPort ->mp_SigBit : 0;
+
+		do
+		{
+			Printf("Waiting for signal\n");
+			ULONG sig = Wait( win_mask | SIGBREAKF_CTRL_C);
+
+			if (sig & SIGBREAKF_CTRL_C)	break;
+
+			if (sig  & win_mask )
+			{
+				Printf("Got Message\n");
+				m = (struct IntuiMessage *) GetMsg( win[1] -> UserPort );
+
+				while (m)
+				{
+					switch (m -> Class)
+					{
+						case IDCMP_CLOSEWINDOW:
+							quit = true;
+							break;
+					}
+					m = (struct IntuiMessage *) GetMsg( win[1] -> UserPort );
+				}
+			}
+
+		} while (!quit);
+
+		Printf("Ready to quit...\n");
 
 		for (n=0;n<2;n++)
 		{
-			if (win[n]) CloseWindow( win[n] );
+			if (win[n]) 
+			{
+				printf("Window %d\n",n);
+				show_win( win[n] );
+
+				Printf("close window %d\n",n);
+				CloseWindow( win[n] );
+			}
 		}
 		CloseScreen( src ) ;
 	}
