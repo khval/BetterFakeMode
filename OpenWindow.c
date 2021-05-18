@@ -60,6 +60,9 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 			case WA_IDCMP:
 				win->IDCMPFlags=tag -> ti_Data; break; 
 
+			case WA_Flags:
+				win->Flags=tag -> ti_Data; break; 
+
 			case WA_Title:
 				win->Title= (char *) tag -> ti_Data; break; 
 
@@ -101,6 +104,7 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 	if (win -> IDCMPFlags)
 	{
 		win -> UserPort = (APTR) AllocSysObjectTags(ASOT_PORT, TAG_DONE);
+		FPrintf( output, "UserPort: %08x\n", win -> UserPort);
 	}
 
 	win -> RPort = new_struct( RastPort );
@@ -114,14 +118,29 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 		if (win -> RPort)
 		{
 			ULONG i;
+			ULONG icon_s;
 
 			InitRastPort( win -> RPort );
 			win -> RPort -> BitMap = win -> WScreen -> RastPort.BitMap;
 			SetFont( &win -> RPort, default_font );
 
+			icon_s = win -> RPort -> Font -> tf_YSize + 4;
+
 			if (win -> Title)
 			{
-				win -> BorderTop = win -> RPort -> Font -> tf_YSize + 4;
+				win -> BorderTop = icon_s;
+			}
+
+			if (win -> Flags & WFLG_SIZEGADGET)
+			{
+				if (win -> Flags & WFLG_SIZEBBOTTOM)
+				{
+					win -> BorderBottom = icon_s;
+				}
+				else
+				{
+					win -> BorderRight = icon_s;
+				}
 			}
 
 			i = win -> WScreen - screens;	// get the index..
@@ -141,6 +160,8 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 		}
 
 	}
+
+	Delay(50);
 
 	return win;
 }

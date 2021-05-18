@@ -5,6 +5,7 @@ files = init.c \
 	OpenWindow.c \
 	CloseWindow.c \
 	MoveWindow.c \
+	SizeWindow.c \
 	AllocScreenBuffer.c \
 	renderWindow.c \
 	helper/screen.c \

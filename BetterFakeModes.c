@@ -34,6 +34,7 @@ APTR old_ppc_func_AllocScreenBuffer = NULL;
 APTR old_ppc_func_FreeScreenBuffer = NULL;
 APTR old_ppc_func_ChangeScreenBuffer = NULL;
 APTR old_ppc_func_MoveWindow = NULL;
+APTR old_ppc_func_SizeWindow = NULL;
 
 #define _LVOOpenScreen	-198
 #define _LVOCloseScreen	-66
@@ -268,19 +269,34 @@ static void ppc_func_CloseWindow( struct IntuitionIFace *Self, struct Window *w 
 	}
 }
 
-static void ppc_func_MoveWindow( struct IntuitionIFace *Self, struct Window *w, LONG x, LONG y  )
+static void ppc_func_MoveWindow( struct IntuitionIFace *Self, struct Window *w, LONG dx, LONG dy  )
 {
-	FPrintf( output,"CloseWindow\n");
+	FPrintf( output,"MoveWindow\n");
 
 	if (is_fake_screen( w -> WScreen ))
 	{
-		fake_MoveWindow( w,x,y );
+		fake_MoveWindow( w,dx,dy );
 	}
 	else
 	{
-		((void (*) ( struct IntuitionIFace *, struct Window *window, LONG x,  LONG y )) old_ppc_func_MoveWindow) (Self, w,x,y);
+		((void (*) ( struct IntuitionIFace *, struct Window *window, LONG x,  LONG y )) old_ppc_func_MoveWindow) (Self, w,dx,dy);
 	}
 }
+
+static void ppc_func_SizeWindow( struct IntuitionIFace *Self, struct Window *w, LONG dx, LONG dy  )
+{
+	FPrintf( output,"SizeWindow\n");
+
+	if (is_fake_screen( w -> WScreen ))
+	{
+		fake_SizeWindow( w,dx,dy );
+	}
+	else
+	{
+		((void (*) ( struct IntuitionIFace *, struct Window *window, LONG x,  LONG y )) old_ppc_func_SizeWindow) (Self, w,dx,dy);
+	}
+}
+
 
 struct ScreenBuffer * ppc_func_AllocScreenBuffer (struct IntuitionIFace *Self, struct Screen * sc, struct BitMap * bm, ULONG flags)
 {
@@ -328,6 +344,7 @@ BOOL set_patches( void )
 	set_new_ppc_patch(Intuition,FreeScreenBuffer);
 	set_new_ppc_patch(Intuition,ChangeScreenBuffer);
 	set_new_ppc_patch(Intuition,MoveWindow);
+	set_new_ppc_patch(Intuition,SizeWindow);
 
 	set_new_ppc_patch(Intuition,OpenWindowTagList);
 	set_new_ppc_patch(Intuition,CloseWindow);
@@ -348,6 +365,7 @@ void undo_patches( void )
 	undo_ppc_patch(Intuition,FreeScreenBuffer);
 	undo_ppc_patch(Intuition,ChangeScreenBuffer);
 	undo_ppc_patch(Intuition,MoveWindow);
+	undo_ppc_patch(Intuition,SizeWindow);
 
 	undo_ppc_patch(Intuition,OpenWindowTagList);
 	undo_ppc_patch(Intuition,CloseWindow);
