@@ -37,6 +37,8 @@ extern BPTR output;
 extern ULONG host_sig;
 extern struct Task *host_task;
 
+extern struct TextFont *default_font;
+
 struct amiga_rgb
 {
 	uint32 r;
@@ -248,7 +250,7 @@ enum
 
 LONG mouse_state = 0;
 struct Window *clicked_win=NULL;
-LONG drag_x,drag_y;
+LONG clicked_x,clicked_y;
 
 void dialog_click( struct Screen *src )
 {
@@ -294,8 +296,8 @@ void dialog_click( struct Screen *src )
 					{
 						mouse_state = drag_action;
 						clicked_win = win;
-						drag_x = win -> MouseX;
-						drag_y = win -> MouseY;
+						clicked_x = win -> MouseX;
+						clicked_y = win -> MouseY;
 					}
 				}
 				break;
@@ -315,6 +317,8 @@ void dialog_click( struct Screen *src )
 						{
 							mouse_state = size_action;
 							clicked_win = win;
+							clicked_x = win -> MouseX - win -> Width;
+							clicked_y = win -> MouseY - win -> Height;
 						}
 					}
 				}
@@ -348,13 +352,35 @@ void drag_window(struct Screen *src)
 
 	if (window_open(src,clicked_win))
 	{
-		dx = clicked_win -> MouseX - drag_x;
-		dy = clicked_win -> MouseY - drag_y;
+		dx = clicked_win -> MouseX - clicked_x;
+		dy = clicked_win -> MouseY - clicked_y;
 
 		if (dx | dy)
 		{
 			FPrintf( output, "dx %ld dy %ld\n",dx,dy);
 			no_block_MoveWindow( clicked_win, dx, dy  );
+		}
+	}
+}
+
+void size_window(struct Screen *src)
+{
+	int cx,cy;
+	int dx,dy;
+
+	FPrintf( output, "%s\n",__FUNCTION__);
+
+	if (window_open(src,clicked_win))
+	{
+		cx = clicked_x<0 ? clicked_win -> Width + clicked_x : clicked_x;
+		cy = clicked_y<0 ? clicked_win -> Height + clicked_y : clicked_y;
+
+		dx = clicked_win -> MouseX - cx;
+		dy = clicked_win -> MouseY - cy;
+
+		if (dx | dy)
+		{
+			no_block_SizeWindow( clicked_win, dx, dy  );
 		}
 	}
 }
@@ -375,10 +401,13 @@ void send_closeWindow(struct MsgPort *port)
 
 void dump_screen()
 {
+	struct RastPort local_rp;
 	struct TimerContext tc;
 	struct Screen *src;
 	ULONG win_mask = 0;
 	struct BitMap *dest_bitmap;
+
+	bool no_screens = false;
 
 	bzero( &tc , sizeof(struct TimerContext) );
 
@@ -411,6 +440,11 @@ void dump_screen()
 	if (!win) return ;
 
 	dest_bitmap =AllocBitMap( 640, 480, 32, BMF_DISPLAYABLE, win ->RPort -> BitMap);
+
+	InitRastPort( &local_rp );
+	local_rp.BitMap = dest_bitmap;
+
+	SetFont( &local_rp, default_font );
 
 	if (!dest_bitmap) return ;
 
@@ -480,6 +514,10 @@ void dump_screen()
 						
 							switch (mouse_state)
 							{
+								case size_action:
+										size_window( src );
+										break;
+
 								case drag_action:
 										drag_window( src );
 										break;
@@ -539,11 +577,39 @@ void dump_screen()
 			src = first_fake_screen();
 			if (src)
 			{
+				no_screens = false;
+
 				update_argb_lookup( src -> ViewPort.ColorMap );
 				draw_screen( win,  src -> RastPort.BitMap, dest_bitmap );
  				comp_window_update( src, dest_bitmap, win);
-
 			}
+			else
+			{
+				struct Screen src;
+				const char info[]= "No AGA Screens open";
+
+				if (no_screens == false)
+				{
+					RectFillColor( &local_rp,0,0,640,480, 0xFF000000);
+
+					SetRPAttrs( &local_rp,  
+						RPTAG_APenColor, 0xFFFFFFFF,
+						RPTAG_BPenColor, 0xFF000000,
+						TAG_END);
+
+					Move( &local_rp, 20,20 );
+					Text( &local_rp, info, strlen(info) );
+					
+				}
+
+				no_screens = true;
+
+				src.Width = 640;
+				src.Height = 480;
+
+ 				comp_window_update( &src, dest_bitmap, win);
+			}
+
 			MutexRelease(video_mutex);
 
 			reset_timer( tc.timer_io );
