@@ -8,6 +8,7 @@ tests_c += OpenWindow.c
 tests_c += dbuf.c
 tests_c += Gadtools.c
 tests_c += ResizeWindow.c
+tests_c += SetWindowTitles.c 
 
 incdir = -I../ -I./
 
