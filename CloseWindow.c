@@ -1,7 +1,9 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -39,7 +41,6 @@ struct Window * fake_CloseWindow ( struct Window *w )
 			w -> UserPort = NULL;
 		}
 
-
 		// Free Bitmap, if its not the same as screen bitmap.
 
 		if (w -> RPort -> BitMap != w -> WScreen -> RastPort.BitMap)
@@ -52,6 +53,12 @@ struct Window * fake_CloseWindow ( struct Window *w )
 		FreeVec( w-> RPort);
 		w -> RPort = NULL;
 	}
+
+	if (w -> Title) free( w-> Title);
+	w->Title= NULL; 
+
+	if (w->ScreenTitle) free(w -> ScreenTitle);
+	w -> ScreenTitle = NULL;
 
 	FreeVec( w );
 

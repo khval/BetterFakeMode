@@ -1,7 +1,9 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -31,6 +33,9 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 	win -> BorderRight = 2;
 	win -> BorderBottom = 0;
 
+	win -> Title = NULL;
+	win -> ScreenTitle = NULL;
+
 	if (nw)
 	{
     		win->DetailPen=nw->DetailPen;
@@ -39,7 +44,7 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 		win->Flags=nw->Flags;
 		win->FirstGadget=nw->FirstGadget;
 		win->CheckMark=nw->CheckMark;
-		win->Title=nw->Title;
+		win->Title=nw -> Title ? strdup(nw->Title) : NULL;
 		win->WScreen=nw->Screen;
 		win->MinWidth=nw->MinWidth;
 		win->MinHeight=nw->MinHeight;
@@ -64,11 +69,23 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 				win->Flags=tag -> ti_Data; break; 
 
 			case WA_Title:
-				win->Title= (char *) tag -> ti_Data; break; 
+
+				if (tag -> ti_Data)
+				{
+					if (win -> Title) free( win-> Title);
+					win->Title= (char *) tag -> ti_Data; 
+				}
+				break; 
 
 			case WA_ScreenTitle:
-				win->ScreenTitle= (char *) tag -> ti_Data; break; 
 
+				if (tag -> ti_Data)
+				{
+					if (win->ScreenTitle) free(win -> ScreenTitle);
+					win -> ScreenTitle = strdup((char *) tag -> ti_Data);
+				}
+				 break; 
+		
 			case WA_CustomScreen: 
 				win -> WScreen = (struct Screen *) tag -> ti_Data; break; 
 
@@ -161,8 +178,6 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 		}
 
 	}
-
-	Delay(50);
 
 	return win;
 }
