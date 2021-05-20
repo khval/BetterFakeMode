@@ -508,7 +508,7 @@ void dump_screen()
 							src -> MouseY = host_my * src -> Height / host_h;
 
 
-							FPrintf( output, "host %ld, %ld, mouse %ld, %ld\n", host_w, host_h, host_mx, host_my);
+
 
 							update_fake_window_mouse_xy(src)	;
 						
@@ -520,6 +520,10 @@ void dump_screen()
 
 								case drag_action:
 										drag_window( src );
+										break;
+
+								default:
+//										FPrintf( output, "host %ld, %ld, mouse %ld, %ld\n", host_w, host_h, host_mx, host_my);
 										break;
 							}
 							break;
