@@ -35,6 +35,7 @@ APTR old_ppc_func_FreeScreenBuffer = NULL;
 APTR old_ppc_func_ChangeScreenBuffer = NULL;
 APTR old_ppc_func_MoveWindow = NULL;
 APTR old_ppc_func_SizeWindow = NULL;
+APTR old_ppc_func_SetWindowTitles = NULL;
 
 #define _LVOOpenScreen	-198
 #define _LVOCloseScreen	-66
@@ -271,8 +272,6 @@ static void ppc_func_CloseWindow( struct IntuitionIFace *Self, struct Window *w 
 
 static void ppc_func_MoveWindow( struct IntuitionIFace *Self, struct Window *w, LONG dx, LONG dy  )
 {
-	FPrintf( output,"MoveWindow\n");
-
 	if (is_fake_screen( w -> WScreen ))
 	{
 		fake_MoveWindow( w,dx,dy );
@@ -285,8 +284,6 @@ static void ppc_func_MoveWindow( struct IntuitionIFace *Self, struct Window *w, 
 
 static void ppc_func_SizeWindow( struct IntuitionIFace *Self, struct Window *w, LONG dx, LONG dy  )
 {
-	FPrintf( output,"SizeWindow\n");
-
 	if (is_fake_screen( w -> WScreen ))
 	{
 		fake_SizeWindow( w,dx,dy );
@@ -294,6 +291,20 @@ static void ppc_func_SizeWindow( struct IntuitionIFace *Self, struct Window *w, 
 	else
 	{
 		((void (*) ( struct IntuitionIFace *, struct Window *window, LONG x,  LONG y )) old_ppc_func_SizeWindow) (Self, w,dx,dy);
+	}
+}
+
+static void ppc_func_SetWindowTitles( struct IntuitionIFace *Self, struct Window *w, const char *winStr, const char *srcStr  )
+{
+	if (is_fake_screen( w -> WScreen ))
+	{
+		FPrintf( output,"SetWindowTitles (fake)\n");
+		fake_SetWindowTitles( w,winStr, srcStr );
+	}
+	else
+	{
+		FPrintf( output,"SetWindowTitles (native)\n");
+		((void (*) ( struct IntuitionIFace *, struct Window *window, const char *, const char * )) old_ppc_func_SetWindowTitles) (Self, w, winStr, srcStr );
 	}
 }
 
@@ -345,6 +356,7 @@ BOOL set_patches( void )
 	set_new_ppc_patch(Intuition,ChangeScreenBuffer);
 	set_new_ppc_patch(Intuition,MoveWindow);
 	set_new_ppc_patch(Intuition,SizeWindow);
+	set_new_ppc_patch(Intuition,SetWindowTitles);
 
 	set_new_ppc_patch(Intuition,OpenWindowTagList);
 	set_new_ppc_patch(Intuition,CloseWindow);
@@ -366,6 +378,7 @@ void undo_patches( void )
 	undo_ppc_patch(Intuition,ChangeScreenBuffer);
 	undo_ppc_patch(Intuition,MoveWindow);
 	undo_ppc_patch(Intuition,SizeWindow);
+	undo_ppc_patch(Intuition,SetWindowTitles);
 
 	undo_ppc_patch(Intuition,OpenWindowTagList);
 	undo_ppc_patch(Intuition,CloseWindow);

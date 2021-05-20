@@ -8,6 +8,7 @@ files = init.c \
 	SizeWindow.c \
 	AllocScreenBuffer.c \
 	renderWindow.c \
+	SetWindowTitles.c \
 	helper/screen.c \
 	spawn.c \
 	engine.c \
