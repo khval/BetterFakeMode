@@ -9,6 +9,7 @@
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
+#include <proto/gadtools.h>
 #include <exec/emulation.h>
 
 #include "init.h"

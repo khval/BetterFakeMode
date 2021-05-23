@@ -9,6 +9,7 @@
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
+#include <proto/gadtools.h>
 #include <exec/emulation.h>
 
 #include "init.h"
@@ -187,21 +188,17 @@ int main()
 
 		win[0] = OpenWindowTags( NULL, 
 			WA_Title, "Back Win",
-			WA_Flags, WFLG_SIZEBBOTTOM,
+			WA_Flags, WFLG_DRAGBAR ,
 			WA_Left, 10, WA_Top, 10,
 			WA_Width, 100, WA_Height, 100,
-			WA_MinWidth, 100, WA_MinHeight, 100,
-			WA_MaxWidth, 320, WA_MaxHeight, 200,
 			WA_CustomScreen, src, TAG_END);
 
 		win[1] = OpenWindowTags( NULL, 
 			WA_IDCMP, IDCMP_CLOSEWINDOW,
-			WA_Flags, WFLG_DRAGBAR | WFLG_CLOSEGADGET | WFLG_SIZEGADGET,
+			WA_Flags, WFLG_DRAGBAR | WFLG_CLOSEGADGET,
 			WA_Title, "Front Win",
 			WA_Left, 50, WA_Top, 50,
 			WA_Width, 100, WA_Height, 100,
-			WA_MinWidth, 100, WA_MinHeight, 100,
-			WA_MaxWidth, 320, WA_MaxHeight, 200,
 			WA_CustomScreen, src, TAG_END);
 
 
@@ -211,30 +208,10 @@ int main()
 
 		if (win[0])
 		{
-			int x,y;
-
-			ActivateWindow( win[0] );
-
-			SetAPen( win[0] -> RPort, 2);
-
-			x = rand()%200;
-			y = rand()%200;
-			Move( win[0] -> RPort,x,y );
-
-			for (n=0;n<100;n++)
-			{
-				x = rand()%200;
-				y = rand()%200;
-				Draw( win[0] -> RPort,x,y );
-				printf("xy %d,%d\n",x,y);
-			}
-
 			for (n=0;n<10;n++)
 			{
-				Delay(20);
-				SizeWindow( win[0], 20, 20 );
-				Delay(20);
-				SizeWindow( win[0], -20, -20 );
+				Delay(5);
+				ActivateWindow( win[n&1]);
 			}
 		}
 
