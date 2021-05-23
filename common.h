@@ -14,7 +14,9 @@ extern BPTR output;
 #define new_struct(x) 	(struct x *) IExec->AllocVecTags( sizeof(struct x), AVT_Type, MEMF_SHARED,AVT_ClearWithValue, 0, TAG_END)
 #endif
 
+extern APTR video_mutex;
 extern struct TextFont *default_font;
+extern struct Window *active_win;
 
 extern struct Screen * _new_fake_OpenScreenTagList( const struct NewScreen * newScreen, const struct TagItem * tagList);
 extern void _delete_fake_screen( struct Screen *s );
@@ -27,7 +29,15 @@ extern ULONG fake_ChangeScreenBuffer ( struct Screen * sc, struct ScreenBuffer *
 
 extern void fake_MoveWindow( struct Window *w, LONG dx, LONG dy  );
 extern void fake_SizeWindow( struct Window *w, LONG dx, LONG dy  );
+extern void fake_ActivateWindow( struct Window *w );
+
+extern void box(struct RastPort *rp,int x0,int y0,int x1, int y1);
+
+extern void RenderGadget(struct RastPort *rp, struct Gadget *g);
+extern void RenderGadgets(struct RastPort *rp, struct Gadget *g);
+extern void RenderWindow(struct Window *win);
 
 extern void no_block_MoveWindow ( struct Window *win, LONG dx, LONG dy );
 extern void no_block_SizeWindow ( struct Window *win, LONG dx, LONG dy );
+extern void no_block_ActivateWindow( struct Window *w );
 

@@ -13,6 +13,10 @@
 #include <exec/emulation.h>
 #include <exec/ports.h>
 
+#include "common.h"
+
+extern struct Window *active_win;
+
 void box(struct RastPort *rp,int x0,int y0,int x1, int y1)
 {
 	Move(rp,x0,y0);
@@ -44,10 +48,12 @@ void ClearBorder(struct Window *win)
 	RectFill( rp,0,y0,win -> Width,y1 );
 }
 
+extern void ReThinkGadgets(struct Window *w);
+
 void RenderWindow(struct Window *win)
 {
 	int icon_w,icon_h;
-	int left_x, right_x;
+	int left_x = 0, right_x = 0;
 	int x1,y1;
 	int tmp_DetailPen;
 	struct RastPort *rp = win -> RPort;
@@ -57,7 +63,14 @@ void RenderWindow(struct Window *win)
 
 	tmp_DetailPen = win -> DetailPen;
 
-	SetAPen(rp,2);
+	if (active_win == win)
+	{
+		SetAPen(rp,3);
+	}
+	else
+	{
+		SetAPen(rp,2);
+	}
 
 	box(rp,0,0,x1,y1);
 	box(rp, win->BorderLeft, win -> BorderTop,x1 - win -> BorderRight,y1 - win -> BorderBottom );
@@ -65,23 +78,9 @@ void RenderWindow(struct Window *win)
 	icon_w = win -> BorderTop;
 	icon_h = win -> BorderTop;
 
-	left_x =0;
+	if (win -> FirstGadget) ReThinkGadgets( win );
+	if (win -> FirstGadget) RenderGadgets( win -> RPort, win -> FirstGadget);
 
-	if (win -> Flags & WFLG_CLOSEGADGET)
-	{
-		box(rp, 2, 2, icon_w - 2, icon_h - 2);
-		left_x += icon_w;
-	}
-
-	if (win -> Flags & WFLG_SIZEGADGET)
-	{
-		ULONG x,y;
-		x = win -> Width - icon_w;
-		y = win -> Height - icon_h;
-
-		box(rp, x+2, y+2, x+icon_w - 2, y+icon_h - 2);
-	}
-	
 	if (win -> Title)
 	{
 		int y;

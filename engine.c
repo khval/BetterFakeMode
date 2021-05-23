@@ -15,6 +15,7 @@
 #include <exec/emulation.h>
 #include <exec/ports.h>
 
+#include "common.h"
 #include "engine.h"
 #include "EngineTimer.h"
 #include "helper/screen.h"
@@ -247,86 +248,97 @@ enum
 	close_action
 };
 
-
 LONG mouse_state = 0;
-struct Window *clicked_win=NULL;
+struct Window *active_win=NULL;
 LONG clicked_x,clicked_y;
 
-void dialog_click( struct Screen *src )
+void ClickButtons( struct Window *win )
 {
-	LONG icon_w;
-	LONG icon_h;
-	struct Window *win;
+	ULONG x1,y1;
+	LONG mx,my;
+	struct Gadget *g;
 
-	FPrintf( output, "%s\n",__FUNCTION__);
+	mx = win -> MouseX;
+	my = win -> MouseY;
 
-	for(win = src -> FirstWindow;win;win = win -> NextWindow)
+	FPrintf( output, "mouse %ld,%ld\n",mx,my);
+
+	for (g = win -> FirstGadget; g ; g = g -> NextGadget )
 	{
-		win -> MouseX = src -> MouseX - win -> LeftEdge;
-		win -> MouseY = src -> MouseY - win -> TopEdge;
-
-		icon_w = win -> BorderTop;
-		icon_h = win -> BorderTop;
-
-		FPrintf( output, "win %ld, %ld\n", win -> MouseX, win -> MouseY);
-
-		if ((win -> MouseX>=0) && (win -> MouseX<=win -> Width))
+		x1 = g -> LeftEdge +  g -> Width;
+		y1 = g -> TopEdge + g -> Height;
+		
+		if (
+			( mx >= g -> LeftEdge ) && ( mx < x1) &&
+			( my >= g -> TopEdge) && ( my < y1)
+		)
 		{
-			FPrintf( output, "X\n");
-
-			if ((win -> MouseY>=0) && (win -> MouseY<=win -> BorderTop))		// window title, drag bar.
+			switch ( g-> Flags)
 			{
-				LONG left_x = 0;
-			
-				if (win -> Flags & WFLG_CLOSEGADGET)
-				{
-					if (win -> MouseX < icon_w)
-					{
-						mouse_state = close_action;
-						clicked_win = win;
-					}
-					left_x += icon_w;
-				}
+				case GTYP_CLOSE: 
+					mouse_state = close_action;
+					break;
 
+				case GTYP_WDRAGGING:
+					mouse_state = drag_action;
+					clicked_x = mx;
+					clicked_y = my;
+					break;
 
+				case GTYP_WDEPTH:
+					break;
 
-				if (win -> Flags & WFLG_DRAGBAR)
-				{
-					if (win -> MouseX >= left_x)
-					{
-						mouse_state = drag_action;
-						clicked_win = win;
-						clicked_x = win -> MouseX;
-						clicked_y = win -> MouseY;
-					}
-				}
-				break;
+				case WFLG_SIZEGADGET:
+					mouse_state = size_action;
+					clicked_x = win -> Width - mx;
+					clicked_y = win -> Height -  my;
+					break;
+
+				default:
+					break;
 			}
-			else 
-			{
-				if (win -> Flags & WFLG_SIZEGADGET)
-				{
-					ULONG x,y;
-
-					x = win -> Width - icon_w;
-					y = win -> Height - icon_h;
-
-					if ((win -> MouseY > y) && (win -> MouseY < win -> Height))
-					{
-						if ((win -> MouseX > x) && (win -> MouseX < win -> Width))
-						{
-							mouse_state = size_action;
-							clicked_win = win;
-							clicked_x = win -> MouseX - win -> Width;
-							clicked_y = win -> MouseY - win -> Height;
-						}
-					}
-				}
-			}
-		}
+		}		
 	}
 }
 
+void WindowClick( struct Screen *src )
+{
+	ULONG mx,my;
+	struct Window *win;
+	struct Window *clicked_win;
+	UWORD last_clicked_layer_priority = ~0;
+
+	FPrintf( output, "%s\n",__FUNCTION__);
+
+	// update mouse x,y in window, and check what window is clicked.
+
+	clicked_win = NULL;
+	for(win = src -> FirstWindow;win;win = win -> NextWindow)
+	{
+		mx = win -> MouseX = src -> MouseX - win -> LeftEdge;
+		my = win -> MouseY = src -> MouseY - win -> TopEdge;
+
+		if (
+			(mx>=0) && (mx<win -> Width) &&
+			(my>=0) && (my<win -> Height)
+		)
+		{
+			if (win -> WLayer -> priority < last_clicked_layer_priority )
+			{
+				clicked_win = win;
+				last_clicked_layer_priority = win -> WLayer -> priority;
+			}
+		}
+	}
+
+	// if window is clicked, check if any buttons are clicked.
+
+	if (clicked_win)
+	{
+		no_block_ActivateWindow( clicked_win );
+	 	ClickButtons( clicked_win );
+	}
+}
 
 bool window_open(struct Screen *src,struct Window *check_win)
 {
@@ -350,15 +362,14 @@ void drag_window(struct Screen *src)
 
 	FPrintf( output, "%s\n",__FUNCTION__);
 
-	if (window_open(src,clicked_win))
+	if (window_open(src,active_win))
 	{
-		dx = clicked_win -> MouseX - clicked_x;
-		dy = clicked_win -> MouseY - clicked_y;
+		dx = active_win -> MouseX - clicked_x;
+		dy = active_win -> MouseY - clicked_y;
 
 		if (dx | dy)
 		{
-			FPrintf( output, "dx %ld dy %ld\n",dx,dy);
-			no_block_MoveWindow( clicked_win, dx, dy  );
+			no_block_MoveWindow( active_win, dx, dy  );
 		}
 	}
 }
@@ -370,17 +381,17 @@ void size_window(struct Screen *src)
 
 	FPrintf( output, "%s\n",__FUNCTION__);
 
-	if (window_open(src,clicked_win))
+	if (window_open(src,active_win))
 	{
-		cx = clicked_x<0 ? clicked_win -> Width + clicked_x : clicked_x;
-		cy = clicked_y<0 ? clicked_win -> Height + clicked_y : clicked_y;
+		cx = clicked_x<0 ? active_win -> Width + clicked_x : clicked_x;
+		cy = clicked_y<0 ? active_win -> Height + clicked_y : clicked_y;
 
-		dx = clicked_win -> MouseX - cx;
-		dy = clicked_win -> MouseY - cy;
+		dx = active_win -> MouseX - cx;
+		dy = active_win -> MouseY - cy;
 
 		if (dx | dy)
 		{
-			no_block_SizeWindow( clicked_win, dx, dy  );
+			no_block_SizeWindow( active_win, dx, dy  );
 		}
 	}
 }
@@ -507,9 +518,6 @@ void dump_screen()
 							src -> MouseX = host_mx * src -> Width / host_w;
 							src -> MouseY = host_my * src -> Height / host_h;
 
-
-
-
 							update_fake_window_mouse_xy(src)	;
 						
 							switch (mouse_state)
@@ -540,11 +548,9 @@ void dump_screen()
 								{
 									case close_action:
 
-										if (window_open(src,clicked_win))
+										if (window_open(src,active_win))
 										{
-											FPrintf( output, "Hit the close button, UserPort: %08x\n", clicked_win -> UserPort);
-
-											send_closeWindow( clicked_win -> UserPort );
+											send_closeWindow( active_win -> UserPort );
 										}
 										break;
 								}
@@ -558,7 +564,7 @@ void dump_screen()
 								switch (mouse_state)
 								{
 									case no_action:
-											dialog_click( src );
+											WindowClick( src );
 											break;
 								}
 							}

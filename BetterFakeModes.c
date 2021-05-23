@@ -36,6 +36,7 @@ APTR old_ppc_func_ChangeScreenBuffer = NULL;
 APTR old_ppc_func_MoveWindow = NULL;
 APTR old_ppc_func_SizeWindow = NULL;
 APTR old_ppc_func_SetWindowTitles = NULL;
+APTR old_ppc_func_ActivateWindow = NULL;
 
 #define _LVOOpenScreen	-198
 #define _LVOCloseScreen	-66
@@ -120,49 +121,29 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 		sd = newScreen -> Depth;
 	}
 
-FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-
 	if ((newScreen) && (tagList == NULL))
 	{
 		is_lagacy = maybe_lagacy;
 	}
 	else 
 	{
-FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-
 		is_lagacy =legacy_in_tags(  tagList, maybe_lagacy );
 	}
-
-FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 	if (is_lagacy)
 	{
 		struct Screen *src;
 
-FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-
 		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we allocate screen.
-
-FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-
 		src = _new_fake_OpenScreenTagList( newScreen, tagList );
 
-FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-
 		if (src) num_of_open_screens ++;
-
-FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-
 		IExec->MutexRelease(video_mutex);
-
-FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 		return src;
 	}
 	else
 	{
-		FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-
 		return (( struct Screen * (*)(struct IntuitionIFace *, const struct NewScreen * , const struct TagItem * )) old_ppc_func_OpenScreenTagList ) ( Self, newScreen, tagList );
 	}
 
@@ -270,6 +251,20 @@ static void ppc_func_CloseWindow( struct IntuitionIFace *Self, struct Window *w 
 	}
 }
 
+static void ppc_func_ActivateWindow( struct IntuitionIFace *Self, struct Window *w )
+{
+	FPrintf( output,"ActivateWindow\n");
+
+	if (is_fake_screen( w -> WScreen ))
+	{
+		fake_ActivateWindow( w );
+	}
+	else
+	{
+		((void (*) ( struct IntuitionIFace *, struct Window *window )) old_ppc_func_ActivateWindow) (Self, w);
+	}
+}
+
 static void ppc_func_MoveWindow( struct IntuitionIFace *Self, struct Window *w, LONG dx, LONG dy  )
 {
 	if (is_fake_screen( w -> WScreen ))
@@ -357,6 +352,7 @@ BOOL set_patches( void )
 	set_new_ppc_patch(Intuition,MoveWindow);
 	set_new_ppc_patch(Intuition,SizeWindow);
 	set_new_ppc_patch(Intuition,SetWindowTitles);
+	set_new_ppc_patch(Intuition,ActivateWindow);
 
 	set_new_ppc_patch(Intuition,OpenWindowTagList);
 	set_new_ppc_patch(Intuition,CloseWindow);
@@ -379,6 +375,7 @@ void undo_patches( void )
 	undo_ppc_patch(Intuition,MoveWindow);
 	undo_ppc_patch(Intuition,SizeWindow);
 	undo_ppc_patch(Intuition,SetWindowTitles);
+	undo_ppc_patch(Intuition,ActivateWindow);
 
 	undo_ppc_patch(Intuition,OpenWindowTagList);
 	undo_ppc_patch(Intuition,CloseWindow);

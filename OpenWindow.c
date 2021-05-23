@@ -17,6 +17,47 @@
 
 extern void RenderWindow(struct Window *win);
 
+void addGadget(struct Window *win, ULONG icon_s, ULONG flags)
+{
+	struct Gadget *g = new_struct( Gadget );
+
+	if (g)
+	{
+		g -> Flags = flags;
+		g -> NextGadget = win -> FirstGadget;
+		g -> Width = icon_s;
+		g -> Height  = icon_s;
+		win -> FirstGadget = g;
+	}
+}
+
+ULONG get_default_icon_size(struct RastPort *rp)
+{
+	ULONG icon_s = rp -> Font -> tf_YSize + 4;
+	if (icon_s < 5) icon_s = 5;
+	return icon_s;
+}
+
+void addWindowGadgets( struct Window *win )
+{
+	ULONG icon_s = get_default_icon_size( win -> RPort );
+
+	if (win -> Flags)
+	{
+		if (win->Flags & WFLG_CLOSEGADGET)
+			addGadget( win, icon_s, GTYP_CLOSE );
+
+		if (win->Flags & WFLG_DRAGBAR)
+			addGadget( win, icon_s, GTYP_WDRAGGING );
+
+		if (win->Flags & WFLG_DEPTHGADGET)
+			addGadget( win, icon_s, GTYP_WDEPTH );
+
+		if (win->Flags & WFLG_SIZEGADGET)
+			addGadget( win, icon_s, GTYP_SIZING );
+	}
+}
+
 struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const struct TagItem * tagList)
 {
 	struct Window *win = NULL;
@@ -66,7 +107,8 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 				win->IDCMPFlags=tag -> ti_Data; break; 
 
 			case WA_Flags:
-				win->Flags=tag -> ti_Data; break; 
+				win->Flags=tag -> ti_Data;
+				break; 
 
 			case WA_Title:
 
@@ -117,7 +159,6 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 		}
 	}
 
-
 	if (win -> IDCMPFlags)
 	{
 		win -> UserPort = (APTR) AllocSysObjectTags(ASOT_PORT, TAG_DONE);
@@ -142,7 +183,9 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 
 			SetFont( win -> RPort, default_font );
 
-			icon_s = win -> RPort -> Font -> tf_YSize + 4;
+			icon_s = get_default_icon_size( win -> RPort );
+
+			addWindowGadgets( win );
 
 			if (win -> Title)
 			{
