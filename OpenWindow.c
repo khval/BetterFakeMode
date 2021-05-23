@@ -73,7 +73,7 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 				if (tag -> ti_Data)
 				{
 					if (win -> Title) free( win-> Title);
-					win->Title= (char *) tag -> ti_Data; 
+					win->Title= strdup((char *) tag -> ti_Data); 
 				}
 				break; 
 

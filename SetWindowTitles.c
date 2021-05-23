@@ -21,6 +21,8 @@ void fake_SetWindowTitles( struct Window *win, const char *winStr, const char *s
 {
 FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
+	MutexObtain(video_mutex);
+
 FPrintf( output,"Title: %08lx, ScreenTitle: %08lx\n", win -> Title, win -> ScreenTitle);
 
 	if (winStr)
@@ -40,6 +42,7 @@ FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 	RenderWindow(win);
+	MutexRelease(video_mutex);
 
 FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 }
