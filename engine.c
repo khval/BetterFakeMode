@@ -252,7 +252,7 @@ LONG mouse_state = 0;
 struct Window *active_win=NULL;
 LONG clicked_x,clicked_y;
 
-void ClickButtons( struct Window *win )
+bool ClickButtons( struct Window *win )
 {
 	ULONG x1,y1;
 	LONG mx,my;
@@ -277,31 +277,36 @@ void ClickButtons( struct Window *win )
 			{
 				case GTYP_CLOSE: 
 					mouse_state = close_action;
-					break;
+					return true;
 
 				case GTYP_WDRAGGING:
 					mouse_state = drag_action;
 					clicked_x = mx;
 					clicked_y = my;
-					break;
+					return true;
 
 				case GTYP_WDEPTH:
-					break;
+					return true;
 
 				case WFLG_SIZEGADGET:
 					mouse_state = size_action;
 					clicked_x = win -> Width - mx;
 					clicked_y = win -> Height -  my;
-					break;
+					return true;
 
 				default:
-					break;
+					return true;
 			}
 		}		
 	}
+
+	return false;
 }
 
-void WindowClick( struct Screen *src )
+
+// return true, if you have clicked on button.
+
+bool WindowClick( struct Screen *src )
 {
 	ULONG mx,my;
 	struct Window *win;
@@ -336,8 +341,10 @@ void WindowClick( struct Screen *src )
 	if (clicked_win)
 	{
 		no_block_ActivateWindow( clicked_win );
-	 	ClickButtons( clicked_win );
+	 	return ClickButtons( clicked_win );
+		
 	}
+	return false;
 }
 
 bool window_open(struct Screen *src,struct Window *check_win)
@@ -396,17 +403,77 @@ void size_window(struct Screen *src)
 	}
 }
 
-void send_closeWindow(struct MsgPort *port)
+void send_copy( struct Window *win,  struct IntuiMessage *source_msg )
 {
-	struct IntuiMessage *msg;
-	msg = (struct IntuiMessage *) AllocSysObjectTags(ASOT_MESSAGE,
-		ASOMSG_Size, sizeof(struct IntuiMessage),
-		TAG_DONE);
-
-	if (msg)
+	if (win -> IDCMPFlags & source_msg -> Class)
 	{
-		msg -> Class = IDCMP_CLOSEWINDOW;
-		PutMsg( port, (struct Message *) msg);
+		struct IntuiMessage *msg;
+		msg = (struct IntuiMessage *) AllocSysObjectTags(ASOT_MESSAGE,
+			ASOMSG_Size, sizeof(struct IntuiMessage),
+			TAG_DONE);
+
+		if (msg)
+		{
+			msg -> Class = source_msg -> Class;
+			msg -> Code = source_msg -> Code;
+			msg -> MouseX = source_msg -> MouseX;
+			msg -> MouseY = source_msg -> MouseY;
+			PutMsg( win -> UserPort, (struct Message *) msg);
+		}
+	}
+}
+
+void send_mouse_move( struct Window *win,  struct IntuiMessage *source_msg )
+{
+	if (win -> IDCMPFlags & source_msg -> Class)
+	{
+		struct IntuiMessage *msg;
+		msg = (struct IntuiMessage *) AllocSysObjectTags(ASOT_MESSAGE,
+			ASOMSG_Size, sizeof(struct IntuiMessage),
+			TAG_DONE);
+
+		if (msg)
+		{
+			msg -> Class = source_msg -> Class;
+			msg -> Code = source_msg -> Code;
+			msg -> MouseX = win -> MouseX;
+			msg -> MouseY = win -> MouseY;
+			PutMsg( win -> UserPort, (struct Message *) msg);
+		}
+	}
+}
+
+void send_INTUITICKS( struct Window *win  )
+{
+	if (win -> IDCMPFlags & IDCMP_INTUITICKS)
+	{
+		struct IntuiMessage *msg;
+		msg = (struct IntuiMessage *) AllocSysObjectTags(ASOT_MESSAGE,
+			ASOMSG_Size, sizeof(struct IntuiMessage),
+			TAG_DONE);
+
+		if (msg)
+		{
+			msg -> Class = IDCMP_INTUITICKS;
+			PutMsg( win -> UserPort, (struct Message *) msg);
+		}
+	}
+}
+
+void send_closeWindow(struct Window *win)
+{
+	if (win -> IDCMPFlags & IDCMP_CLOSEWINDOW)
+	{
+		struct IntuiMessage *msg;
+		msg = (struct IntuiMessage *) AllocSysObjectTags(ASOT_MESSAGE,
+			ASOMSG_Size, sizeof(struct IntuiMessage),
+			TAG_DONE);
+
+		if (msg)
+		{
+			msg -> Class = IDCMP_CLOSEWINDOW;
+			PutMsg( win -> UserPort, (struct Message *) msg);
+		}
 	}
 }
 
@@ -438,6 +505,7 @@ void dump_screen()
 				IDCMP_CLOSEWINDOW |
 				IDCMP_MOUSEBUTTONS | 
 				IDCMP_MOUSEMOVE |
+				IDCMP_INTUITICKS |
 				IDCMP_GADGETUP
 			,
 			WA_RMBTrap, true,
@@ -508,6 +576,8 @@ void dump_screen()
 
 				if (src)
 				{
+					bool has_active_win = window_open(src,active_win);
+						
 					switch (m -> Class)
 					{
 						case IDCMP_MOUSEMOVE:
@@ -531,8 +601,16 @@ void dump_screen()
 										break;
 
 								default:
-//										FPrintf( output, "host %ld, %ld, mouse %ld, %ld\n", host_w, host_h, host_mx, host_my);
+										if (has_active_win) send_mouse_move( active_win , m );
 										break;
+							}
+							break;
+
+						case IDCMP_INTUITICKS:
+
+							if (window_open(src,active_win))
+							{
+								send_INTUITICKS( active_win );
 							}
 							break;
 
@@ -540,18 +618,15 @@ void dump_screen()
 
 							FPrintf( output, "IDCMP_MOUSEBUTTONS\n");
 
-							FPrintf( output, "Code: %lx\n", m->Code &~IECODE_UP_PREFIX);
-
 							if ( m->Code & IECODE_UP_PREFIX)
 							{
 								switch (mouse_state)
 								{
 									case close_action:
-
-										if (window_open(src,active_win))
-										{
-											send_closeWindow( active_win -> UserPort );
-										}
+										if (has_active_win) send_closeWindow( active_win );
+										break;
+									default:
+										if (has_active_win) send_copy( active_win , m );
 										break;
 								}
 
@@ -564,8 +639,11 @@ void dump_screen()
 								switch (mouse_state)
 								{
 									case no_action:
-											WindowClick( src );
-											break;
+										if (WindowClick( src ) == false)
+										{
+											if (has_active_win) send_copy( active_win , m );
+										}
+										break;
 								}
 							}
 							break;
