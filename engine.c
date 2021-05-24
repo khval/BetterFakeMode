@@ -236,7 +236,7 @@ void update_fake_window_mouse_xy(struct Screen *src)
 	for(win = src -> FirstWindow;win;win = win -> NextWindow)
 	{
 		win -> MouseX = src -> MouseX - win -> LeftEdge;
-		win -> MouseY = src -> MouseX - win -> TopEdge;
+		win -> MouseY = src -> MouseY - win -> TopEdge;
 	}
 }
 
