@@ -261,6 +261,7 @@ int main()
 							quit = true;
 							break;
 					}
+					ReplyMsg( m );
 					m = (struct IntuiMessage *) GetMsg( win[1] -> UserPort );
 				}
 			}
