@@ -10,6 +10,7 @@ tests_c += Gadtools.c
 tests_c += ResizeWindow.c
 tests_c += SetWindowTitles.c 
 tests_c += ActiveWindow.c
+tests_c += paint.c
 
 incdir = -I../ -I./
 
