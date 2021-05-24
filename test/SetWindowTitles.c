@@ -212,7 +212,11 @@ int main()
 		}
 
 
-		win_mask = win[0] -> UserPort ? 1 << win[0] -> UserPort ->mp_SigBit : 0;
+		win_mask = 0;
+		for (n=0;n<1;n++)
+		{
+			win_mask |= win[n] -> UserPort ? 1 << win[n] -> UserPort ->mp_SigBit : 0;
+		}
 
 		do
 		{
@@ -221,20 +225,24 @@ int main()
 
 			if (sig & SIGBREAKF_CTRL_C)	break;
 
-			if (sig  & win_mask )
+			for (n=0;n<1;n++)
 			{
-				Printf("Got Message\n");
-				m = (struct IntuiMessage *) GetMsg( win[0] -> UserPort );
-
-				while (m)
+				if (sig  & (1 << win[n] -> UserPort ->mp_SigBit) )
 				{
-					switch (m -> Class)
+					m = (struct IntuiMessage *) GetMsg( win[n] -> UserPort );
+
+					while (m)
 					{
-						case IDCMP_CLOSEWINDOW:
-							quit = true;
-							break;
+						switch (m -> Class)
+						{
+							case IDCMP_CLOSEWINDOW:
+								quit = true;
+								break;
+						}
+
+						ReplyMsg( m );
+						m = (struct IntuiMessage *) GetMsg( win[n] -> UserPort );
 					}
-					m = (struct IntuiMessage *) GetMsg( win[0] -> UserPort );
 				}
 			}
 
