@@ -12,6 +12,7 @@ files = init.c \
 	SetWindowTitles.c \
 	ActivateWindow.c \
 	helper/screen.c \
+	helper/debug.c \
 	spawn.c \
 	engine.c \
 	EngineTimer.c

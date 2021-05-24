@@ -17,6 +17,8 @@
 
 extern void RenderWindow(struct Window *win);
 
+extern void dump_tags( const struct TagItem * tagList , struct win_info **nameList);
+
 void addGadget(struct Window *win, ULONG icon_s, ULONG flags)
 {
 	struct Gadget *g = new_struct( Gadget );

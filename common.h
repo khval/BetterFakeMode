@@ -1,4 +1,13 @@
 
+struct debug_tag_info
+{
+	ULONG tag;
+	const char *name; 
+};
+
+extern struct debug_tag_info win_info_tags[];
+extern struct debug_tag_info screen_info_tags[];
+
 extern bool monitor;
 extern BPTR output;
 

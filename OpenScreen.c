@@ -174,6 +174,7 @@ struct Screen * _new_fake_OpenScreenTagList( const struct NewScreen * newScreen,
 		if (newScreen) init_screen_from_newScreen( newScreen, s, &depth );
 		if (tagList)
 		{
+			dump_tags( tagList , screen_info_tags);
 			update_screen_from_taglist(tagList, s, &depth);
 		}
 
