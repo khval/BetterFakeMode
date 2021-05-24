@@ -50,9 +50,11 @@ void ClearBorder(struct Window *win)
 
 extern void ReThinkGadgets(struct Window *w);
 
+extern ULONG get_default_icon_size(struct RastPort *rp);
+
 void RenderWindow(struct Window *win)
 {
-	int icon_w,icon_h;
+	int icon_s;
 	int left_x = 0, right_x = 0;
 	int x1,y1;
 	int tmp_DetailPen;
@@ -75,15 +77,15 @@ void RenderWindow(struct Window *win)
 	box(rp,0,0,x1,y1);
 	box(rp, win->BorderLeft, win -> BorderTop,x1 - win -> BorderRight,y1 - win -> BorderBottom );
 
-	icon_w = win -> BorderTop;
-	icon_h = win -> BorderTop;
-
 	if (win -> FirstGadget) ReThinkGadgets( win );
 	if (win -> FirstGadget) RenderGadgets( win -> RPort, win -> FirstGadget);
 
 	if (win -> Title)
 	{
 		int y;
+		icon_s = get_default_icon_size( win -> RPort );
+
+		if (win->Flags & WFLG_CLOSEGADGET) left_x += icon_s;
 
 		y = win -> BorderTop;
 		y -= win -> RPort -> Font -> tf_YSize;
