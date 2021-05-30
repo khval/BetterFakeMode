@@ -219,7 +219,14 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 			win -> IFont = default_font;
 			win -> WLayer = win -> RPort -> Layer;
 
-			RenderWindow(win);
+			if (win -> Flags & WFLG_ACTIVATE)
+			{
+				no_block_ActivateWindow(win);
+			}
+			else
+			{			
+				RenderWindow(win);
+			}
 		}
 
 	}

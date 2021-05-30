@@ -228,7 +228,11 @@ static struct Window * ppc_func_OpenWindowTagList (struct IntuitionIFace *Self, 
 
 	if (has_a_fake_screen)
 	{
-		return  fake_OpenWindowTagList ( newWindow, tagList);
+		struct Window *win;
+		IExec->MutexObtain(video_mutex);
+		win = fake_OpenWindowTagList ( newWindow, tagList);
+		IExec->MutexRelease(video_mutex);
+		return win;
 	}
 	else
 	{
