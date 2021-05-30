@@ -344,6 +344,7 @@ BOOL set_patches( void )
 //	set_new_68k_patch(Intuition,OpenScreen);			// maybe not needed, as it will end up in PPC routines.
 //	set_new_68k_patch(Intuition,CloseScreen);
 
+	IExec->Forbid();
 	set_new_ppc_patch(Intuition,OpenScreenTagList);
 	set_new_ppc_patch(Intuition,CloseScreen);
 	set_new_ppc_patch(Intuition,AllocScreenBuffer);
@@ -353,12 +354,10 @@ BOOL set_patches( void )
 	set_new_ppc_patch(Intuition,SizeWindow);
 	set_new_ppc_patch(Intuition,SetWindowTitles);
 	set_new_ppc_patch(Intuition,ActivateWindow);
-
 	set_new_ppc_patch(Intuition,OpenWindowTagList);
 	set_new_ppc_patch(Intuition,CloseWindow);
+	IExec->Permit();	
 
-
-	
 	return TRUE;
 }
 
@@ -367,6 +366,8 @@ void undo_patches( void )
 //	undo_68k_patch(Intuition,OpenScreen);			// maybe not needed, as it will end up in PPC routines.
 //	undo_68k_patch(Intuition,CloseScreen);
 
+
+	IExec->Forbid();
 	undo_ppc_patch(Intuition,OpenScreenTagList);
 	undo_ppc_patch(Intuition,CloseScreen);
 	undo_ppc_patch(Intuition,AllocScreenBuffer);
@@ -376,9 +377,9 @@ void undo_patches( void )
 	undo_ppc_patch(Intuition,SizeWindow);
 	undo_ppc_patch(Intuition,SetWindowTitles);
 	undo_ppc_patch(Intuition,ActivateWindow);
-
 	undo_ppc_patch(Intuition,OpenWindowTagList);
 	undo_ppc_patch(Intuition,CloseWindow);
+	IExec->Permit();
 }
 
 bool quit = false;
