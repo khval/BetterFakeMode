@@ -387,6 +387,8 @@ bool quit = false;
 ULONG host_sig;
 struct Task *host_task;
 
+extern void emuEngine();
+
 int main( void )
 {
 	struct Process *display_proc;
@@ -414,7 +416,7 @@ int main( void )
 //	disp_output = IDOS -> Open("CON:660/32/320/200/display debug", MODE_NEWFILE );
 	disp_output = IDOS -> Open("NIL:", MODE_NEWFILE );
 
-	display_proc = spawn( dump_screen, "dump screen", disp_output );
+	display_proc = spawn( emuEngine, "emuEngine", disp_output );
 
 	if (set_patches())
 	{

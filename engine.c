@@ -40,6 +40,8 @@ extern struct Task *host_task;
 
 extern struct TextFont *default_font;
 
+struct MsgPort *reply_port = NULL;
+
 struct amiga_rgb
 {
 	uint32 r;
@@ -410,16 +412,29 @@ void send_copy( struct Window *win,  struct IntuiMessage *source_msg )
 		struct IntuiMessage *msg;
 		msg = (struct IntuiMessage *) AllocSysObjectTags(ASOT_MESSAGE,
 			ASOMSG_Size, sizeof(struct IntuiMessage),
+			ASOMSG_ReplyPort, reply_port,
 			TAG_DONE);
 
 		if (msg)
 		{
 			msg -> Class = source_msg -> Class;
 			msg -> Code = source_msg -> Code;
-			msg -> MouseX = source_msg -> MouseX;
-			msg -> MouseY = source_msg -> MouseY;
+			msg -> Qualifier = source_msg -> Qualifier;
+			msg -> Seconds = source_msg -> Seconds;
+			msg -> Micros = source_msg -> Micros;
+
+			msg -> IDCMPWindow = win;
+			msg -> MouseX = win -> MouseX;
+			msg -> MouseY = win -> MouseY;
+
+			Forbid();
 			PutMsg( win -> UserPort, (struct Message *) msg);
+			Permit();
 		}
+	}
+	else
+	{
+		FPrintf( output, "Window does not have this IDCMP flag\n");
 	}
 }
 
@@ -430,6 +445,7 @@ void send_mouse_move( struct Window *win,  struct IntuiMessage *source_msg )
 		struct IntuiMessage *msg;
 		msg = (struct IntuiMessage *) AllocSysObjectTags(ASOT_MESSAGE,
 			ASOMSG_Size, sizeof(struct IntuiMessage),
+			ASOMSG_ReplyPort, reply_port,
 			TAG_DONE);
 
 		if (msg)
@@ -438,7 +454,10 @@ void send_mouse_move( struct Window *win,  struct IntuiMessage *source_msg )
 			msg -> Code = source_msg -> Code;
 			msg -> MouseX = win -> MouseX;
 			msg -> MouseY = win -> MouseY;
+
+			Forbid();
 			PutMsg( win -> UserPort, (struct Message *) msg);
+			Permit();
 		}
 	}
 }
@@ -450,12 +469,16 @@ void send_INTUITICKS( struct Window *win  )
 		struct IntuiMessage *msg;
 		msg = (struct IntuiMessage *) AllocSysObjectTags(ASOT_MESSAGE,
 			ASOMSG_Size, sizeof(struct IntuiMessage),
+			ASOMSG_ReplyPort, reply_port,
 			TAG_DONE);
 
 		if (msg)
 		{
 			msg -> Class = IDCMP_INTUITICKS;
+
+			Forbid();
 			PutMsg( win -> UserPort, (struct Message *) msg);
+			Permit();
 		}
 	}
 }
@@ -467,29 +490,90 @@ void send_closeWindow(struct Window *win)
 		struct IntuiMessage *msg;
 		msg = (struct IntuiMessage *) AllocSysObjectTags(ASOT_MESSAGE,
 			ASOMSG_Size, sizeof(struct IntuiMessage),
+			ASOMSG_ReplyPort, reply_port,
 			TAG_DONE);
 
 		if (msg)
 		{
 			msg -> Class = IDCMP_CLOSEWINDOW;
+
+			Forbid();
 			PutMsg( win -> UserPort, (struct Message *) msg);
+			Permit();
 		}
 	}
 }
 
-void dump_screen()
+struct emuIntuitionContext
 {
 	struct RastPort local_rp;
 	struct TimerContext tc;
 	struct Screen *src;
-	ULONG win_mask = 0;
+	struct Window *win;
 	struct BitMap *dest_bitmap;
+};
+
+
+void get_replymsg_and_delete(  )
+{
+	struct IntuiMessage *m;
+
+	m = (struct IntuiMessage *) GetMsg( reply_port );
+	while (m)
+	{
+		FreeSysObject(ASOT_MESSAGE, m);
+		m = (struct IntuiMessage *) GetMsg( reply_port );
+	}
+}
+
+void cleanup_engine( struct emuIntuitionContext *c )
+{
+	struct IntuiMessage *m;
+
+	close_timer_context( &c -> tc );
+
+	if (c->win)		// engine window...
+	{
+		// stop intutuion from sending new messages, we can't set IDCMP to 0, becouse intutuion will delete the MsgPort.
+		ModifyIDCMP( c->win, IDCMP_CLOSEWINDOW );
+
+		m = (struct IntuiMessage *) GetMsg( c->win->UserPort );
+		while (m)
+		{
+			ReplyMsg( (struct Message *) m );
+			m = (struct IntuiMessage *) GetMsg( c->win->UserPort );
+		}
+	
+		CloseWindow( c->win );
+		c->win = NULL;
+	}
+
+	if (reply_port)
+	{
+		get_replymsg_and_delete( c );
+		FreeSysObject(ASOT_PORT, reply_port);
+		reply_port = NULL;
+	}
+
+	if (c->dest_bitmap) 
+	{
+		FreeBitMap( c->dest_bitmap );
+		c->dest_bitmap = NULL;
+	}
+}
+
+void emuEngine()
+{
+	struct emuIntuitionContext c;
+	ULONG win_mask = 0;
+	ULONG mask_reply_port = 0;
+	struct IntuiMessage *m;
 
 	bool no_screens = false;
 
-	bzero( &tc , sizeof(struct TimerContext) );
+	bzero( &c.tc , sizeof(struct TimerContext) );
 
-	struct Window *win = OpenWindowTags( NULL, 
+	c.win = OpenWindowTags( NULL, 
 			WA_InnerWidth, 640,
 			WA_InnerHeight, 480,
 			WA_DragBar, TRUE,
@@ -506,6 +590,8 @@ void dump_screen()
 				IDCMP_MOUSEBUTTONS | 
 				IDCMP_MOUSEMOVE |
 				IDCMP_INTUITICKS |
+				IDCMP_RAWKEY |
+				IDCMP_VANILLAKEY |
 				IDCMP_GADGETUP
 			,
 			WA_RMBTrap, true,
@@ -516,33 +602,42 @@ void dump_screen()
 			WA_SizeBBottom, TRUE,
 			TAG_END);
 
-	if (!win) return ;
+	if (!c.win) return ;
 
-	dest_bitmap =AllocBitMap( 640, 480, 32, BMF_DISPLAYABLE, win ->RPort -> BitMap);
+	c.dest_bitmap =AllocBitMap( 640, 480, 32, BMF_DISPLAYABLE, c.win ->RPort -> BitMap);
 
-	InitRastPort( &local_rp );
-	local_rp.BitMap = dest_bitmap;
-
-	SetFont( &local_rp, default_font );
-
-	if (!dest_bitmap) return ;
-
-	if (open_timer_context( &tc)== false)
+	if (!c.dest_bitmap) 
 	{
-		close_timer_context( &tc );
-		CloseWindow( win );
+		cleanup_engine( &c );
 		return ;
 	}
 
-	win_mask = win -> UserPort ? 1 << win -> UserPort ->mp_SigBit : 0;
+	InitRastPort( &c.local_rp );
+	c.local_rp.BitMap = c.dest_bitmap;
+
+	SetFont( &c.local_rp, default_font );
+
+	if (open_timer_context( &c.tc)== false)
+	{
+		cleanup_engine( &c );
+		return ;
+	}
+
+	win_mask = c.win -> UserPort ? 1 << c.win -> UserPort ->mp_SigBit : 0;
+
+	reply_port = (APTR) AllocSysObjectTags(ASOT_PORT, TAG_DONE);
+
+	mask_reply_port = 1L << reply_port -> mp_SigBit;
 
 	do
 	{
 		ULONG host_w,host_h;
 		ULONG host_mx,host_my;
-		ULONG sig = Wait( win_mask | tc.timer_mask | SIGBREAKF_CTRL_C);
+		ULONG sig = Wait( win_mask | c.tc.timer_mask | SIGBREAKF_CTRL_C | mask_reply_port);
 
 		if (sig & SIGBREAKF_CTRL_C)	break;
+
+		if (sig & mask_reply_port) get_replymsg_and_delete();
 
 		if (sig  & win_mask )
 		{
@@ -550,17 +645,17 @@ void dump_screen()
 
 			MutexObtain(video_mutex);
 
-			src = first_fake_screen();
+			c.src = first_fake_screen();
 
-			host_w = win -> Width;
-			host_w -= win -> BorderLeft;
-			host_w -= win -> BorderRight;
+			host_w = c.win -> Width;
+			host_w -= c.win -> BorderLeft;
+			host_w -= c.win -> BorderRight;
 
-			host_h = win -> Height;
-			host_h -= win -> BorderTop;
-			host_h -= win -> BorderBottom;
+			host_h = c.win -> Height;
+			host_h -= c.win -> BorderTop;
+			host_h -= c.win -> BorderBottom;
 
-			m = (struct IntuiMessage *) GetMsg( win -> UserPort );
+			m = (struct IntuiMessage *) GetMsg( c.win -> UserPort );
 			while (m)
 			{
 				if (m -> Class)
@@ -574,30 +669,30 @@ void dump_screen()
 					}
 				}
 
-				if (src)
+				if (c.src)
 				{
-					bool has_active_win = window_open(src,active_win);
+					bool has_active_win = window_open(c.src,active_win);
 						
 					switch (m -> Class)
 					{
 						case IDCMP_MOUSEMOVE:
 
-							host_mx = win -> WScreen -> MouseX - win -> LeftEdge - win -> BorderLeft;
-							host_my = win -> WScreen -> MouseY - win -> TopEdge - win -> BorderTop;
+							host_mx = c.win -> WScreen -> MouseX - c.win -> LeftEdge - c.win -> BorderLeft;
+							host_my = c.win -> WScreen -> MouseY - c.win -> TopEdge - c.win -> BorderTop;
 
-							src -> MouseX = host_mx * src -> Width / host_w;
-							src -> MouseY = host_my * src -> Height / host_h;
+							c.src -> MouseX = host_mx * c.src -> Width / host_w;
+							c.src -> MouseY = host_my * c.src -> Height / host_h;
 
-							update_fake_window_mouse_xy(src)	;
+							update_fake_window_mouse_xy(c.src)	;
 						
 							switch (mouse_state)
 							{
 								case size_action:
-										size_window( src );
+										size_window( c.src );
 										break;
 
 								case drag_action:
-										drag_window( src );
+										drag_window( c.src );
 										break;
 
 								default:
@@ -606,12 +701,18 @@ void dump_screen()
 							}
 							break;
 
-						case IDCMP_INTUITICKS:
+						case IDCMP_VANILLAKEY:
+							FPrintf( output, "IDCMP_VANILLAKEY\n");
+							if (has_active_win) send_copy( active_win, m );	
+							break;
 
-							if (window_open(src,active_win))
-							{
-								send_INTUITICKS( active_win );
-							}
+						case IDCMP_RAWKEY:
+							FPrintf( output, "IDCMP_RAWKEY\n");
+							if (has_active_win) send_copy( active_win, m );	
+							break;
+
+						case IDCMP_INTUITICKS:
+							if (has_active_win) send_INTUITICKS( active_win );					
 							break;
 
 						case IDCMP_MOUSEBUTTONS:
@@ -639,7 +740,7 @@ void dump_screen()
 								switch (mouse_state)
 								{
 									case no_action:
-										if (WindowClick( src ) == false)
+										if (WindowClick( c.src ) == false)
 										{
 											if (has_active_win) send_copy( active_win , m );
 										}
@@ -652,24 +753,24 @@ void dump_screen()
 				}
 
 				ReplyMsg( (struct Message *) m );
-				m = (struct IntuiMessage *) GetMsg( win -> UserPort );
+				m = (struct IntuiMessage *) GetMsg( c.win -> UserPort );
 			}
 
 			MutexRelease(video_mutex);
 		}
 
-		if (sig & tc.timer_mask)
+		if (sig & c.tc.timer_mask)
 		{
 			MutexObtain(video_mutex);
 
-			src = first_fake_screen();
-			if (src)
+			c.src = first_fake_screen();
+			if (c.src)
 			{
 				no_screens = false;
 
-				update_argb_lookup( src -> ViewPort.ColorMap );
-				draw_screen( win,  src -> RastPort.BitMap, dest_bitmap );
- 				comp_window_update( src, dest_bitmap, win);
+				update_argb_lookup( c.src -> ViewPort.ColorMap );
+				draw_screen( c.win,  c.src -> RastPort.BitMap, c.dest_bitmap );
+ 				comp_window_update( c.src, c.dest_bitmap, c.win);
 			}
 			else
 			{
@@ -678,15 +779,15 @@ void dump_screen()
 
 				if (no_screens == false)
 				{
-					RectFillColor( &local_rp,0,0,640,480, 0xFF000000);
+					RectFillColor( &c.local_rp,0,0,640,480, 0xFF000000);
 
-					SetRPAttrs( &local_rp,  
+					SetRPAttrs( &c.local_rp,  
 						RPTAG_APenColor, 0xFFFFFFFF,
 						RPTAG_BPenColor, 0xFF000000,
 						TAG_END);
 
-					Move( &local_rp, 20,20 );
-					Text( &local_rp, info, strlen(info) );
+					Move( &c.local_rp, 20,20 );
+					Text( &c.local_rp, info, strlen(info) );
 					
 				}
 
@@ -695,19 +796,20 @@ void dump_screen()
 				src.Width = 640;
 				src.Height = 480;
 
- 				comp_window_update( &src, dest_bitmap, win);
+ 				comp_window_update( &src, c.dest_bitmap, c.win);
 			}
 
 			MutexRelease(video_mutex);
 
-			reset_timer( tc.timer_io );
+			reset_timer( c.tc.timer_io );
 		}
 
 	} while (!quit);
 
 	close_timer_context( &tc );
-	CloseWindow( win );
-	FreeBitMap( dest_bitmap );
+
+	cleanup_engine( &c );
+
 }
 
 
