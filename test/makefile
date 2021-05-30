@@ -11,6 +11,7 @@ tests_c += ResizeWindow.c
 tests_c += SetWindowTitles.c 
 tests_c += ActiveWindow.c
 tests_c += paint.c
+tests_c += RawKey.c
 
 incdir = -I../ -I./
 
