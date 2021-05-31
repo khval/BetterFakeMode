@@ -35,7 +35,7 @@ but don’t expect it to work on anything else then the tests provided.
 
 Mostly nothing will work with this patch, don't use it :-)
 
-* Events are not sendt.
+* Some events are not sendt.
 
 * Double buffering is broken.
 
@@ -52,6 +52,8 @@ Mostly nothing will work with this patch, don't use it :-)
 
 * It does scale fake screen to fit the window.
 
+* It does send some events.
+
 # How can you help.
 
 End users are useless here, but if you are a developer:
@@ -63,7 +65,9 @@ End users are useless here, but if you are a developer:
 
 # How does it work?
 
-Well, think of BetterFakeMode as an engine, it redirects thing normal the OS does, and takes over, so in other words, the OS does not know what has happened, the OS does not know about BetterFakeMode fake screens, or fake windows, there is a chance this will cause confusion, any place where the OS get confused, we must take over. At this point in time, we don’t know what part of the OS that does not like this or what part that does. This why test cases are essential.
+Well, think of BetterFakeMode as an engine, it redirects things normal the OS does, and takes over, so in other words, the OS does not know what has happened, the OS does not know about BetterFakeMode fake screens, or fake windows, there is a chance this will cause confusion, any place where the OS get confused, we must take over. At this point in time, we don’t know what part of the OS that does not like this or what part that does. This why test cases are essential.
+
+If it's not fake screen/fake bitmap, fake window, it's handeled by the OS.
 
 # Priority
 
@@ -81,3 +85,10 @@ Work on user input, events, make sure windows and user input is forwarded to the
 
 When we can see if this project might work, the work on updating the code, so that it displays correct. remove any graphic glitches,
 Updated the engine: focus now shifts to making it display in full screen mode, fix the aspect ratio, preferences, and so on.
+
+# You found bugs 
+
+If you find bugs while using this software, do NOT report this to Hyperion, they are not to blame, bugs as result of using this software should be reported in the bug tracker on GitHub. As I wrote before only interested in testable cases. if you have the source code to the program that is not working with this hack, then that’s wherry helpful.
+
+And if you find anything that works better with this hack, please tell me.
+
