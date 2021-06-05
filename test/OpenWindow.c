@@ -194,7 +194,7 @@ int main()
 
 		win[1] = OpenWindowTags( NULL, 
 			WA_IDCMP, IDCMP_CLOSEWINDOW,
-			WA_Flags, WFLG_DRAGBAR | WFLG_CLOSEGADGET,
+			WA_Flags, WFLG_DRAGBAR | WFLG_CLOSEGADGET | WFLG_ACTIVATE,
 			WA_Title, "Front Win",
 			WA_Left, 50, WA_Top, 50,
 			WA_Width, 100, WA_Height, 100,
@@ -208,8 +208,6 @@ int main()
 		if (win[0])
 		{
 			int x,y;
-
-			ActivateWindow( win[0] );
 
 			for (x=30;x<65;x++)
 			{
