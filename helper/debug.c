@@ -163,7 +163,7 @@ void dump_tags( const struct TagItem * tagList , struct debug_tag_info **nameLis
 {
 	const struct TagItem * tag;
 
-	for (tag = tagList; tag -> ti_Tag != TAG_DONE; tag++)
+	for (tag = tagList; (tag -> ti_Tag != TAG_DONE) || (tag -> ti_Tag != TAG_END); tag++)
 	{
 		print_tag(nameList, tag -> ti_Tag , tag -> ti_Data );
 	}
