@@ -229,6 +229,9 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 				}
 			}
 
+			win -> GZZWidth = win -> Width - win -> BorderLeft - win -> BorderRight;
+			win -> GZZHeight = win -> Height - win -> BorderTop - win -> BorderBottom;
+
 			i = win -> WScreen - screens;	// get the index..
 
 			win -> RPort -> Layer = CreateLayer( LayerInfos[i], 

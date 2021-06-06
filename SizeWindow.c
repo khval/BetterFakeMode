@@ -48,6 +48,8 @@ void no_block_SizeWindow ( struct Window *win, LONG dx, LONG dy )
 		ClearBorder(win);
 		win -> Width = w;
 		win -> Height = h;
+		win -> GZZWidth = win -> Width - win -> BorderLeft - win -> BorderRight;
+		win -> GZZHeight = win -> Height - win -> BorderTop - win -> BorderBottom;
 		SetWinLayer( win );
 		RenderWindow(win);
 	}
