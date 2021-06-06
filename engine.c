@@ -806,10 +806,7 @@ void emuEngine()
 
 	} while (!quit);
 
-	close_timer_context( &tc );
-
 	cleanup_engine( &c );
-
 }
 
 
