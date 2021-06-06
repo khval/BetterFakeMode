@@ -101,7 +101,7 @@ enum
 
 void ChangeIcon();
 
-char	**delay_opt;
+//char	**delay_opt;
 
 
 int main()
@@ -113,11 +113,13 @@ int main()
 	int 	i;
 	int 	ev;
 	int	gh;
-	char	*tmp_str;
+//	char	*tmp_str;
 	int 	rows;
 	int 	wh,ww;
 	int	centerw;
 	char	*newfile;
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
 	if (open_libs()==FALSE)
 	{
@@ -125,8 +127,15 @@ int main()
 		return 20;
 	}
 
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+
 	init_blitz_windows();
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+
 	init_blitz_gedtools();
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
 #if use_custom_screen
 	src = OpenScreen( &myscr );	
@@ -137,29 +146,21 @@ int main()
 
 //  check if path exists!
 
-	tmp_str = (void *) malloc(100);
-
-	delay_opt = (void *) malloc(sizeof(void *) * 12 );
-	delay_opt[0] = (void *) strdup("off");
-
-	for(i=1;i<=10;i++)
-	{
-		sprintf(tmp_str,"%i",i*5);
-		delay_opt[i] = (void *) strdup(tmp_str);
-	}
-	delay_opt[11]=0;
-
-	free(tmp_str);
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
 	if (win[0] = OpenWindowTags (NULL,
 		WA_Title," Setup",
-		WA_Left,src -> Width/2-162,WA_Top,src -> Height/2-100,
-		WA_Width,320,WA_Height,320,
+		WA_Left,src -> Width/2-162,
+		WA_Top,src -> Height/2-100,
+		WA_Width,320,
+		WA_Height,320,
 		WA_Flags,WFLG_CLOSEGADGET|WFLG_DRAGBAR|WFLG_DEPTHGADGET|WFLG_GIMMEZEROZERO|WFLG_ACTIVATE,
 		WA_IDCMP,IDCMP_CLOSEWINDOW | IDCMP_GADGETUP | IDCMP_GADGETDOWN, 
 		WA_CustomScreen, src,
 		TAG_END))
 	{
+#if use_gadtools
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
 		rows = 14;
 
@@ -168,15 +169,16 @@ int main()
 
 		centerw = win[0] -> GZZWidth /2 ;
 
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+
 		GTButton(1,index_b_logo,	ww-90,(wh*9)/rows,80,20,"Logo",0);
-
 		GTButton(1,index_b_texture1,	ww-90,(wh*10)/rows,80,20,"Texture1",0);
-
 		GTButton(1,index_b_texture2,	ww-90,(wh*11)/rows,80,20,"Texture2",0);
-
 		GTButton(1,index_b_save,	10,(wh*13)/rows,90,20,"Save",0);
 		GTButton(1,index_b_use,		centerw-45,(wh*13)/rows,90,20,"Use",0);
 		GTButton(1,index_b_cancell,	ww-100,(wh*13)/rows,90,20,"Cancell",0);
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
 		if (GadgetHit = find_blitz_gadget(1,	index_o_open	))
 		{
@@ -185,6 +187,8 @@ int main()
 				TAG_DONE);
 		}
 
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+
 		if (GadgetHit = find_blitz_gadget(1,	index_o_close	))
 		{
 			GT_SetGadgetAttrs(GadgetHit,current_win,NULL,
@@ -192,7 +196,11 @@ int main()
 				TAG_DONE);
 		}
 
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+
 		AttachGTList(1,0);
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
 		do
 		{
@@ -209,8 +217,10 @@ int main()
 			Delay(1);
 		}
 		while (ev!=IDCMP_CLOSEWINDOW);
-
+#endif
 		CloseWindow(win[0]);
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
 #if use_custom_screen
 		CloseScreen( src ) ;
@@ -219,7 +229,12 @@ int main()
 #endif
 	}
 
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+
 	close_libs();
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+
 	return 0;
 
 }
