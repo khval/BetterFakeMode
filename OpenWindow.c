@@ -182,9 +182,21 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 
 	if (win->WScreen)
 	{
-
-		
 		// limit to screen size...
+
+		if (win->Width > win->WScreen->Width) win->Width = win ->WScreen -> Width;
+		if (win->Height > win->WScreen->Height) win->Height = win-> WScreen -> Height;
+
+		// move the window into the screen.
+	
+		if (win -> TopEdge<0) win -> TopEdge = 0;
+		if (win -> LeftEdge<0) win -> LeftEdge = 0;
+
+		if ( (win->TopEdge+win->Height) > win->WScreen->Height)
+			win->TopEdge = win->WScreen->Height - win -> Height;
+
+		if ( (win->LeftEdge+win->Width) > win->WScreen->Width)
+			win->LeftEdge = win->WScreen->Width - win -> Width;
 
 		if (win -> RPort)
 		{
