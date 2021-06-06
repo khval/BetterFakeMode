@@ -188,13 +188,13 @@ int main()
 
 		win[0] = OpenWindowTags( NULL, 
 			WA_Title, "Back Win",
-			WA_Left, 10, WA_Top, 10,
+			WA_Left, 320, WA_Top, 10,
 			WA_Width, 100, WA_Height, 100,
 			WA_CustomScreen, src, TAG_END);
 
 		win[1] = OpenWindowTags( NULL, 
 			WA_IDCMP, IDCMP_CLOSEWINDOW,
-			WA_Flags, WFLG_DRAGBAR | WFLG_CLOSEGADGET | WFLG_ACTIVATE,
+			WA_Flags, WFLG_DRAGBAR | WFLG_CLOSEGADGET | WFLG_DEPTHGADGET | WFLG_ACTIVATE,
 			WA_Title, "Front Win",
 			WA_Left, 50, WA_Top, 50,
 			WA_Width, 100, WA_Height, 100,
