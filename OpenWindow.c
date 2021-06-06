@@ -60,6 +60,13 @@ void addWindowGadgets( struct Window *win )
 	}
 }
 
+void attach_to_screen( struct Window *win)
+{
+	struct Window *oldWin = win -> WScreen -> FirstWindow;
+	win -> NextWindow = oldWin;
+	win -> WScreen -> FirstWindow = win;
+}
+
 struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const struct TagItem * tagList)
 {
 	struct Window *win = NULL;
@@ -178,9 +185,9 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 
 	if (win->WScreen)
 	{
-		struct Window *oldWin = win -> WScreen -> FirstWindow;
-		win -> NextWindow = oldWin;
-		win -> WScreen -> FirstWindow = win;
+
+		
+		// limit to screen size...
 
 		if (win -> RPort)
 		{
@@ -226,6 +233,8 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 			win -> IFont = default_font;
 			win -> WLayer = win -> RPort -> Layer;
 
+			attach_to_screen( win );
+
 			if (win -> Flags & WFLG_ACTIVATE)
 			{
 				no_block_ActivateWindow(win);
@@ -235,7 +244,6 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 				RenderWindow(win);
 			}
 		}
-
 	}
 
 	return win;
