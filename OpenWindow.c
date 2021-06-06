@@ -95,69 +95,76 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 		win->MaxHeight=nw->MaxHeight;
 	}
 
-	for (tag = tagList; tag -> ti_Tag != TAG_DONE; tag++)
+	if (tagList)
 	{
-		switch (tag -> ti_Tag)
+		dump_tags( tagList , win_info_tags);
+
+		FPrintf( output, "%s:%ld\n", __FUNCTION__,__LINE__);	Delay(5);
+
+		for (tag = tagList; (tag -> ti_Tag != TAG_DONE ) && ( tag -> ti_Tag != TAG_END); tag++)
 		{
-			case WA_DetailPen: 
-    				win->DetailPen=tag -> ti_Data; break; 
+			switch (tag -> ti_Tag)
+			{
+				case WA_DetailPen: 
+   	 				win->DetailPen=tag -> ti_Data; break; 
 
-			case WA_BlockPen: 
-				win->BlockPen=tag -> ti_Data; break; 
+				case WA_BlockPen: 
+					win->BlockPen=tag -> ti_Data; break; 
 
-			case WA_IDCMP:
-				win->IDCMPFlags=tag -> ti_Data; break; 
+				case WA_IDCMP:
+					win->IDCMPFlags=tag -> ti_Data; break; 
 
-			case WA_Flags:
-				win->Flags=tag -> ti_Data;
-				break; 
+				case WA_Flags:
+					win->Flags=tag -> ti_Data;
+					break; 
 
-			case WA_Title:
+				case WA_Title:
 
-				if (tag -> ti_Data)
-				{
-					if (win -> Title) free( win-> Title);
-					win->Title= strdup((char *) tag -> ti_Data); 
-				}
-				break; 
+					if (tag -> ti_Data)
+					{
+						if (win -> Title) free( win-> Title);
+						win->Title= strdup((char *) tag -> ti_Data); 
+					}
+					break; 
 
-			case WA_ScreenTitle:
+				case WA_ScreenTitle:
 
-				if (tag -> ti_Data)
-				{
-					if (win->ScreenTitle) free(win -> ScreenTitle);
-					win -> ScreenTitle = strdup((char *) tag -> ti_Data);
-				}
-				 break; 
+					if (tag -> ti_Data)
+					{
+						if (win->ScreenTitle) free(win -> ScreenTitle);
+						win -> ScreenTitle = strdup((char *) tag -> ti_Data);
+					}
+					 break; 
 		
-			case WA_CustomScreen: 
-				win -> WScreen = (struct Screen *) tag -> ti_Data; break; 
+				case WA_CustomScreen: 
+					win -> WScreen = (struct Screen *) tag -> ti_Data; break; 
 
-			case WA_Left: 
-				win -> LeftEdge = tag -> ti_Data; break; 
+				case WA_Left: 
+					win -> LeftEdge = tag -> ti_Data; break; 
 
-			case WA_Top: 
-				win -> TopEdge = tag -> ti_Data; break; 
+				case WA_Top: 
+					win -> TopEdge = tag -> ti_Data; break; 
 
-			case WA_Width:
-				win -> Width = tag -> ti_Data; break; 
+				case WA_Width:
+					win -> Width = tag -> ti_Data; break; 
 
-			case WA_Height:
-				win -> Height = tag -> ti_Data; break; 
+				case WA_Height:
+					win -> Height = tag -> ti_Data; break; 
 
-			case WA_MinWidth:
-				win->MinWidth= tag -> ti_Data; break; 
+				case WA_MinWidth:
+					win->MinWidth= tag -> ti_Data; break; 
 
-			case WA_MinHeight:
-				win->MinHeight= tag -> ti_Data; break; 
+				case WA_MinHeight:
+					win->MinHeight= tag -> ti_Data; break; 
 
-			case WA_MaxWidth:
-				win->MaxWidth= tag -> ti_Data; break; 
+				case WA_MaxWidth:
+					win->MaxWidth= tag -> ti_Data; break; 
 
-			case WA_MaxHeight:
-				win->MaxHeight= tag -> ti_Data; break; 
-				break;
+				case WA_MaxHeight:
+					win->MaxHeight= tag -> ti_Data; break; 
+					break;
 
+			}
 		}
 	}
 
