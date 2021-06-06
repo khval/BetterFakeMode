@@ -55,59 +55,6 @@ void pplot( struct BitMap *bm, int x, int y)
 	*(bm -> Planes[0] + x + y * bm -> BytesPerRow ) |= 1L<<bx;
 }
 
-
-void show_layer_Info(struct Layer_Info *li)
-{
-	printf(
-		" top_layer: %08x\n"
-		"resPtr1: %08x\n"
-		"resPtr2: %08x\n"
-		"FreeClipRects: %08x\n"
-		"PrivateReserve3: %d\n"
-		"ClipRectPool: %08x\n"
-   	 	"Flags: %08x\n"
-		"res_count: %d\n"
-		"LockLayersCount: %d\n"
-		"PrivateReserve5: %d\n"
-		"BlankHook: %08x\n"
-		"Extension: %08x\n",
-
-			li -> top_layer,
-			li -> resPtr1,
-			li -> resPtr2,
-			li -> FreeClipRects,
-			li -> PrivateReserve3,
-			li -> ClipRectPool,
-   		 	li -> Flags,
-			li -> res_count,
-			li -> LockLayersCount,
-			li -> PrivateReserve5,
-			li -> BlankHook,
-			li -> Extension);
-}
-
-void show_ArieaInfo(struct AreaInfo *ai)
-{
-	printf(
-		"AreaInfo-> *VctrTbl: %08x\n"
-    		"AreaInfo-> *VctrPtr: %08x\n"
-		"AreaInfo-> *FlagTbl: %08x\n"
-		"AreaInfo-> *FlagPtr: %08x\n"
-		"AreaInfo-> Count: %d\n"
-		"AreaInfo-> MaxCount: %d\n"
-		"AreaInfo-> FirstX: %d\n"
-		"AreaInfo-> FirstY: %d\n",
-			ai->VctrTbl,
-			ai->VctrPtr,
-			ai->FlagTbl,
-			ai->FlagPtr,
-			ai->Count,
-			ai->MaxCount,
-			ai->FirstX,
-			ai->FirstY);
-}
-
-
 int main()
 {
 	struct Screen *src;

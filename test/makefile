@@ -1,5 +1,6 @@
 
 deps = ../init.c
+deps += debug.c
 
 files = ${deps}
 
@@ -24,8 +25,6 @@ all_files = $(files_o) ${tests}
 
 
 all: ${all_files}
-
-
 
 %.elf: %.c
 		gcc -D__USE_INLINE__ ${incdir} ${libdir} $< $(deps_o) $(libs) -o $@
