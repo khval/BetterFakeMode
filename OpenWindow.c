@@ -73,7 +73,6 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 	const struct TagItem * tag;
 
 	win =  new_struct( Window );
-
 	if (win == NULL) return NULL;
 
 	// Defaults....
@@ -88,7 +87,7 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 
 	if (nw)
 	{
-    		win->DetailPen=nw->DetailPen;
+    	win->DetailPen=nw->DetailPen;
 		win->BlockPen=nw->BlockPen;
 		win->IDCMPFlags=nw->IDCMPFlags;
 		win->Flags=nw->Flags;
@@ -104,9 +103,7 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 
 	if (tagList)
 	{
-		dump_tags( tagList , win_info_tags);
-
-		FPrintf( output, "%s:%ld\n", __FUNCTION__,__LINE__);	Delay(5);
+//		dump_tags( tagList , win_info_tags);
 
 		for (tag = tagList; (tag -> ti_Tag != TAG_DONE ) && ( tag -> ti_Tag != TAG_END); tag++)
 		{
@@ -226,8 +223,8 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 				LAYA_BitMap,  win -> RPort -> BitMap ,
 				LAYA_MinX, win -> LeftEdge,
 				LAYA_MinY, win -> TopEdge,
-				LAYA_MaxX, win -> LeftEdge + win -> Width,
-				LAYA_MaxY, win -> TopEdge + win -> Height,
+				LAYA_MaxX, win -> LeftEdge + win -> Width ,
+				LAYA_MaxY, win -> TopEdge + win -> Height ,
 				TAG_END);
 
 			win -> IFont = default_font;
