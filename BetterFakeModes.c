@@ -27,7 +27,6 @@ APTR old_68k_stub_CloseScreen = NULL;
 
 APTR old_ppc_func_OpenScreenTagList = NULL;
 APTR old_ppc_func_CloseScreen = NULL;
-
 APTR old_ppc_func_OpenWindowTagList = NULL;
 APTR old_ppc_func_CloseWindow = NULL;
 APTR old_ppc_func_AllocScreenBuffer = NULL;
@@ -37,6 +36,7 @@ APTR old_ppc_func_MoveWindow = NULL;
 APTR old_ppc_func_SizeWindow = NULL;
 APTR old_ppc_func_SetWindowTitles = NULL;
 APTR old_ppc_func_ActivateWindow = NULL;
+APTR old_ppc_func_GetBitMapAttr = NULL;
 
 #define _LVOOpenScreen	-198
 #define _LVOCloseScreen	-66
@@ -323,20 +323,19 @@ struct ScreenBuffer * ppc_func_AllocScreenBuffer (struct IntuitionIFace *Self, s
 }
 
 
-/*
-static VOID stub_68k_OpenScreenTagList_func( uint32 *regarray )
+ULONG ppc_func_GetBitMapAttr (struct IntuitionIFace *Self, struct BitMap * bm, ULONG value)
 {
-	regarray[REG68K_D0/4] =(uint32) ppc_func_OpenScreen( IIntuition, (struct NewScreen *) regarray[REG68K_A0/4] );
+
+	if ( bm -> pad == 0xFA8E)
+	{
+		return fake_GetBitMapAttr (  bm, value);
+	}
+	else
+	{
+		return ((ULONG (*) (struct IntuitionIFace *,  struct BitMap *, ULONG)) old_ppc_func_GetBitMapAttr) (Self, bm, value);
+	}
 }
 
-static VOID stub_68k_CloseScreen_func( uint32 *regarray )
-{
-	ppc_func_CloseScreen( IIntuition, (struct Screen *) regarray[REG68K_A0/4] );
-}
-
-STATIC CONST struct EmuTrap stub_68k_OpenScreen      = { TRAPINST, TRAPTYPENR, (uint32 (*)(uint32 *)) stub_68k_OpenScreen_func };
-STATIC CONST struct EmuTrap stub_68k_CloseScreen      = { TRAPINST, TRAPTYPENR, (uint32 (*)(uint32 *)) stub_68k_CloseScreen_func };
-*/
 
 
 BOOL set_patches( void )

@@ -11,11 +11,6 @@ extern struct debug_tag_info screen_info_tags[];
 extern bool monitor;
 extern BPTR output;
 
-// 13 because its not taken, move it up if there is conflict.
-// BMB_HIJACKED might work, but don't wont patch effect other things.
-
-#define BMB_FAKE_BITMAP 13
-#define BMF_FAKE_BITMAP (1L<<BMB_FAKE_BITMAP)
 
 #ifdef __USE_INLINE__
 #define new_struct(x) 	(struct x *) AllocVecTags( sizeof(struct x), AVT_Type, MEMF_SHARED,AVT_ClearWithValue, 0, TAG_END)
