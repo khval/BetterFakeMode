@@ -9,7 +9,7 @@
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
-#include <exec/emulation.h>
+#include <proto/gadtools.h>
 
 #include "init.h"
 
@@ -75,6 +75,7 @@ int main()
 		int x,y;
 		ULONG Result;
 		ULONG is_interleaved;
+		struct VisualInfo *vi;
 
 		Result = GetScreenAttr( src, SA_Interleaved, &is_interleaved, sizeof(ULONG) );
 
@@ -98,6 +99,17 @@ int main()
 		printf("src -> BarLayer: %08x\n", src -> BarLayer );
 		printf("src -> ExtData: %08x\n", src -> ExtData );
 		printf("src -> UserData: %08x\n", src -> UserData );
+
+		vi = GetVisualInfo(src, TAG_DONE );
+
+		if (vi)
+		{
+			printf("found visual info, what is it?\n");
+		}
+		else
+		{
+			printf("BUG: no visual info\n");
+		}
 
 		set_colors( src );
 
