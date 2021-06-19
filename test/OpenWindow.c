@@ -55,6 +55,25 @@ void pplot( struct BitMap *bm, int x, int y)
 	*(bm -> Planes[0] + x + y * bm -> BytesPerRow ) |= 1L<<bx;
 }
 
+void GetBitMapAttr_test( struct BitMap *bm )
+{
+	ULONG h = GetBitMapAttr( bm, BMA_HEIGHT );
+	ULONG w = GetBitMapAttr( bm, BMA_WIDTH );
+	ULONG d = GetBitMapAttr( bm, BMA_DEPTH );
+	ULONG f = GetBitMapAttr( bm, BMA_FLAGS );
+	ULONG isRtg = GetBitMapAttr( bm, BMA_ISRTG );
+	ULONG bytesPerPixel = GetBitMapAttr( bm, BMA_BYTESPERPIXEL );
+	ULONG bitsPerPixel = GetBitMapAttr( bm, BMA_BITSPERPIXEL );
+	ULONG pixelFormat = GetBitMapAttr( bm, BMA_PIXELFORMAT );
+	ULONG actualWidth = GetBitMapAttr( bm, BMA_ACTUALWIDTH );
+	ULONG bytesPerRow = GetBitMapAttr( bm, BMA_BYTESPERROW );
+
+	Printf("w: %ld, h %ld d %ld, f %ld, isRtg %ld, bytesPerPixel %ld bitsPerPixel %ld, pixelFormat %lx, actualWidth %ld, bytesPerRow %ld\n",
+		w,h,d,f,isRtg,bytesPerPixel,bitsPerPixel,pixelFormat,actualWidth,bytesPerRow	);
+
+}
+
+
 int main()
 {
 	struct Screen *src;
@@ -117,6 +136,8 @@ int main()
 		if (win[0])
 		{
 			int x,y;
+
+			GetBitMapAttr_test( win[0] -> RPort -> BitMap );
 
 			for (x=30;x<65;x++)
 			{
