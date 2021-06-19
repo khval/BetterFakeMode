@@ -61,6 +61,9 @@ void fake_initViewPort( struct Screen *s , int depth )
 	vp -> RasInfo = new_struct( RasInfo );
 	if (vp -> RasInfo) fake_initRasInfo( vp -> RasInfo, s -> RastPort.BitMap );
 }
+#if use_fake_bitmap == 1
+
+#warning using fake bitmap
 
 struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
 {
@@ -72,6 +75,7 @@ struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
 	if (bm == NULL) return NULL;
 
 	InitBitMap( bm, Depth, Width, Height );
+	bm -> pad = 0xFA8E;	// Fake BitMap!!
 
 	sizeOfPlane = bm -> BytesPerRow *  bm -> Rows;
 
@@ -84,6 +88,7 @@ struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
 
 	return bm;
 }
+#endif
 
 void _init_fake_screen(struct Screen *s,int Depth)
 {
