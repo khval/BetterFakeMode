@@ -36,6 +36,7 @@
 
 struct Window		*win[max_windows];
 struct Screen		*src;
+struct VisualInfo *vi;
 
 #include "gadtools_blitz.h"
 
@@ -103,6 +104,17 @@ void ChangeIcon();
 
 //char	**delay_opt;
 
+void dump_gadget(struct Gadget *g)
+{
+	Printf("id: %08lx LeftEdge: %ld, TopEdge: %ld, Width: %ld, Height: %ld, Flags: %08lx GadgetText: %s\n",
+		g -> GadgetID,
+		g -> LeftEdge,
+		g -> TopEdge,
+		g -> Width,
+		g -> Height,
+		g -> Flags,
+		g -> GadgetText ? g -> GadgetText -> IText : "NULL");
+}
 
 int main()
 {
@@ -118,6 +130,7 @@ int main()
 	int 	wh,ww;
 	int	centerw;
 	char	*newfile;
+	struct Gadget *g;
 
 	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
@@ -144,20 +157,32 @@ int main()
 	if (!src) return FALSE;
 #endif
 
-//  check if path exists!
+
+	vi = GetVisualInfo(src, TAG_DONE );
+
 
 	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
-	if (win[0] = OpenWindowTags (NULL,
-		WA_Title," Setup",
-		WA_Left,src -> Width/2-162,
-		WA_Top,src -> Height/2-100,
-		WA_Width,320,
-		WA_Height,320,
-		WA_Flags,WFLG_CLOSEGADGET|WFLG_DRAGBAR|WFLG_DEPTHGADGET|WFLG_GIMMEZEROZERO|WFLG_ACTIVATE,
-		WA_IDCMP,IDCMP_CLOSEWINDOW | IDCMP_GADGETUP | IDCMP_GADGETDOWN, 
-		WA_CustomScreen, src,
-		TAG_END))
+	if ((vi)&&(src))
+	{
+		win[0] = OpenWindowTags (NULL,
+			WA_Title," Setup",
+			WA_Left,src -> Width/2-162,
+			WA_Top,src -> Height/2-100,
+			WA_Width,320,
+			WA_Height,320,
+			WA_Flags,WFLG_CLOSEGADGET|WFLG_DRAGBAR|WFLG_DEPTHGADGET|WFLG_GIMMEZEROZERO|WFLG_ACTIVATE,
+			WA_IDCMP,IDCMP_CLOSEWINDOW | IDCMP_GADGETUP | IDCMP_GADGETDOWN, 
+			WA_CustomScreen, src,
+			TAG_END)	;
+	}
+	else
+	{
+		if (!vi) printf("No VisualInfo\n");
+		if (!src) printf("No Screen\n");
+	}
+
+	if (win[0])
 	{
 #if use_gadtools
 	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
@@ -200,6 +225,11 @@ int main()
 
 		AttachGTList(1,0);
 
+		for (g = win[0] -> FirstGadget; g; g = g -> NextGadget)
+		{
+			dump_gadget(g);
+		}
+
 	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
 		do
@@ -220,13 +250,23 @@ int main()
 #endif
 		CloseWindow(win[0]);
 
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+		Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+	}
 
+	if (vi)
+	{
+		FreeVisualInfo( vi );
+		vi = NULL;
+	}
+
+	if (src)
+	{
 #if use_custom_screen
 		CloseScreen( src ) ;
 #else
  		UnlockPubScreen(NULL,src);
 #endif
+		src = NULL;
 	}
 
 	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
