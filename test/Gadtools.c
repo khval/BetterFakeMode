@@ -14,8 +14,6 @@
 
 #include "init.h"
 
-struct Library			*GadToolsBase = NULL;
-struct GadToolsIFace	*IGadTools = NULL;
 
 struct TextAttr MyFont =
 {
@@ -60,13 +58,10 @@ void pplot( struct BitMap *bm, int x, int y)
 
 bool open_extra_libs()
 {
-	if ( ! open_lib( "gadtools.library", 51L , "main", 1, &GadToolsBase, (struct Interface **) &IGadTools ) ) return FALSE;
-	return TRUE;
 }
 
 void close_extra_libs()
 {
-	close_lib(GadTools);
 }
 
 #define GAD_BUTTON 101
