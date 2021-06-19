@@ -244,40 +244,58 @@ int Event()
 	return imsgClass;
 }
 
+static LONG _win_index = 0;
+
 LONG _GetAEvent()
 {
+	struct Window *cwin;
 	struct IntuiMessage *imsg = 0;
 	ULONG	imsgClass;
-	ULONG i;
+	ULONG count;
 
-	for (i=0;i<max_windows;i++)
+	for (count=0;count<10;count++)	// try 10 times to find a event..
 	{
-		imsg = 0;
-		imsgClass = 0;
+		// give it a even chance of event being read.
+		_win_index = (_win_index + 1) % max_windows;
 
-		if (win[i])
+		cwin = win[_win_index];	// get current window.
+		if (cwin)
 		{
-			if (imsg = GT_GetIMsg(win[i] -> UserPort))
+			Printf("GT_GetIMsg(cwin -> UserPort)\n");
+
+			if (imsg = GT_GetIMsg(cwin -> UserPort))
 			{
-			 	current_win	=	win[i]; 
+				Printf("Success\n");
+				current_win = cwin;
 				imsgClass		=	imsg->Class;
 				EventCode	=	imsg->Code;
 				GadgetHit		=	(struct Gadget *) imsg -> IAddress;
+
+				Printf("GT_ReplyIMsg(imsg)\n");
 				GT_ReplyIMsg(imsg);
+				Printf("Success\n");
+			}
+			else
+			{
+				Printf("Failed\n");
+				imsgClass = 0;
+				EventCode = 0;
+				GadgetHit	= NULL;
 			}
 
 			switch (imsgClass)
 			{
 				case IDCMP_REFRESHWINDOW:
 
-					GT_BeginRefresh(current_win);
-					GT_EndRefresh(current_win, TRUE);
+					GT_BeginRefresh(cwin);
+					GT_EndRefresh(cwin, TRUE);
 					break;
 
 				default:	break;
 			}
 		}
-		if (imsgClass) return imsgClass;
+
+		if (imsgClass) return imsgClass;	// we found a event so exit...
 	}
 	return 0;
 }
