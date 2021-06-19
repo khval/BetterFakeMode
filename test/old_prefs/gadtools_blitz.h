@@ -117,9 +117,14 @@ void GT_configure( struct NewGadget *ng,int id,int x,int y,int w,int h)
 	ng -> ng_Width = w;
 	ng -> ng_Height = h;
 	ng -> ng_GadgetID = id;
-	ng -> ng_VisualInfo = GetVisualInfo(src, TAG_DONE );
+	ng -> ng_VisualInfo = vi;
 //	ng -> ng_VisualInfo = NULL;
 	ng -> ng_TextAttr = 0;
+
+	if (ng -> ng_VisualInfo == NULL)
+	{
+		printf("Screen has none working VisualInfo\n");
+	}
 
 /*
 	if (I_Intuition -> GetScreenAttr(src,SA_Font,ng -> ng_TextAttr,sizeof(struct TextAttr) )==0)
