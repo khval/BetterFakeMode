@@ -1,5 +1,9 @@
 
 files = init.c \
+	hooks/gadtools.c \
+	hooks/intuition.c \
+	helper/screen.c \
+	helper/debug.c \
 	OpenScreen.c \
 	CloseScreen.c \
 	OpenWindow.c \
@@ -11,12 +15,11 @@ files = init.c \
 	renderGadgets.c \
 	SetWindowTitles.c \
 	ActivateWindow.c \
-	helper/screen.c \
-	helper/debug.c \
 	spawn.c \
 	engine.c \
-	EngineTimer.c
-	
+	GetBitMapAttr.c \
+	EngineTimer.c \
+	CreateGadgetA.c
 
 files_o = ${files:.c=.o}
 
@@ -38,3 +41,4 @@ all: ${files_o}
 
 clean:
 	delete $(all_files)
+

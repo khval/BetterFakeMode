@@ -10,6 +10,7 @@
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
+#include <proto/gadtools.h>
 #include <exec/emulation.h>
 #include <exec/ports.h>
 
@@ -37,6 +38,18 @@ APTR old_ppc_func_SizeWindow = NULL;
 APTR old_ppc_func_SetWindowTitles = NULL;
 APTR old_ppc_func_ActivateWindow = NULL;
 APTR old_ppc_func_GetBitMapAttr = NULL;
+
+// gadtools
+
+APTR old_ppc_func_GetVisualInfo = NULL;
+APTR old_ppc_func_FreeVisualInfo = NULL;
+APTR old_ppc_func_CreateGadgetA = NULL;
+APTR old_ppc_func_AddGList = NULL;
+APTR old_ppc_func_RefreshGList = NULL;
+APTR old_ppc_func_GT_GetIMsg = NULL;
+
+#include "hooks/gadtools.h"
+#include "hooks/intuition.h"
 
 #define _LVOOpenScreen	-198
 #define _LVOCloseScreen	-66
@@ -344,10 +357,10 @@ BOOL set_patches( void )
 
 	Printf("libs is open, time to patch\n");
 
-//	set_new_68k_patch(Intuition,OpenScreen);			// maybe not needed, as it will end up in PPC routines.
-//	set_new_68k_patch(Intuition,CloseScreen);
-
 	IExec->Forbid();
+
+	// Intuition
+
 	set_new_ppc_patch(Intuition,OpenScreenTagList);
 	set_new_ppc_patch(Intuition,CloseScreen);
 	set_new_ppc_patch(Intuition,AllocScreenBuffer);
@@ -359,6 +372,21 @@ BOOL set_patches( void )
 	set_new_ppc_patch(Intuition,ActivateWindow);
 	set_new_ppc_patch(Intuition,OpenWindowTagList);
 	set_new_ppc_patch(Intuition,CloseWindow);
+
+//	set_new_ppc_patch(Intuition,AddGList);
+	set_new_ppc_patch(Intuition,RefreshGList);
+
+	//  GadTools
+
+	set_new_ppc_patch(GadTools,GetVisualInfo);
+	set_new_ppc_patch(GadTools,FreeVisualInfo);
+	set_new_ppc_patch(GadTools,CreateGadgetA);
+	set_new_ppc_patch(GadTools,GT_GetIMsg);
+
+	// Fix bad values from Graphics
+
+	set_new_ppc_patch(Graphics,GetBitMapAttr);
+
 	IExec->Permit();	
 
 	return TRUE;
@@ -366,11 +394,26 @@ BOOL set_patches( void )
 
 void undo_patches( void )
 {
-//	undo_68k_patch(Intuition,OpenScreen);			// maybe not needed, as it will end up in PPC routines.
-//	undo_68k_patch(Intuition,CloseScreen);
-
 
 	IExec->Forbid();
+
+	// undo Graphics
+
+	undo_ppc_patch(Graphics,GetBitMapAttr);
+
+	// undo GadTools
+
+	undo_ppc_patch(GadTools,GetVisualInfo);
+	undo_ppc_patch(GadTools,FreeVisualInfo);
+	undo_ppc_patch(GadTools,CreateGadgetA);
+	undo_ppc_patch(GadTools,GT_GetIMsg);
+
+
+	// Intuition
+
+//	undo_ppc_patch(Intuition,AddGList);
+	undo_ppc_patch(Intuition,RefreshGList);
+
 	undo_ppc_patch(Intuition,OpenScreenTagList);
 	undo_ppc_patch(Intuition,CloseScreen);
 	undo_ppc_patch(Intuition,AllocScreenBuffer);
@@ -423,6 +466,7 @@ int main( void )
 
 	if (set_patches())
 	{
+
 		for(;;) 
 		{
 			IExec -> Wait( 1L << host_sig  | SIGBREAKF_CTRL_C);
