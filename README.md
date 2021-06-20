@@ -16,6 +16,8 @@ will allow old programs and games to be displayed correct.)
 * AmigaOS 4.1 does not allow you to use "Screen -> BitMap", only "Screen -> RastPort -> BitMap"
 (Old programs might crash if they poke into Screen -> BitMap)
 
+* Lots of missing modes like Porductivity Modes, DBPAL, DBNTSC
+
 # Current status.
 
 Many of problems might not be OpenScreen actually it can be in definitions of the fake modes as well.
