@@ -74,6 +74,30 @@ void GetBitMapAttr_test( struct BitMap *bm )
 }
 
 
+void dumpMsg( struct IntuiMessage *m )
+{
+	Printf("Class %08lx, "
+		"Code %04x, "
+		"Qualifier %04x, "
+		"IAddress %08lx, "
+		"MouseX %d, "
+		"MouseY %d, "
+		"Seconds %ld, "
+		"Micros %ld, "
+		"IDCMPWindow %08lx, "
+		"SpecialLink %08lx, \n",
+			m->Class,
+			m->Code,
+			m->Qualifier,
+			m->IAddress,
+			m->MouseX,
+			m->MouseY,
+			m->Seconds,
+			m->Micros,
+			m->IDCMPWindow,
+			m->SpecialLink);
+}
+
 int main()
 {
 	struct Screen *src;
@@ -183,6 +207,8 @@ int main()
 
 				while (m)
 				{
+					dumpMsg(m);
+
 					switch (m -> Class)
 					{
 						case IDCMP_CLOSEWINDOW:
