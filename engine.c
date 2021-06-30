@@ -452,8 +452,14 @@ void send_mouse_move( struct Window *win,  struct IntuiMessage *source_msg )
 		{
 			msg -> Class = source_msg -> Class;
 			msg -> Code = source_msg -> Code;
+			msg -> Qualifier = source_msg -> Qualifier;
+			msg -> Seconds = source_msg -> Seconds;
+			msg -> Micros = source_msg -> Micros;
+
+			msg -> IDCMPWindow = win;
 			msg -> MouseX = win -> MouseX;
 			msg -> MouseY = win -> MouseY;
+
 
 			Forbid();
 			PutMsg( win -> UserPort, (struct Message *) msg);
@@ -475,6 +481,7 @@ void send_INTUITICKS( struct Window *win  )
 		if (msg)
 		{
 			msg -> Class = IDCMP_INTUITICKS;
+			msg -> IDCMPWindow = win;
 
 			Forbid();
 			PutMsg( win -> UserPort, (struct Message *) msg);
@@ -496,6 +503,7 @@ void send_closeWindow(struct Window *win)
 		if (msg)
 		{
 			msg -> Class = IDCMP_CLOSEWINDOW;
+			msg -> IDCMPWindow = win;
 
 			Forbid();
 			PutMsg( win -> UserPort, (struct Message *) msg);
