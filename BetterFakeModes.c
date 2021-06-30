@@ -363,15 +363,20 @@ BOOL set_patches( void )
 	set_new_ppc_patch(Intuition,OpenWindowTagList);
 	set_new_ppc_patch(Intuition,CloseWindow);
 
-//	set_new_ppc_patch(Intuition,AddGList);
+#if patch_gadtools
+	set_new_ppc_patch(Intuition,AddGList);
 	set_new_ppc_patch(Intuition,RefreshGList);
+#endif
 
 	//  GadTools
 
+#if patch_gadtools
 	set_new_ppc_patch(GadTools,GetVisualInfo);
 	set_new_ppc_patch(GadTools,FreeVisualInfo);
 	set_new_ppc_patch(GadTools,CreateGadgetA);
 	set_new_ppc_patch(GadTools,GT_GetIMsg);
+	set_new_ppc_patch(GadTools,GT_ReplyIMsg);
+#endif
 
 	// Graphics
 
@@ -397,16 +402,20 @@ void undo_patches( void )
 
 	// undo GadTools
 
+#if patch_gadtools
 	undo_ppc_patch(GadTools,GetVisualInfo);
 	undo_ppc_patch(GadTools,FreeVisualInfo);
 	undo_ppc_patch(GadTools,CreateGadgetA);
 	undo_ppc_patch(GadTools,GT_GetIMsg);
-
+	undo_ppc_patch(GadTools,GT_ReplyIMsg);
+#endif
 
 	// Intuition
 
-//	undo_ppc_patch(Intuition,AddGList);
+#if patch_gadtools
+	undo_ppc_patch(Intuition,AddGList);
 	undo_ppc_patch(Intuition,RefreshGList);
+#endif
 
 	undo_ppc_patch(Intuition,OpenScreenTagList);
 	undo_ppc_patch(Intuition,CloseScreen);

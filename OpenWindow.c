@@ -174,7 +174,14 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 
 	if (win -> IDCMPFlags)
 	{
-		win -> UserPort = (APTR) AllocSysObjectTags(ASOT_PORT, TAG_DONE);
+		char name[100];
+		sprintf(name,"FakeWindow%08x",win);
+
+		win -> UserPort = (APTR) AllocSysObjectTags(ASOT_PORT, 
+							ASOPORT_Name, name,
+							ASOPORT_CopyName, TRUE,
+							TAG_DONE);
+
 		FPrintf( output, "UserPort: %08x\n", win -> UserPort);
 	}
 

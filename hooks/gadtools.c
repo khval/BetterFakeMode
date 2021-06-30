@@ -9,13 +9,17 @@
 
 #include "hooks/gadtools.h"
 #include "helper/screen.h"
+#include "common.h"
 
 // We most create a bad VisualInfo, becouse gadtools, don't like fake windows.
+
+extern struct MsgPort *reply_port;
 
 APTR ppc_func_GetVisualInfo(struct GadToolsIFace *Self, struct Screen * screen, const struct TagItem * taglist)
 {
 	if (is_fake_screen( screen ))
 	{
+		FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
 		return (APTR) 0xFA8EFA8E;	// this how we know... its fake..
 	}
 	else
@@ -31,7 +35,11 @@ APTR ppc_func_GetVisualInfo(struct GadToolsIFace *Self, struct Screen * screen, 
 
 void ppc_func_FreeVisualInfo(struct GadToolsIFace *Self, APTR ptr)
 {
-	if (ptr != (APTR) 0xFA8EFA8E)
+	if (ptr == (APTR) 0xFA8EFA8E)
+	{
+		FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
+	}
+	else
 	{
 		return ((void (*)( struct GadToolsIFace *, APTR ptr))
 				old_ppc_func_FreeVisualInfo) ( Self, ptr);
@@ -44,6 +52,7 @@ struct Gadget * ppc_func_CreateGadgetA(struct GadToolsIFace *Self,ULONG kind,str
 {
 	if ( ng -> ng_VisualInfo == (APTR) 0xFA8EFA8E)
 	{
+		FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
 		return fake_CreateGadgetA ( kind,  gad, ng, taglist);
 	}
 	else
@@ -60,11 +69,31 @@ struct Gadget * ppc_func_CreateGadgetA(struct GadToolsIFace *Self,ULONG kind,str
 
 struct IntuiMessage * ppc_func_GT_GetIMsg (struct GadToolsIFace *Self, struct MsgPort * iport)
 {
-		// how do we find the Window? or how to know the mssage is used on a fake window.
+	if (iport -> mp_Node.ln_Name)
+	{
+		if (strncmp(iport -> mp_Node.ln_Name,"FakeWindow",10)==0)
+		{
+			FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
+			return (struct IntuiMessage *) GetMsg( iport );
+		}
+	}
 
-		return ((struct Gadget * (*)( struct GadToolsIFace *, struct MsgPort *))
-				old_ppc_func_GT_GetIMsg) ( Self, iport);
+	return ((struct IntuiMessage * (*)( struct GadToolsIFace *, struct MsgPort *))
+			old_ppc_func_GT_GetIMsg) ( Self, iport);
 }
 
+void ppc_func_GT_ReplyIMsg (struct GadToolsIFace *Self, struct IntuiMessage *msg)
+{
+	if (reply_port == msg -> ExecMessage.mn_ReplyPort)
+	{
+		FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
+		ReplyMsg( msg );
+	}
+	else
+	{
+		((void (*)( struct GadToolsIFace *, struct IntuiMessage *))
+				old_ppc_func_GT_ReplyIMsg) ( Self, msg);
+	}
+}
 
 

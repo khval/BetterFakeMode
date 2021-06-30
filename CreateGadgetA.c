@@ -21,6 +21,20 @@ void set_ng_gadget(struct Gadget *g ,const struct NewGadget *ng )
 //	g -> TextAttr = ng -> ng_TextAttr ;
 }
 
+void set_gadget_tags( struct Gadget *g,const struct TagItem * tagList )
+{
+	const struct TagItem * tag;
+
+	for (tag = tagList; (tag -> ti_Tag != TAG_DONE) || (tag -> ti_Tag != TAG_END); tag++)
+	{
+		switch ( tag -> ti_Tag )
+		{
+//			case 
+
+		} // tag -> ti_Data );
+	}
+}
+
 struct Gadget * fake_CreateGadgetA(ULONG kind,struct Gadget * previous,const struct NewGadget * ng,const struct TagItem * taglist)
 {
 	struct Gadget *g = new_struct( Gadget );
@@ -28,6 +42,8 @@ struct Gadget * fake_CreateGadgetA(ULONG kind,struct Gadget * previous,const str
 	if (g)
 	{
 		if (ng) set_ng_gadget(g ,ng);
+
+		if (taglist) set_gadget_tags( g, taglist );
 
 		g -> NextGadget = NULL;
 

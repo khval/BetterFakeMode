@@ -7,18 +7,35 @@ files_intuition = \
 	CloseWindow.c \
 	MoveWindow.c \
 	SizeWindow.c \
+	SetWindowTitles.c \
+	ActivateWindow.c \
+	CreateGadgetA.c
+
+files_graphics = \
+	GetBitMapAttr.c \
+	LockBitMapTagList.c 
+
+files = \
+	${files_intuition} \
+	${files_graphics} \
+	init.c \
+	hooks/gadtools.c \
+	hooks/intuition.c \
+	hooks/graphics.c \
+	helper/screen.c \
+	helper/debug.c \
 	AllocScreenBuffer.c \
 	renderWindow.c \
 	renderGadgets.c \
 	spawn.c \
 	engine.c \
 	EngineTimer.c \
-	CreateGadgetA.c
 
 files_o = ${files:.c=.o}
 
 opts += -Duse_fake_bitmap=1 
 opts += -Dmax_screens=100
+opts += -Dpatch_gadtools=0
 
 opts_inline = ${opts} -D__USE_INLINE__  -Wall
 
