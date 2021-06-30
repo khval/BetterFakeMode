@@ -247,7 +247,8 @@ enum
 	no_action = 0,
 	drag_action,
 	size_action,
-	close_action
+	close_action,
+	wdepth_action
 };
 
 LONG mouse_state = 0;
@@ -288,6 +289,7 @@ bool ClickButtons( struct Window *win )
 					return true;
 
 				case GTYP_WDEPTH:
+					mouse_state = wdepth_action;
 					return true;
 
 				case WFLG_SIZEGADGET:
@@ -305,6 +307,21 @@ bool ClickButtons( struct Window *win )
 	return false;
 }
 
+UWORD getMinLayerPriority( struct Screen *src )
+{
+	struct Window *win;
+	UWORD min_layer_priority = ~0;
+
+	for(win = src -> FirstWindow;win;win = win -> NextWindow)
+	{
+		if (win -> WLayer -> priority < min_layer_priority )
+		{
+			min_layer_priority = win -> WLayer -> priority;
+		}
+	}
+
+	return min_layer_priority;
+}
 
 // return true, if you have clicked on button.
 
@@ -380,6 +397,32 @@ void drag_window(struct Screen *src)
 		{
 			no_block_MoveWindow( active_win, dx, dy  );
 		}
+	}
+}
+
+
+void wdepth_window(struct Screen *src)
+{
+	LONG dx,dy;
+
+	FPrintf( output, "%s\n",__FUNCTION__);
+
+	if (window_open(src,active_win))
+	{
+		ULONG minLayerPriority = getMinLayerPriority( src );
+		struct Layer *l = active_win -> RPort -> Layer;
+
+		FPrintf( output, "minLayerPriority: %ld, active_win -> WLayer -> priority: %ld\n",minLayerPriority, active_win -> WLayer -> priority);
+
+		LockLayer(0, active_win -> RPort->Layer);
+
+		if ( minLayerPriority == active_win -> WLayer -> priority)
+		{
+			BehindLayer( 0, l );
+		}
+		else UpfrontLayer( 0, l );
+
+		UnlockLayer( active_win -> RPort->Layer);
 	}
 }
 
@@ -734,6 +777,11 @@ void emuEngine()
 									case close_action:
 										if (has_active_win) send_closeWindow( active_win );
 										break;
+
+									case wdepth_action:
+										wdepth_window( c.src );
+										break;
+
 									default:
 										if (has_active_win) send_copy( active_win , m );
 										break;
