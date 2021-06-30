@@ -223,7 +223,7 @@ int main()
 
 	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
-		AttachGTList(1,0);
+//		AttachGTList(1,0);
 
 		for (g = win[0] -> FirstGadget; g; g = g -> NextGadget)
 		{
@@ -236,13 +236,19 @@ int main()
 		{
 			ev=WaitEvent();
 
-			if (ev==IDCMP_GADGETUP)
+			Printf("ev: %08lx\n",ev);
+
+			switch (ev)
 			{
-				switch(GadgetHit -> GadgetID)
-				{
-					case index_b_cancell:	ev=IDCMP_CLOSEWINDOW;
-							break;
-				}
+				case IDCMP_GADGETUP:
+
+						switch(GadgetHit -> GadgetID)
+						{
+							case index_b_cancell:	ev=IDCMP_CLOSEWINDOW;
+									Printf("Pressed Cancel button\n");
+									break;
+						}
+						break;
 			}
 			Delay(1);
 		}

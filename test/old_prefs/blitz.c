@@ -277,7 +277,6 @@ LONG _GetAEvent()
 			}
 			else
 			{
-				Printf("Failed\n");
 				imsgClass = 0;
 				EventCode = 0;
 				GadgetHit	= NULL;
