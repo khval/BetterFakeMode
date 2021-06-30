@@ -1,9 +1,6 @@
 
-files = init.c \
-	hooks/gadtools.c \
-	hooks/intuition.c \
-	helper/screen.c \
-	helper/debug.c \
+
+files_intuition = \
 	OpenScreen.c \
 	CloseScreen.c \
 	OpenWindow.c \
@@ -13,11 +10,8 @@ files = init.c \
 	AllocScreenBuffer.c \
 	renderWindow.c \
 	renderGadgets.c \
-	SetWindowTitles.c \
-	ActivateWindow.c \
 	spawn.c \
 	engine.c \
-	GetBitMapAttr.c \
 	EngineTimer.c \
 	CreateGadgetA.c
 
@@ -31,7 +25,7 @@ opts_inline = ${opts} -D__USE_INLINE__  -Wall
 incdir = -I./
 incdir += -I../
 
-all_files = BetterFakeModes ${files_o}
+all_files = BetterFakeModes ${incdir} ${files_o}
 
 all: ${files_o}
 	gcc  $(opts) BetterFakeModes.c ${files_o} -o BetterFakeModes

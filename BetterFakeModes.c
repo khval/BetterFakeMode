@@ -39,6 +39,11 @@ APTR old_ppc_func_SetWindowTitles = NULL;
 APTR old_ppc_func_ActivateWindow = NULL;
 APTR old_ppc_func_GetBitMapAttr = NULL;
 
+// graphics
+
+APTR old_ppc_func_LockBitMapTagList = NULL;
+APTR old_ppc_func_UnlockBitMap = NULL;
+
 // gadtools
 
 APTR old_ppc_func_GetVisualInfo = NULL;
@@ -47,9 +52,11 @@ APTR old_ppc_func_CreateGadgetA = NULL;
 APTR old_ppc_func_AddGList = NULL;
 APTR old_ppc_func_RefreshGList = NULL;
 APTR old_ppc_func_GT_GetIMsg = NULL;
+APTR old_ppc_func_GT_ReplyIMsg = NULL;
 
 #include "hooks/gadtools.h"
 #include "hooks/intuition.h"
+#include "hooks/graphics.h"
 
 #define _LVOOpenScreen	-198
 #define _LVOCloseScreen	-66
@@ -310,12 +317,10 @@ static void ppc_func_SetWindowTitles( struct IntuitionIFace *Self, struct Window
 {
 	if (is_fake_screen( w -> WScreen ))
 	{
-		FPrintf( output,"SetWindowTitles (fake)\n");
 		fake_SetWindowTitles( w,winStr, srcStr );
 	}
 	else
 	{
-		FPrintf( output,"SetWindowTitles (native)\n");
 		((void (*) ( struct IntuitionIFace *, struct Window *window, const char *, const char * )) old_ppc_func_SetWindowTitles) (Self, w, winStr, srcStr );
 	}
 }
@@ -334,21 +339,6 @@ struct ScreenBuffer * ppc_func_AllocScreenBuffer (struct IntuitionIFace *Self, s
 		return ((struct ScreenBuffer * (*) (struct IntuitionIFace *, struct Screen *, struct BitMap *, ULONG)) old_ppc_func_AllocScreenBuffer) (Self, sc, bm, flags);
 	}
 }
-
-
-ULONG ppc_func_GetBitMapAttr (struct IntuitionIFace *Self, struct BitMap * bm, ULONG value)
-{
-
-	if ( bm -> pad == 0xFA8E)
-	{
-		return fake_GetBitMapAttr (  bm, value);
-	}
-	else
-	{
-		return ((ULONG (*) (struct IntuitionIFace *,  struct BitMap *, ULONG)) old_ppc_func_GetBitMapAttr) (Self, bm, value);
-	}
-}
-
 
 
 BOOL set_patches( void )
@@ -383,9 +373,11 @@ BOOL set_patches( void )
 	set_new_ppc_patch(GadTools,CreateGadgetA);
 	set_new_ppc_patch(GadTools,GT_GetIMsg);
 
-	// Fix bad values from Graphics
+	// Graphics
 
-	set_new_ppc_patch(Graphics,GetBitMapAttr);
+	set_new_ppc_patch(Graphics,GetBitMapAttr);		// Fix bad values
+	set_new_ppc_patch(Graphics,LockBitMapTagList);	// Lock does not work with fake bitmaps.
+	set_new_ppc_patch(Graphics,UnlockBitMap);
 
 	IExec->Permit();	
 
@@ -400,6 +392,8 @@ void undo_patches( void )
 	// undo Graphics
 
 	undo_ppc_patch(Graphics,GetBitMapAttr);
+	undo_ppc_patch(Graphics,LockBitMapTagList);
+	undo_ppc_patch(Graphics,UnlockBitMap);
 
 	// undo GadTools
 
