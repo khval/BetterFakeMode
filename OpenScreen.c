@@ -14,14 +14,9 @@
 #include "helper/screen.h"
 
 
-void fake_initColorMap( struct ViewPort *vp, int depth)
+void initColors( struct ViewPort *vp, int depth)
 {
 	struct ColorMap *cm = vp -> ColorMap;
-
-	cm -> Count = 1L << depth;
-	cm -> ColorTable = AllocVecTags( sizeof(uint32) * 3  * cm -> Count, 
-			AVT_Type, MEMF_SHARED, AVT_ClearWithValue, 0, TAG_END); 
-	cm -> cm_vp = vp;
 
 	 SetRGB32( vp, 0, 0x55555555,0x55555555,0x55555555 );
 	 SetRGB32( vp, 1, 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF );
@@ -55,8 +50,12 @@ void fake_initViewPort( struct Screen *s , int depth )
 	vp -> DWidth = s -> Width;
 	vp -> DHeight = s -> Height;
 
-	vp -> ColorMap =  new_struct( ColorMap );
-	if (vp -> ColorMap) fake_initColorMap( vp, depth );
+	vp -> ColorMap = GetColorMap( 1L << depth);
+	if (vp -> ColorMap)
+	{
+		vp -> ColorMap -> cm_vp = vp;
+		initColors( vp, depth );
+	}
 
 	vp -> RasInfo = new_struct( RasInfo );
 	if (vp -> RasInfo) fake_initRasInfo( vp -> RasInfo, s -> RastPort.BitMap );

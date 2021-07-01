@@ -13,21 +13,15 @@
 
 extern APTR video_mutex;
 
-void _cleanup_colormap( struct ColorMap *cm )
-{
-	if (cm -> ColorTable)	
-	{
-		FreeVec( cm -> ColorTable );
-		cm -> ColorTable = NULL;
-	}
-}
+
+
+
 
 void _cleanup_fake_ViewPort( struct ViewPort *vp )
 {
 	if (vp -> ColorMap)
 	{
-		_cleanup_colormap( vp -> ColorMap );
-		FreeVec(vp -> ColorMap);
+		FreeColorMap( vp -> ColorMap );
 		vp -> ColorMap = NULL;
 	}
 
