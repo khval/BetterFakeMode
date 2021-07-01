@@ -71,6 +71,20 @@ void update_argb_lookup( struct ColorMap *cm )
 	}
 }
 
+void dump_colors( struct ColorMap *cm )
+{
+	int c;
+	int colors = cm -> Count;
+	ULONG d[3];
+
+	for (c=0;c<colors;c++)
+	{
+		GetRGB32( cm, c, 1, d );
+		FPrintf( output,"%ld: %08lx,%08lx,%08lx\n", c, d[0] , d[1] , d[2]);
+	}
+
+}
+
 
 void draw_bits(struct RastPort *rp, unsigned char *b, int x,int  y )
 {
