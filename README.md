@@ -58,8 +58,9 @@ or I need to fool the program completely. replacing Gadtools with my own fake on
 
 Dkd-Chaotic, Dkd-swnf, dkd-jaeg.
 
-(There will be DSI error when demo starts, press ignore.
-I like to know what goes wrong, but don’t have the source code to demos, nor to the OS.)
+(There will be a DSI error when the demo starts, press ignore.
+I like to know what goes wrong, but don’t have the source code to the demos, 
+nor to the OS, so stacktrace logs don't help, no symbols to help me.)
 
 # What is working.
 
