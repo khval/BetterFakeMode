@@ -37,14 +37,29 @@ but don’t expect it to work on anything else then the tests provided.
 
 Mostly nothing will work with this patch, don't use it :-)
 
-* Some events are not sendt.
+* Some events might not be sendt, 
+(pleae report problem if you find any.)
 
 * Double buffering is broken.
+(Never used double buffer myself, so not sure how this should work, its not often used in programs, 
+because it hard to do correct, even if done correct, it can crash, at exit. So maybe not so importent.)
 
 * Intuition Windows are not rendered correct yet.
 (Resize window, close window, depth gadget.)
 
 * There pointers that are not set, that should be set, but I do not know what they are for.
+(Unexpected crashes are likely, need more test cases, code snippets.)
+
+* Do not try to open MUI, Reaction, or GadTools based programs.
+(Some internal structures are not well documented, and I need to simulate this for this to work, 
+or I need to fool the program completely. replacing Gadtools with my own fake one.)
+
+# Demos I know works with this Patch.
+
+Dkd-Chaotic, Dkd-swnf, dkd-jaeg.
+
+(There will be DSI error when demo starts, press ignore.
+I like to know what goes wrong, but don’t have the source code to demos, nor to the OS.)
 
 # What is working.
 
