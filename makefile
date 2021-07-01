@@ -1,4 +1,16 @@
 
+#default settings...
+
+opts += -Duse_fake_bitmap=1 
+opts += -Dmax_screens=100
+
+# Enable or disable patches... 1=enable, 0=disable
+
+opts += -Dpatch_gadtools=0
+opts += -Dpatch_GetBitMapAttr=1
+opts += -Dpatch_LockBitMap=1
+
+# files to compile..
 
 files_intuition = \
 	OpenScreen.c \
@@ -33,9 +45,6 @@ files = \
 
 files_o = ${files:.c=.o}
 
-opts += -Duse_fake_bitmap=1 
-opts += -Dmax_screens=100
-opts += -Dpatch_gadtools=0
 
 opts_inline = ${opts} -D__USE_INLINE__  -Wall
 

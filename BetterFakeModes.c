@@ -380,9 +380,14 @@ BOOL set_patches( void )
 
 	// Graphics
 
+#if patch_GetBitMapAttr
 	set_new_ppc_patch(Graphics,GetBitMapAttr);		// Fix bad values
+#endif
+
+#if patch_LockBitMap
 	set_new_ppc_patch(Graphics,LockBitMapTagList);	// Lock does not work with fake bitmaps.
 	set_new_ppc_patch(Graphics,UnlockBitMap);
+#endif
 
 	IExec->Permit();	
 
@@ -396,9 +401,14 @@ void undo_patches( void )
 
 	// undo Graphics
 
+#if patch_GetBitMapAttr
 	undo_ppc_patch(Graphics,GetBitMapAttr);
+#endif
+
+#if patch_LockBitMap
 	undo_ppc_patch(Graphics,LockBitMapTagList);
 	undo_ppc_patch(Graphics,UnlockBitMap);
+#endif
 
 	// undo GadTools
 
