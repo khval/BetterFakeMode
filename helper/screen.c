@@ -8,7 +8,9 @@
 #include <proto/graphics.h>
 #include <exec/emulation.h>
 
+#include "modeid.h"
 #include "helper/screen.h"
+
 
 struct Screen screens[max_screens];
 struct Layer_Info *LayerInfos[max_screens];
@@ -67,29 +69,65 @@ struct Screen *first_fake_screen()
 	return NULL;
 }
 
-bool is_leagcy_mode( ULONG id )
+struct KownLgacyModes
 {
-	FPrintf( output, "MODE ID: %08lx\n",id);
+	int w;
+	int h;
+};
 
-	switch (id)
+struct KownLgacyModes LgacyModes[] =
+{
+	{320,200},	// NTSC, LOWRES
+	{320,400},	// NTSC, LOWRES + interlaced
+	{640,200},	// NTSC, HIRES
+	{640,400},	// NTSC, HIRES + interlaced
+	{320,256},	// PAL, LOWRES
+	{320,512},	// PAL, LOWRES + interlaced
+	{640,256},	// PAL, HIRES
+	{640,512},	// PAL, HIRES + interlaced
+	{-1,-1}
+};
+
+bool maybe_lagacy_mode(const struct NewScreen * newScreen)
+{
+	struct KownLgacyModes *lm;
+
+	if (newScreen -> Depth>8) return false;
+
+	for (lm = LgacyModes; lm -> w != -1; lm++ )
 	{
-		case 0x21000:	// LowRes
-		case 0x29000: // HighRes
-		case 0x29020: // SuperHighRes
-		case 0x21004: // LowResLaced
-		case 0x29004: // HighResLaced
-		case 0x29024: // SuperHighResLaced
-		case 0x29404: // HighResLaced DPF
-			return true;
+		if ((newScreen -> Width == lm -> w) && (newScreen -> Height == lm -> h)) return true;
 	}
 
 	return false;
 }
 
-bool legacy_in_tags( const struct TagItem * tagList, bool legacy_status_maybe )
+extern struct modeT modes[];
+
+struct modeT *is_leagcy_mode( ULONG id )
+{
+	struct modeT *mode;
+
+	FPrintf( output, "MODE ID: %08lx\n",id);
+
+	for (mode = modes; mode -> id ; mode++)
+	{
+		FPrintf( output, "this ID: %08lx\n", mode -> id);
+
+		if (mode -> id == id) 
+		{
+			FPrintf( output, "MODE Name: %08lx\n",mode -> name);
+			return mode;
+		}
+	}
+
+	return NULL;
+}
+
+struct modeT *legacy_in_tags( const struct TagItem * tagList, bool legacy_status_maybe )
 {
 	bool has_mode_id = false;
-	bool legacy_status = false;
+	struct modeT *legacy_mode = NULL;
 	const struct TagItem *tag;
 
 	if (tagList == NULL) return false;
@@ -105,16 +143,16 @@ bool legacy_in_tags( const struct TagItem * tagList, bool legacy_status_maybe )
 
 			case SA_DisplayID:
 				has_mode_id = true;
-				if (is_leagcy_mode( tag -> ti_Data )) legacy_status = true;
+				legacy_mode = is_leagcy_mode( tag -> ti_Data );
 				break;
 		}
 	}
 
 	if (has_mode_id == false)	// if we have no mode id, we most guess.
 	{
-		if (legacy_status_maybe) legacy_status=true;
+		if (legacy_status_maybe) legacy_mode=0xFFFFFFFF;
 	}
 
-	return legacy_status;
+	return legacy_mode;
 }
 

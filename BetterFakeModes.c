@@ -18,6 +18,7 @@
 #include "patch.h"
 #include "common.h"
 #include "spawn.h"
+#include "modeid.h"
 #include "helper/screen.h"
 #include "engine.h"
 
@@ -73,26 +74,6 @@ bool monitor = false;
 
 int num_of_open_screens = 0;
 
-struct KownLgacyModes
-{
-	int w;
-	int h;
-};
-
-struct KownLgacyModes LgacyModes[] =
-{
-	{320,200},	// NTSC, LOWRES
-	{320,400},	// NTSC, LOWRES + interlaced
-	{640,200},	// NTSC, HIRES
-	{640,400},	// NTSC, HIRES + interlaced
-	{320,256},	// PAL, LOWRES
-	{320,512},	// PAL, LOWRES + interlaced
-	{640,256},	// PAL, HIRES
-	{640,512},	// PAL, HIRES + interlaced
-	{-1,-1}
-};
-
-
 void show_newScreenInfo(const struct NewScreen * newScreen)
 {
 	char stdTXT[256];
@@ -108,20 +89,6 @@ void show_newScreenInfo(const struct NewScreen * newScreen)
 		newScreen -> ViewModes );
 
 	FPrintf( output, "%s\n",stdTXT);
-}
-
-bool maybe_lagacy_mode(const struct NewScreen * newScreen)
-{
-	struct KownLgacyModes *lm;
-
-	if (newScreen -> Depth>8) return false;
-
-	for (lm = LgacyModes; lm -> w != -1; lm++ )
-	{
-		if ((newScreen -> Width == lm -> w) && (newScreen -> Height == lm -> h)) return true;
-	}
-
-	return false;
 }
 
 struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const struct NewScreen * newScreen, const struct TagItem * tagList)
@@ -147,7 +114,22 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 	}
 	else 
 	{
-		is_lagacy =legacy_in_tags(  tagList, maybe_lagacy );
+		struct modeT *mode =legacy_in_tags(  tagList, maybe_lagacy );
+
+		if ( mode )
+		{
+			if (mode == (struct modeT *) 0xFFFFFFFF)
+			{
+				is_lagacy = true;
+			}
+			else
+			{
+				sw = mode -> w;
+				sh = mode -> h;
+				sd = mode -> maxDepth;
+				is_lagacy = true;
+			}
+		}
 	}
 
 	if (is_lagacy)

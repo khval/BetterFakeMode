@@ -42,6 +42,7 @@ files = \
 	spawn.c \
 	engine.c \
 	EngineTimer.c \
+	modeid.c 
 
 files_o = ${files:.c=.o}
 

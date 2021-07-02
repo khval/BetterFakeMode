@@ -11,6 +11,7 @@
 #include <exec/emulation.h>
 
 #include "common.h"
+#include "modeid.h"
 #include "helper/screen.h"
 
 
