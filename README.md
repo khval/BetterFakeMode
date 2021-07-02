@@ -62,6 +62,10 @@ Dkd-Chaotic, Dkd-swnf, dkd-jaeg.
 I like to know what goes wrong, but don’t have the source code to the demos, 
 nor to the OS, so stacktrace logs don't help, no symbols to help me.)
 
+# Progams I know work with this patch
+
+Vista Pro V3
+
 # What is working.
 
 * it is able to catch programs, trying to open old screen modes.
