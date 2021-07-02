@@ -64,7 +64,9 @@ nor to the OS, so stacktrace logs don't help, no symbols to help me.)
 
 # Progams I know work with this patch
 
-Vista Pro V3
+Vista Pro V3 
+(Preview not working, it opens a new screen, 
+I think it trys to render into True color screen.)
 
 # What is working.
 
