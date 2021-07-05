@@ -123,6 +123,44 @@ struct modeT *is_leagcy_mode( ULONG id )
 	return NULL;
 }
 
+struct modeT *bestMode( ULONG monitor, ULONG w, ULONG h)
+{
+	ULONG _match; 
+	ULONG match = ~0;
+	struct modeT *mode;
+	struct modeT *found = NULL;
+
+	if (monitor)
+	{
+		for (mode = modes; mode -> id ; mode++)
+		{
+			if (mode -> id & MONITOR_ID_MASK ==  monitor)
+			{
+				_match = abs(mode -> w-w) + abs(mode -> h-h);
+				if (_match<match)
+				{
+					match = _match;
+					found = mode;
+				}
+			}
+		}
+	}
+	else
+	{
+		for (mode = modes; mode -> id ; mode++)
+		{
+			_match = abs(mode -> w-w) + abs(mode -> h-h);
+			if (_match<match)
+			{
+				match = _match;
+				found = mode;
+			}
+		}
+	}
+
+	return found;
+}
+
 struct modeT *legacy_in_tags( const struct TagItem * tagList, bool legacy_status_maybe )
 {
 	bool has_mode_id = false;

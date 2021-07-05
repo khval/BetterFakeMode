@@ -334,7 +334,10 @@ void draw_screen( struct emuIntuitionContext *c)
 			LBM_BaseAddress, &dest_ptr,
 			TAG_END	 );
 
-	max_height = bm -> Rows > 480 ? 480 : bm -> Rows;	// must limit....
+	max_height = c -> src -> ViewPort.DHeight;
+	if (bm -> Rows < max_height) max_height = bm -> Rows;
+
+// bm -> Rows > 480 ? 480 : bm -> Rows;	// must limit....
 
 	for (y=0;y<max_height; y++)
 	{

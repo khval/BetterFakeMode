@@ -9,5 +9,6 @@ extern bool is_fake_screen( struct Screen *screen );
 extern struct Screen *first_fake_screen();
 extern struct modeT * is_leagcy_mode( ULONG id );
 extern struct modeT * legacy_in_tags( const struct TagItem * tagList, bool legacy_status_maybe );
+extern struct modeT *bestMode( ULONG monitor, ULONG w, ULONG h);
 
 

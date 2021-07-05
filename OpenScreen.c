@@ -9,6 +9,7 @@
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <exec/emulation.h>
+#include <graphics/modeid.h>
 
 #include "common.h"
 #include "modeid.h"
@@ -46,10 +47,8 @@ void fake_initViewPort( struct Screen *s , int depth )
 {
 	struct ViewPort *vp = &s-> ViewPort;
 
-	InitVPort( vp );
-
-	vp -> DWidth = s -> Width;
-	vp -> DHeight = s -> Height;
+	if (vp -> DWidth == 0) vp -> DWidth = s -> Width;
+	if (vp -> DHeight == 0) vp -> DHeight = s -> Height;
 
 	vp -> ColorMap = GetColorMap( 1L << depth);
 	if (vp -> ColorMap)
@@ -90,7 +89,7 @@ struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
 }
 #endif
 
-void _init_fake_screen(struct Screen *s,int Depth)
+void _init_fake_screen(struct Screen *s,int Depth )
 {
 		s -> Width = s -> Width & 15 ? (s -> Width + 16) & 0xFFFE : s -> Width ;	// Round up closes 16 pixels.
 
@@ -113,7 +112,7 @@ void _init_fake_screen(struct Screen *s,int Depth)
 
 		FPrintf( output, "%ld\n", s ->RastPort.BitMap -> BytesPerRow );
 
-		 fake_initViewPort( s, Depth );
+		 fake_initViewPort( s, Depth);
 
 		// need to fill in the struct as best as I can.
 }
@@ -136,8 +135,12 @@ void init_screen_from_newScreen( const struct NewScreen * newScreen, struct Scre
 	*depth = newScreen -> Depth;
 }
 
-void update_screen_from_taglist(const struct TagItem * tagList, struct Screen *s, int *depth)
+
+
+void update_screen_from_taglist(const struct TagItem * tagList, struct Screen *s, ULONG *depth)
 {
+	int s_w, s_h, s_d, s_id, s_monitor;
+
 	const struct TagItem * tag;
 
 	for (tag = tagList; tag -> ti_Tag != TAG_DONE; tag++)
@@ -145,23 +148,46 @@ void update_screen_from_taglist(const struct TagItem * tagList, struct Screen *s
 		switch (tag -> ti_Tag)
 		{
 			case SA_Width:
-				s -> Width = tag -> ti_Data;
+				s_w = tag -> ti_Data;
+				s -> Width = s_w;
 				break;
 
 			case SA_Height:
-				s -> Height = tag -> ti_Data;
+				s_h = tag -> ti_Data;
+				s -> Height = s_w;
 				break;
 
 			case SA_Depth:
-				*depth = tag -> ti_Data;
+				s_d = tag -> ti_Data;
+				*depth = s_d;
+				break;
+
+			case SA_DisplayID:
+				s -> ViewPort.Modes = tag -> ti_Data;
+				s_monitor = tag -> ti_Data & MONITOR_ID_MASK;
 				break;
 		}
 	}
+
+	{
+		struct modeT *mode;
+
+		mode = bestMode( s_monitor,  s_w,  s_h);
+		if (mode)
+		{
+			s -> ViewPort.DWidth = mode -> w;
+			s -> ViewPort.DHeight = mode -> h;
+
+			FPrintf( output, "ViewPort %ld,%ld\n", mode -> w, mode -> h);
+		}
+	}
+
 }
 
 struct Screen * _new_fake_OpenScreenTagList( const struct NewScreen * newScreen, const struct TagItem * tagList)
 {
-	int depth;
+	int depth = 0;
+	UWORD displayID = 0;
 	int i;
 	struct Screen *s;
 
@@ -170,8 +196,12 @@ struct Screen * _new_fake_OpenScreenTagList( const struct NewScreen * newScreen,
 
 	if (s)
 	{
-		s -> FirstWindow = NULL;
+		InitVPort( &s -> ViewPort );
+		
+		s -> ViewPort.DHeight = 0;
+		s -> ViewPort.DWidth = 0;
 
+		s -> FirstWindow = NULL;
 		s -> Title = strdup("Hello World");
 
 		add_LayerInfo( i, s );
