@@ -112,14 +112,13 @@ struct modeT *is_leagcy_mode( ULONG id )
 
 	for (mode = modes; mode -> id ; mode++)
 	{
-		FPrintf( output, "this ID: %08lx\n", mode -> id);
-
 		if (mode -> id == id) 
 		{
-			FPrintf( output, "MODE Name: %08lx\n",mode -> name);
+			FPrintf( output, "MODE Name: %s\n",mode -> name);
 			return mode;
 		}
 	}
+	FPrintf( output, "MODE ID: %08lx -- not found\n",id);
 
 	return NULL;
 }
