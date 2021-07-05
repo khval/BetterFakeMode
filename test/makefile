@@ -5,7 +5,8 @@ deps += debug.c
 files = ${deps}
 
 tests_c = OpenScreen.c 
-tests_c += OpenScreen_002100.c
+tests_c += OpenScreen_0021000.c
+tests_c += OpenScreen_HAM.c
 tests_c += OpenWindow.c
 tests_c += dbuf.c
 tests_c += Gadtools.c
