@@ -49,7 +49,17 @@ struct amiga_rgb
 	uint32 b;
 };
 
-uint32 argb[256];
+union
+{
+	uint32 argb;
+	struct
+	{
+		unsigned char a;
+		unsigned char r;
+		unsigned char g;
+		unsigned char b;
+	};
+} palette[256];
 
 void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Window *win);
 
@@ -67,7 +77,10 @@ void update_argb_lookup( struct ColorMap *cm )
 		d[1] >>= 24;
 		d[2] >>= 24;
 
-		argb[ c ] = 0xFF000000 | (d[0]<<16)| (d[1]<<8) | d[2];
+		palette[ c ].a = 0xFF;
+		palette[ c ].r = d[0];
+		palette[ c ].g = d[1];
+		palette[ c ].b = d[2];
 	}
 }
 
@@ -85,34 +98,110 @@ void dump_colors( struct ColorMap *cm )
 
 }
 
-
+/*
 void draw_bits(struct RastPort *rp, unsigned char *b, int x,int  y )
 {
-	WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
-	WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
-	WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
-	WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
+	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
+	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
+	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
+	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
 
-	WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
-	WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
-	WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
-	WritePixelColor(rp,  x++,  y,  argb[ *b++ ] );
+	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
+	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
+	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
+	WritePixelColor(rp,  x,  y,  palette[ *b ].argb );
 
 }
+*/
 
+uint32 ham_r,ham_g,ham_b;
+
+inline uint32 ham6( unsigned char color )
+{
+	switch (color & 0x30)
+	{
+		case 0x00:
+				ham_r = palette[color].r << 16;
+				ham_g = palette[color].g << 8;
+				ham_b = palette[color].b;
+				break;
+		case 0x10:
+				ham_b = ((color & 0xF) * 0x11);
+				break;
+		case 0x20:
+				ham_r = ((color & 0xF) * 0x11) << 16;
+				break;
+		case 0x30:
+				ham_g = ((color & 0xF) * 0x11) << 8;
+				break;
+	}
+
+	return 0xFF000000 | ham_r | ham_g | ham_b;
+}
+
+inline uint32 ham8( unsigned char color )
+{
+	switch (color & 0x3)
+	{
+		case 0x0:
+				ham_r = palette[color].r << 16;
+				ham_g = palette[color].g << 8;
+				ham_b = palette[color].b;
+				break;
+		case 0x1:
+				ham_b = color & 0xFC;
+				break;
+		case 0x2:
+				ham_g = (color & 0xFC) << 8;
+				break;
+		case 0x3:
+				ham_r = (color & 0xFC) << 16;
+				break;
+	}
+
+	return 0xFF000000 | ham_r | ham_g | ham_b;
+}
 
 void draw_bits_argb( unsigned char *dest_ptr,unsigned int dest_bpr, unsigned char *b, int x,int  y )
 {
 	uint32 *d_argb = (uint32 *)	(dest_ptr + dest_bpr * y + (x*4));
 
-	*d_argb++ = argb[ *b++ ]; // 0
-	*d_argb++ = argb[ *b++ ]; // 1
-	*d_argb++ = argb[ *b++ ]; // 2
-	*d_argb++ = argb[ *b++ ]; // 3
-	*d_argb++ = argb[ *b++ ]; // 4
-	*d_argb++ = argb[ *b++ ]; // 5
-	*d_argb++ = argb[ *b++ ]; // 6
-	*d_argb++ = argb[ *b++ ]; // 7
+	*d_argb++ = palette[ *b++ ].argb ;
+	*d_argb++ = palette[ *b++ ].argb ;
+	*d_argb++ = palette[ *b++ ].argb ;
+	*d_argb++ = palette[ *b++ ].argb ;
+	*d_argb++ = palette[ *b++ ].argb ;
+	*d_argb++ = palette[ *b++ ].argb ;
+	*d_argb++ = palette[ *b++ ].argb ;
+	*d_argb = palette[ *b ].argb ;
+}
+
+void draw_bits_argb_ham6( unsigned char *dest_ptr,unsigned int dest_bpr, unsigned char *b, int x,int  y )
+{
+	uint32 *d_argb = (uint32 *)	(dest_ptr + dest_bpr * y + (x*4));
+
+	*d_argb++ = ham6( *b++ ); // 0
+	*d_argb++ = ham6( *b++ ); // 1
+	*d_argb++ = ham6( *b++ ); // 2
+	*d_argb++ = ham6( *b++ ); // 3
+	*d_argb++ = ham6( *b++ ); // 4
+	*d_argb++ = ham6( *b++ ); // 5
+	*d_argb++ = ham6( *b++ ); // 6
+	*d_argb++ = ham6( *b ); // 7
+}
+
+void draw_bits_argb_ham8( unsigned char *dest_ptr,unsigned int dest_bpr, unsigned char *b, int x,int  y )
+{
+	uint32 *d_argb = (uint32 *)	(dest_ptr + dest_bpr * y + (x*4));
+
+	*d_argb++ = ham8( *b++ ); // 0
+	*d_argb++ = ham8( *b++ ); // 1
+	*d_argb++ = ham8( *b++ ); // 2
+	*d_argb++ = ham8( *b++ ); // 3
+	*d_argb++ = ham8( *b++ ); // 4
+	*d_argb++ = ham8( *b++ ); // 5
+	*d_argb++ = ham8( *b++ ); // 6
+	*d_argb++ = ham8( *b ); // 7
 }
 
 uint64 draw_1p(unsigned char *ptr, int SizeOfPlane)
@@ -199,9 +288,11 @@ void *planar_routines[]  =
 };
 
 
-void draw_screen( struct Window *win, struct BitMap *bm, struct BitMap *dest_bm )
+void draw_screen( struct emuIntuitionContext *c) 
 {
-//	struct RastPort *rp = win -> RPort;
+	struct BitMap *bm = c -> src -> RastPort.BitMap;
+	struct BitMap *dest_bm = c -> dest_bitmap;
+
 	int SizeOfPlane;
 	int x,y;
 	int bx,bpr;
@@ -214,12 +305,28 @@ void draw_screen( struct Window *win, struct BitMap *bm, struct BitMap *dest_bm 
 	unsigned int dest_bpr;
 	APTR lock;
 
+	uint64 (*planar_routine) (unsigned char *ptr, int SizeOfPlane) = NULL;
+	void (*draw_bits) ( unsigned char *dest_ptr,unsigned int dest_bpr, unsigned char *b, int x,int  y ) = NULL;
+
 	bpr = bm -> BytesPerRow;
 	SizeOfPlane = bm -> BytesPerRow * bm -> Rows;
-
-	uint64 (*planar_routine) (unsigned char *ptr, int SizeOfPlane) = NULL;
-
 	planar_routine = planar_routines[ bm -> Depth ];
+
+
+
+	switch ( (c -> src -> ViewPort.Modes & 0x800) | bm -> Depth )
+	{
+		case 0x0806:	draw_bits = draw_bits_argb_ham6;
+//	FPrintf( output,"	Mode: %s\n", "HAM6"  );
+					break;
+
+		case 0x0808:	draw_bits = draw_bits_argb_ham8;
+//	FPrintf( output,"	Mode: %s\n", "HAM8"  );
+					break;
+
+		default:		draw_bits = draw_bits_argb;
+					break;
+	}
 
 	lock = LockBitMapTags( dest_bm,
 			LBM_PixelFormat, &dest_format,
@@ -234,10 +341,14 @@ void draw_screen( struct Window *win, struct BitMap *bm, struct BitMap *dest_bm 
 		x = 0;
 		yptr = bm -> Planes[0] + bpr*y;
 
+		ham_r = 0;
+		ham_g = 0;
+		ham_b = 0;
+
 		for (bx=0;bx<bpr;bx++)
 		{
 			data = planar_routine( yptr + bx, SizeOfPlane );
-			draw_bits_argb( dest_ptr,dest_bpr, (unsigned char *) &data ,  x,  y );
+			draw_bits( dest_ptr,dest_bpr, (unsigned char *) &data ,  x,  y );
 			x+=8;
 		}
 	}
@@ -569,15 +680,6 @@ void send_closeWindow(struct Window *win)
 	}
 }
 
-struct emuIntuitionContext
-{
-	struct RastPort local_rp;
-	struct TimerContext tc;
-	struct Screen *src;
-	struct Window *win;
-	struct BitMap *dest_bitmap;
-};
-
 
 void get_replymsg_and_delete(  )
 {
@@ -839,7 +941,7 @@ void emuEngine()
 				no_screens = false;
 
 				update_argb_lookup( c.src -> ViewPort.ColorMap );
-				draw_screen( c.win,  c.src -> RastPort.BitMap, c.dest_bitmap );
+				draw_screen( &c );
  				comp_window_update( c.src, c.dest_bitmap, c.win);
 			}
 			else
