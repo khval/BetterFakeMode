@@ -151,7 +151,7 @@ void print_tag(struct debug_tag_info *nameList, ULONG tag, LONG value )
 	{
 		if (i -> tag == tag)
 		{
-			Printf("%s: %08lx\n",i->name,value);
+			Printf("%s: %08lx / %ld \n",i->name,value,value);
 			return;
 		}
 	}
