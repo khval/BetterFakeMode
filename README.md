@@ -78,6 +78,8 @@ I think it trys to render into True color screen.)
 
 * It does send some events.
 
+* Ham6 and Ham8 modes.
+
 # How can you help.
 
 End users are useless here, but if you are a developer:
