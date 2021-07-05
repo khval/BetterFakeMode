@@ -15,7 +15,7 @@
 #include "helper/screen.h"
 
 
-void initColors( struct ViewPort *vp, int depth)
+void initColors( struct ViewPort *vp)
 {
 	struct ColorMap *cm = vp -> ColorMap;
 
@@ -55,7 +55,7 @@ void fake_initViewPort( struct Screen *s , int depth )
 	if (vp -> ColorMap)
 	{
 		vp -> ColorMap -> cm_vp = vp;
-		initColors( vp, depth );
+		initColors( vp );
 	}
 
 	vp -> RasInfo = new_struct( RasInfo );
