@@ -29,6 +29,8 @@ APTR old_68k_stub_CloseScreen = NULL;
 
 APTR old_ppc_func_OpenScreenTagList = NULL;
 APTR old_ppc_func_CloseScreen = NULL;
+APTR old_ppc_func_ScreenToFront = NULL;
+APTR old_ppc_func_ScreenToBack = NULL;
 APTR old_ppc_func_OpenWindowTagList = NULL;
 APTR old_ppc_func_CloseWindow = NULL;
 APTR old_ppc_func_AllocScreenBuffer = NULL;
@@ -110,16 +112,20 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 
 	if ((newScreen) && (tagList == NULL))
 	{
+		FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
 		is_lagacy = maybe_lagacy;
 	}
 	else 
 	{
 		struct modeT *mode =legacy_in_tags(  tagList, maybe_lagacy );
 
+		FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
+
 		if ( mode )
 		{
 			if (mode == (struct modeT *) 0xFFFFFFFF)
 			{
+				FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
 				is_lagacy = true;
 			}
 			else
@@ -136,6 +142,8 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 	{
 		struct Screen *src;
 
+		FPrintf( output, "Fake mode\n");
+
 		IExec->MutexObtain(video_mutex);		// prevent screen from being drawn while we allocate screen.
 		src = _new_fake_OpenScreenTagList( newScreen, tagList );
 
@@ -146,6 +154,9 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 	}
 	else
 	{
+
+		FPrintf( output, "Real mode\n");
+
 		return (( struct Screen * (*)(struct IntuitionIFace *, const struct NewScreen * , const struct TagItem * )) old_ppc_func_OpenScreenTagList ) ( Self, newScreen, tagList );
 	}
 
@@ -174,6 +185,39 @@ void ppc_func_FreeScreenBuffer( struct IntuitionIFace *Self, struct Screen *s, s
 	else
 	{
 		((void (*) ( struct IntuitionIFace *, struct Screen *,struct ScreenBuffer *)) old_ppc_func_FreeScreenBuffer) (Self, s, sb);
+	}
+}
+
+static void ppc_func_ScreenToFront( struct IntuitionIFace *Self, struct Screen *screen )
+{
+	FPrintf( output,"ScreenToFront\n");
+
+	if (is_fake_screen( screen ))
+	{
+		IExec->MutexObtain(video_mutex);	
+		fake_screen_to_front( screen );
+		IExec->MutexRelease(video_mutex);
+	}
+	else
+	{
+		((void (*) ( struct IntuitionIFace *, struct Screen *)) old_ppc_func_ScreenToFront) (Self, screen);
+	}
+}
+
+static void ppc_func_ScreenToBack( struct IntuitionIFace *Self, struct Screen *screen )
+{
+	FPrintf( output,"ScreenToBack\n");
+
+
+	if (is_fake_screen( screen ))
+	{
+		IExec->MutexObtain(video_mutex);	
+		fake_screen_to_back( screen );
+		IExec->MutexRelease(video_mutex);
+	}
+	else
+	{
+		((void (*) ( struct IntuitionIFace *, struct Screen *)) old_ppc_func_ScreenToBack) (Self, screen);
 	}
 }
 
@@ -335,6 +379,8 @@ BOOL set_patches( void )
 
 	set_new_ppc_patch(Intuition,OpenScreenTagList);
 	set_new_ppc_patch(Intuition,CloseScreen);
+	set_new_ppc_patch(Intuition,ScreenToFront);
+	set_new_ppc_patch(Intuition,ScreenToBack);
 	set_new_ppc_patch(Intuition,AllocScreenBuffer);
 	set_new_ppc_patch(Intuition,FreeScreenBuffer);
 	set_new_ppc_patch(Intuition,ChangeScreenBuffer);
@@ -411,6 +457,8 @@ void undo_patches( void )
 
 	undo_ppc_patch(Intuition,OpenScreenTagList);
 	undo_ppc_patch(Intuition,CloseScreen);
+	undo_ppc_patch(Intuition,ScreenToFront);
+	undo_ppc_patch(Intuition,ScreenToBack);
 	undo_ppc_patch(Intuition,AllocScreenBuffer);
 	undo_ppc_patch(Intuition,FreeScreenBuffer);
 	undo_ppc_patch(Intuition,ChangeScreenBuffer);

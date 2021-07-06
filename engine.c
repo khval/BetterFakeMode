@@ -815,7 +815,7 @@ void emuEngine()
 
 			MutexObtain(video_mutex);
 
-			c.src = first_fake_screen();
+			c.src = current_fake_screen();
 
 			host_w = c.win -> Width;
 			host_w -= c.win -> BorderLeft;
@@ -882,6 +882,7 @@ void emuEngine()
 							break;
 
 						case IDCMP_INTUITICKS:
+
 							if (has_active_win) send_INTUITICKS( active_win );					
 							break;
 
@@ -938,7 +939,7 @@ void emuEngine()
 		{
 			MutexObtain(video_mutex);
 
-			c.src = first_fake_screen();
+			c.src = current_fake_screen();
 			if (c.src)
 			{
 				no_screens = false;

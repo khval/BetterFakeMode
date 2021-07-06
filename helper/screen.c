@@ -1,5 +1,7 @@
 
 #include <stdbool.h>
+#include <stdlib.h>
+#include <math.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -11,10 +13,11 @@
 #include "modeid.h"
 #include "helper/screen.h"
 
-
 struct Screen screens[max_screens];
 struct Layer_Info *LayerInfos[max_screens];
 bool allocatedScreen[max_screens];
+
+#define GetFakeScreen(n) (screens + n)
 
 extern BPTR output;
 
@@ -59,6 +62,68 @@ bool is_fake_screen( struct Screen *screen )
 	return false;
 }
 
+int current_screen = 0;
+
+
+void fake_screen_to_front(struct Screen *s)
+{
+	int n;
+	for (n=0;n<max_screens;n++)
+	{
+		if (allocatedScreen[n])
+		{
+			if (GetFakeScreen(n)==s) 
+			{
+				current_screen = n;
+				return;
+			}
+		}
+	}
+}
+
+void fake_screen_to_back(struct Screen *s)
+{
+	int n,nn;
+	nn = current_screen;
+
+	for (n=0;n<max_screens;n++)
+	{
+		nn = (nn + 1) % max_screens;
+
+		if (allocatedScreen[nn])
+		{
+			if ((GetFakeScreen(nn) != s) && ( allocatedScreen[nn]))
+			{
+				current_screen = nn;
+				return;
+			}
+		}
+	}
+}
+
+struct Screen *current_fake_screen()
+{
+	if (allocatedScreen[current_screen]) 
+	{
+		return GetFakeScreen(current_screen);
+	}
+	else
+	{
+		int n;
+		for (n=0;n<max_screens;n++)
+		{
+			if (allocatedScreen[n])
+			{
+				current_screen = n;
+				return GetFakeScreen(current_screen);
+			}
+		}
+	}
+
+	return NULL;
+}
+
+/*
 struct Screen *first_fake_screen()
 {
 	int n;
@@ -68,6 +133,7 @@ struct Screen *first_fake_screen()
 	}
 	return NULL;
 }
+*/
 
 struct KownLgacyModes
 {
@@ -92,6 +158,7 @@ bool maybe_lagacy_mode(const struct NewScreen * newScreen)
 {
 	struct KownLgacyModes *lm;
 
+	if (newScreen -> Depth<8) return true;
 	if (newScreen -> Depth>8) return false;
 
 	for (lm = LgacyModes; lm -> w != -1; lm++ )
