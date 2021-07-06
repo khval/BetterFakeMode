@@ -134,7 +134,7 @@ struct modeT *bestMode( ULONG monitor, ULONG w, ULONG h)
 	{
 		for (mode = modes; mode -> id ; mode++)
 		{
-			if (mode -> id & MONITOR_ID_MASK ==  monitor)
+			if ( (mode -> id & MONITOR_ID_MASK) ==  monitor)
 			{
 				_match = abs(mode -> w-w) + abs(mode -> h-h);
 				if (_match<match)
@@ -187,7 +187,7 @@ struct modeT *legacy_in_tags( const struct TagItem * tagList, bool legacy_status
 
 	if (has_mode_id == false)	// if we have no mode id, we most guess.
 	{
-		if (legacy_status_maybe) legacy_mode=0xFFFFFFFF;
+		if (legacy_status_maybe) legacy_mode=(struct modeT *) 0xFFFFFFFF;
 	}
 
 	return legacy_mode;
