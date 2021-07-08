@@ -941,9 +941,14 @@ void emuEngine()
 				struct Screen src;
 				const char info[]= "No AGA Screens open";
 
+				src.Width = 640;
+				src.Height = 480;
+				src.ViewPort.DWidth = src.Width;
+				src.ViewPort.DHeight = src.Height;
+
 				if (no_screens == false)
 				{
-					RectFillColor( &c.local_rp,0,0,640,480, 0xFF000000);
+					RectFillColor( &c.local_rp,0,0,src.Width,src.Height, 0xFF000000);
 
 					SetRPAttrs( &c.local_rp,  
 						RPTAG_APenColor, 0xFFFFFFFF,
@@ -956,10 +961,6 @@ void emuEngine()
 				}
 
 				no_screens = true;
-
-				src.Width = 640;
-				src.Height = 480;
-
  				comp_window_update( &src, c.dest_bitmap, c.win);
 			}
 
@@ -1042,8 +1043,12 @@ static ULONG compositeHookFunc(
 		COMPTAG_SrcHeight,  hookData->srcHeight,
 		COMPTAG_ScaleX, 	hookData->scaleX,
 		COMPTAG_ScaleY, 	hookData->scaleY,
+/*
 		COMPTAG_OffsetX,    msg->Bounds.MinX - (msg->OffsetX - hookData->offsetX),
 		COMPTAG_OffsetY,    msg->Bounds.MinY - (msg->OffsetY - hookData->offsetY),
+*/
+		COMPTAG_OffsetX,    msg->Bounds.MinX - (msg->OffsetX - msg->Bounds.MinX),
+		COMPTAG_OffsetY,    msg->Bounds.MinY - (msg->OffsetY - msg->Bounds.MinY),
 		COMPTAG_DestX,      msg->Bounds.MinX,
 		COMPTAG_DestY,      msg->Bounds.MinY,
 		COMPTAG_DestWidth,  msg->Bounds.MaxX - msg->Bounds.MinX + 1,
@@ -1071,8 +1076,10 @@ void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Windo
 	hook.h_Data = &hookData;
 
 	hookData.srcBitMap = bitmap;
-	hookData.srcWidth = src -> Width;
-	hookData.srcHeight = src -> Height > 480 ? 480 : src -> Height;
+
+	hookData.srcWidth = src -> ViewPort.DWidth;
+	hookData.srcHeight = src -> Height < src -> ViewPort.DHeight ? src -> Height : src -> ViewPort.DHeight;
+
 	hookData.offsetX = win->BorderLeft;
 	hookData.offsetY = win->BorderTop;
 	hookData.retCode = COMPERR_Success;
