@@ -49,7 +49,7 @@ struct amiga_rgb
 	uint32 b;
 };
 
-union
+union amiga_argb
 {
 	uint32 argb;
 	struct
@@ -59,7 +59,9 @@ union
 		unsigned char g;
 		unsigned char b;
 	};
-} palette[256];
+};
+
+union amiga_argb palette[256];
 
 void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Window *win);
 
@@ -114,29 +116,27 @@ void draw_bits(struct RastPort *rp, unsigned char *b, int x,int  y )
 }
 */
 
-uint32 ham_r,ham_g,ham_b;
+union amiga_argb ham;
 
 inline uint32 ham6( unsigned char color )
 {
 	switch (color & 0x30)
 	{
 		case 0x00:
-				ham_r = palette[color].r << 16;
-				ham_g = palette[color].g << 8;
-				ham_b = palette[color].b;
+				ham.argb = palette[color].argb ;
 				break;
 		case 0x10:
-				ham_b = ((color & 0xF) * 0x11);
+				ham.b = ((color & 0xF) * 0x11);
 				break;
 		case 0x20:
-				ham_r = ((color & 0xF) * 0x11) << 16;
+				ham.r = ((color & 0xF) * 0x11);
 				break;
 		case 0x30:
-				ham_g = ((color & 0xF) * 0x11) << 8;
+				ham.g = ((color & 0xF) * 0x11);
 				break;
 	}
 
-	return 0xFF000000 | ham_r | ham_g | ham_b;
+	return ham.argb;
 }
 
 inline uint32 ham8( unsigned char color )
@@ -144,22 +144,20 @@ inline uint32 ham8( unsigned char color )
 	switch (color & 0x3)
 	{
 		case 0x0:
-				ham_r = palette[color].r << 16;
-				ham_g = palette[color].g << 8;
-				ham_b = palette[color].b;
+				ham.argb = palette[color].argb;
 				break;
 		case 0x1:
-				ham_b = color & 0xFC;
+				ham.b = color & 0xFC;
 				break;
 		case 0x2:
-				ham_g = (color & 0xFC) << 8;
+				ham.g = (color & 0xFC);
 				break;
 		case 0x3:
-				ham_r = (color & 0xFC) << 16;
+				ham.r = (color & 0xFC);
 				break;
 	}
 
-	return 0xFF000000 | ham_r | ham_g | ham_b;
+	return ham.argb;
 }
 
 void draw_bits_argb( unsigned char *dest_ptr,unsigned int dest_bpr, unsigned char *b, int x,int  y )
@@ -187,7 +185,7 @@ void draw_bits_argb_ham6( unsigned char *dest_ptr,unsigned int dest_bpr, unsigne
 	*d_argb++ = ham6( *b++ ); // 4
 	*d_argb++ = ham6( *b++ ); // 5
 	*d_argb++ = ham6( *b++ ); // 6
-	*d_argb++ = ham6( *b ); // 7
+	*d_argb = ham6( *b ); // 7
 }
 
 void draw_bits_argb_ham8( unsigned char *dest_ptr,unsigned int dest_bpr, unsigned char *b, int x,int  y )
@@ -201,7 +199,7 @@ void draw_bits_argb_ham8( unsigned char *dest_ptr,unsigned int dest_bpr, unsigne
 	*d_argb++ = ham8( *b++ ); // 4
 	*d_argb++ = ham8( *b++ ); // 5
 	*d_argb++ = ham8( *b++ ); // 6
-	*d_argb++ = ham8( *b ); // 7
+	*d_argb = ham8( *b ); // 7
 }
 
 uint64 draw_1p(unsigned char *ptr, int SizeOfPlane)
@@ -312,20 +310,11 @@ void draw_screen( struct emuIntuitionContext *c)
 	SizeOfPlane = bm -> BytesPerRow * bm -> Rows;
 	planar_routine = planar_routines[ bm -> Depth ];
 
-
-
 	switch ( (c -> src -> ViewPort.Modes & 0x800) | bm -> Depth )
 	{
-		case 0x0806:	draw_bits = draw_bits_argb_ham6;
-//	FPrintf( output,"	Mode: %s\n", "HAM6"  );
-					break;
-
-		case 0x0808:	draw_bits = draw_bits_argb_ham8;
-//	FPrintf( output,"	Mode: %s\n", "HAM8"  );
-					break;
-
-		default:		draw_bits = draw_bits_argb;
-					break;
+		case 0x0806:	draw_bits = draw_bits_argb_ham6;		break;
+		case 0x0808:	draw_bits = draw_bits_argb_ham8;		break;
+		default:		draw_bits = draw_bits_argb;			break;
 	}
 
 	lock = LockBitMapTags( dest_bm,
@@ -337,16 +326,12 @@ void draw_screen( struct emuIntuitionContext *c)
 	max_height = c -> src -> ViewPort.DHeight;
 	if (bm -> Rows < max_height) max_height = bm -> Rows;
 
-// bm -> Rows > 480 ? 480 : bm -> Rows;	// must limit....
-
 	for (y=0;y<max_height; y++)
 	{
 		x = 0;
 		yptr = bm -> Planes[0] + bpr*y;
 
-		ham_r = 0;
-		ham_g = 0;
-		ham_b = 0;
+		ham.argb = 0xFF000000;
 
 		for (bx=0;bx<bpr;bx++)
 		{
@@ -945,6 +930,9 @@ void emuEngine()
 				no_screens = false;
 
 				update_argb_lookup( c.src -> ViewPort.ColorMap );
+
+				ham.a = 0xFF;
+
 				draw_screen( &c );
  				comp_window_update( c.src, c.dest_bitmap, c.win);
 			}
