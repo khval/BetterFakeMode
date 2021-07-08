@@ -43,18 +43,37 @@ void _free_fake_bitmap( struct BitMap *bm )
 
 void _cleanup_fake_screen( struct Screen *s )
 {
-
-	struct BitMap *bm;
+	struct RastPort *rp;
+	struct BitMap **bm;
 	
 	_cleanup_fake_ViewPort( &s -> ViewPort );
 
-	bm = s -> RastPort.BitMap;
-	if (bm)
+	rp = &s -> RastPort;
+
+	if (rp -> Font)
+	{
+		if (rp -> Font != default_font)
+		{
+			CloseFont( rp -> Font );
+		}
+		rp -> Font = NULL;
+	}
+
+
+	if (rp -> BitMap)
 	{
 #if use_fake_bitmap == 1
-		_free_fake_bitmap( bm );
+
+		if ( rp -> BitMap -> pad == 0xFA8E)	// check, if its custum bitmap or not, (tell me how to do it corrent.)
+		{
+			_free_fake_bitmap(rp -> BitMap );
+			rp -> BitMap = NULL;
+		}
 #else
-		FreeBitMap(bm);
+		// **** WARNING NEED TO CHECK FOR CUSTUM BITMAP.
+
+		FreeBitMap(rp -> BitMap);
+		rp -> BitMap = NULL;
 #endif
 	}
 }

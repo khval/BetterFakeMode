@@ -8,6 +8,7 @@
 #include <proto/layers.h>
 #include <proto/intuition.h>
 #include <proto/graphics.h>
+#include <proto/diskfont.h>
 #include <exec/emulation.h>
 #include <graphics/modeid.h>
 
@@ -91,55 +92,84 @@ struct BitMap *_new_fake_bitmap(int Width,int Height, int Depth)
 
 void _init_fake_screen(struct Screen *s,int Depth )
 {
-		s -> Width = s -> Width & 15 ? (s -> Width + 16) & 0xFFFE : s -> Width ;	// Round up closes 16 pixels.
-
-		InitRastPort( & s -> RastPort );
+	s -> Width = s -> Width & 15 ? (s -> Width + 16) & 0xFFFE : s -> Width ;	// Round up closes 16 pixels.
 
 #if use_fake_bitmap == 1
+
+	if (s -> RastPort.BitMap == NULL) 
+	{
 		s -> RastPort.BitMap = _new_fake_bitmap( s-> Width, s -> Height, Depth );
+	}
+
 #else
-		s -> RastPort.BitMap = AllocBitMapTags(	s-> Width, s -> Height, Depth,
+
+	s -> RastPort.BitMap = AllocBitMapTags(	s-> Width, s -> Height, Depth,
 				BMATags_PixelFormat, PIXF_NONE,
 				BMATags_UserPrivate, TRUE,
 				TAG_END	 );
+
 #endif
 
+	if (s -> Font == NULL)	// no font set.
+	{
 		s -> Font = default_font;
+		SetFont( &s -> RastPort , s -> Font );
+	}
 
-		SetFont( &s -> RastPort , default_font );
-
-		s -> BitMap  = * (s -> RastPort.BitMap);
+	s -> BitMap  = * (s -> RastPort.BitMap);
 
 		FPrintf( output, "%ld\n", s ->RastPort.BitMap -> BytesPerRow );
 
-		 fake_initViewPort( s, Depth);
+	 fake_initViewPort( s, Depth);
 
-		// need to fill in the struct as best as I can.
+	// need to fill in the struct as best as I can.
 }
 
-void add_LayerInfo( int i, struct Screen *s )
+void add_LayerInfo( int screenIndex, struct Screen *s )
 {
-	allocatedScreen[i] = true;
-	LayerInfos[i] = NewLayerInfo();
+	allocatedScreen[screenIndex] = true;
+	LayerInfos[screenIndex] = NewLayerInfo();
 
-	if (LayerInfos[i])
+	if (LayerInfos[screenIndex])
 	{
-		memcpy( &s -> LayerInfo, LayerInfos[i] , sizeof(struct Layer_Info) );
+		memcpy( &s -> LayerInfo, LayerInfos[screenIndex] , sizeof(struct Layer_Info) );
 	}
 }
 
-void init_screen_from_newScreen( const struct NewScreen * newScreen, struct Screen *s, int *depth )
+void init_screen_from_newScreen( const struct NewScreen * newScreen, struct Screen *s, ULONG *depth )
 {
 	s -> Width = newScreen -> Width;
 	s -> Height = newScreen -> Height;
 	*depth = newScreen -> Depth;
+
+	if (newScreen -> CustomBitMap)
+	{
+		s -> RastPort.BitMap = newScreen -> CustomBitMap;
+	}
+
+	if (newScreen -> DefaultTitle)
+	{
+		s -> Title = strdup(newScreen -> DefaultTitle);
+	}
+
+	if (newScreen -> Font)
+	{
+		s -> Font = OpenDiskFont( newScreen -> Font );
+		if ( ! s -> Font ) s -> Font = default_font;
+		SetFont( &s -> RastPort , s -> Font );
+	}
+
+/*
+		newScreen -> Type,
+		newScreen -> ViewModes );
+*/
 }
 
 
 
 void update_screen_from_taglist(const struct TagItem * tagList, struct Screen *s, ULONG *depth)
 {
-	int s_w, s_h, s_d, s_id, s_monitor;
+	int s_w, s_h, s_d, s_monitor;
 
 	const struct TagItem * tag;
 
@@ -186,25 +216,25 @@ void update_screen_from_taglist(const struct TagItem * tagList, struct Screen *s
 
 struct Screen * _new_fake_OpenScreenTagList( const struct NewScreen * newScreen, const struct TagItem * tagList)
 {
-	int depth = 0;
-	UWORD displayID = 0;
-	int i;
+	ULONG depth = 0;
+	int screenIndex;
 	struct Screen *s;
 
-	i = alloc_screen_in_list();
-	s = i>-1 ? screens+i : NULL;
+	screenIndex = alloc_screen_in_list();
+	s = screenIndex >-1 ? screens+screenIndex : NULL;
 
 	if (s)
 	{
 		InitVPort( &s -> ViewPort );
-		
+		InitRastPort( &s -> RastPort );
+
 		s -> ViewPort.DHeight = 0;
 		s -> ViewPort.DWidth = 0;
 
 		s -> FirstWindow = NULL;
-		s -> Title = strdup("Hello World");
+		if (s -> Title) s -> Title = strdup("Hello World");
 
-		add_LayerInfo( i, s );
+		add_LayerInfo( screenIndex, s );
 
 		if (newScreen) init_screen_from_newScreen( newScreen, s, &depth );
 		if (tagList)
