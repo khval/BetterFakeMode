@@ -256,6 +256,8 @@ int main()
 #endif
 		CloseWindow(win[0]);
 
+		FreeGadgets(glist);
+
 		Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 	}
 
