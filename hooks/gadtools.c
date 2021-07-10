@@ -41,7 +41,7 @@ void ppc_func_FreeVisualInfo(struct GadToolsIFace *Self, APTR ptr)
 	}
 	else
 	{
-		return ((void (*)( struct GadToolsIFace *, APTR ptr))
+		((void (*)( struct GadToolsIFace *, APTR ptr))
 				old_ppc_func_FreeVisualInfo) ( Self, ptr);
 	}
 }
@@ -50,18 +50,23 @@ void ppc_func_FreeVisualInfo(struct GadToolsIFace *Self, APTR ptr)
 
 struct Gadget * ppc_func_CreateGadgetA(struct GadToolsIFace *Self,ULONG kind,struct Gadget * gad,const struct NewGadget * ng,const struct TagItem * taglist)
 {
+	struct Gadget *ret = NULL;
+
 	if ( ng -> ng_VisualInfo == (APTR) 0xFA8EFA8E)
 	{
 		FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
-		return fake_CreateGadgetA ( kind,  gad, ng, taglist);
+		ret = fake_CreateGadgetA ( kind,  gad, ng, taglist);
 	}
 	else
 	{
-		return ((struct Gadget * (*)( struct GadToolsIFace *,ULONG , struct Gadget *, const struct NewGadget *, const struct TagItem *))
+		FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
+		ret = ((struct Gadget * (*)( struct GadToolsIFace *,ULONG , struct Gadget *, const struct NewGadget *, const struct TagItem *))
 				old_ppc_func_CreateGadgetA) ( Self, kind, gad, ng, taglist);
 	}
 
-	return NULL;
+	FPrintf( output, "%s:%ld -- %s\n",__FUNCTION__,__LINE__, ret ? "Success" : "Failed");
+
+	return ret;
 }
 
 // Problem GT_GetIMsg, starts poking around in gadgets, this goes wrong...
