@@ -66,31 +66,30 @@ void close_extra_libs()
 
 #define GAD_BUTTON 101
 
-struct Gadget *CreateAllGadgets( struct Gadget **glistptr, void *vi, UWORD topborder)
+struct Gadget *CreateAllGadgets( struct Gadget *lastGadget, void *vi, UWORD topborder)
 {
 	struct NewGadget ng;
-	struct Gadget *gad;
+	struct Gadget *newGadget;
 
+	ng.ng_VisualInfo = vi;
+	ng.ng_GadgetID = GAD_BUTTON;
 	ng.ng_LeftEdge = 10;
-	ng.ng_TopEdge = 19+topborder;
+	ng.ng_TopEdge = 13+topborder;
 	ng.ng_Width = 100;
 	ng.ng_Height = 12;
-	ng.ng_GadgetText = "ClickMe";
-	ng.ng_GadgetID = GAD_BUTTON;
+	ng.ng_GadgetText = "Click Me";
 	ng.ng_Flags = 0;
 
-	gad = CreateGadget(BUTTON_KIND, gad, &ng,
-			TAG_DONE);
+	newGadget = CreateGadget(BUTTON_KIND, lastGadget, &ng, TAG_DONE);
+	if (!newGadget) Printf("failed to create gadget\n");
 
-	return(gad);
+	return newGadget;
 }
 
 int main()
 {
 	struct Screen *src;
 	struct RastPort *rp;
-	UWORD topborder;
-
 
 	if (open_libs()==FALSE)
 	{
@@ -106,30 +105,24 @@ int main()
 		return 0;
 	}
 
-
-
 	src = OpenScreen( &myscr );
 
 	if (src)
 	{
 		void *vi;
-		struct Gadget *gad;
+		struct Gadget *lastGadget;
 		struct Gadget *glist = NULL;
 
 		printf("%s:%d\n",__FUNCTION__,__LINE__);
 
-		topborder = src->WBorTop + (src->Font->ta_YSize + 1);
-
-		printf("%s:%d\n",__FUNCTION__,__LINE__);
-
-      		gad = CreateContext(&glist);
-
 		vi = GetVisualInfo( src , TAG_END );
 
-		CreateAllGadgets(&glist, vi, topborder);
+      		lastGadget = CreateContext(&glist);
+
+		if (!lastGadget) Printf("failed to create context\n");
 
 		struct Window *win = OpenWindowTags( NULL, 
-			WA_Gadgets, glist,
+//			WA_Gadgets, glist,
 			WA_Left, 10,
 			WA_Top, 10,
 			WA_Width, 200,
@@ -140,7 +133,11 @@ int main()
 
 		if (win)
 		{
-			GT_RefreshWindow(win,NULL);
+			lastGadget = CreateAllGadgets( lastGadget, vi, win -> BorderTop);
+			AddGList( (struct Window *) win,(struct Gadget *) glist,0,-1,NULL);
+			RefreshGList( (void *) glist,(void *) win,0,-1); 
+
+//			GT_RefreshWindow(win,NULL);
 		}
 
 		printf("Press enter to quit\n");
