@@ -51,11 +51,13 @@ APTR old_ppc_func_UnlockBitMap = NULL;
 
 APTR old_ppc_func_GetVisualInfo = NULL;
 APTR old_ppc_func_FreeVisualInfo = NULL;
-APTR old_ppc_func_CreateGadgetA = NULL;
-APTR old_ppc_func_AddGList = NULL;
-APTR old_ppc_func_RefreshGList = NULL;
 APTR old_ppc_func_GT_GetIMsg = NULL;
 APTR old_ppc_func_GT_ReplyIMsg = NULL;
+APTR old_ppc_func_CreateGadgetA = NULL;
+
+APTR old_ppc_func_AddGList = NULL;
+APTR old_ppc_func_RefreshGList = NULL;
+APTR old_ppc_func_FreeGadgets = NULL;
 
 #include "hooks/gadtools.h"
 #include "hooks/intuition.h"
@@ -404,6 +406,7 @@ BOOL set_patches( void )
 	set_new_ppc_patch(GadTools,CreateGadgetA);
 	set_new_ppc_patch(GadTools,GT_GetIMsg);
 	set_new_ppc_patch(GadTools,GT_ReplyIMsg);
+	set_new_ppc_patch(GadTools,FreeGadgets);
 #endif
 
 	// Graphics
@@ -446,6 +449,7 @@ void undo_patches( void )
 	undo_ppc_patch(GadTools,CreateGadgetA);
 	undo_ppc_patch(GadTools,GT_GetIMsg);
 	undo_ppc_patch(GadTools,GT_ReplyIMsg);
+	undo_ppc_patch(GadTools,FreeGadgets);
 #endif
 
 	// Intuition

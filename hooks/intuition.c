@@ -13,13 +13,22 @@
 
 extern BPTR output;
 
+struct Gadget *dupGadgat(struct Gadget *g);
+ULONG attachGadget(struct Gadget *g, struct Window *win);
+void RenderGadgets(struct RastPort *rp, struct Gadget *g);
+
+
 VOID ppc_func_RefreshGList (struct IntuitionIFace *Self, struct Gadget * gadgets, struct Window * window, struct Requester * requester, WORD numGad)
 {
 	FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
 
 	if (is_fake_screen( window -> WScreen ))
 	{
-		FPrintf( output, "%s:%ld - NYI\n",__FUNCTION__,__LINE__);
+		struct RastPort *rp = window -> RPort;
+		ULONG tmp_DetailPen = window -> DetailPen;
+		SetAPen(rp,3);
+		RenderGadgets( window -> RPort , window -> FirstGadget);
+		SetAPen(rp,tmp_DetailPen);
 	}
 	else
 	{
@@ -34,7 +43,32 @@ UWORD ppc_func_AddGList(struct IntuitionIFace *Self, struct Window * window, str
 
 	if (is_fake_screen( window -> WScreen ))
 	{
-		FPrintf( output, "%s:%ld - NYI\n",__FUNCTION__,__LINE__);
+		ULONG ret = 0;
+		struct Gadget *g = gadget ;
+		while ((position)&&(g)) g=g->NextGadget;
+
+		if (numGad == -1)
+		{
+			while (g) 
+			{
+				FPrintf( output, "%s:%ld Gadget %08lx\n",__FUNCTION__,__LINE__,g);
+
+				ret = attachGadget(dupGadgat(g), window);
+				g=g->NextGadget;
+			}
+		}
+		else
+		{
+			while ((g)&&(numGad))
+			{
+				FPrintf( output, "%s:%ld Gadget %08x\n",__FUNCTION__,__LINE__,g);
+
+				ret = attachGadget(dupGadgat(g), window);
+				g=g->NextGadget;
+				numGad--;
+			}
+		}
+		return ret;
 	}
 	else
 	{

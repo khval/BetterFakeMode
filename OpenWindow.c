@@ -19,19 +19,7 @@ extern void RenderWindow(struct Window *win);
 
 extern void dump_tags( const struct TagItem * tagList , struct win_info **nameList);
 
-void addGadget(struct Window *win, ULONG icon_s, ULONG flags)
-{
-	struct Gadget *g = new_struct( Gadget );
-
-	if (g)
-	{
-		g -> Flags = flags;
-		g -> NextGadget = win -> FirstGadget;
-		g -> Width = icon_s;
-		g -> Height  = icon_s;
-		win -> FirstGadget = g;
-	}
-}
+extern void addWinGadget(struct Window *win, ULONG icon_s, ULONG flags);
 
 ULONG get_default_icon_size(struct RastPort *rp)
 {
@@ -47,16 +35,16 @@ void addWindowGadgets( struct Window *win )
 	if (win -> Flags)
 	{
 		if (win->Flags & WFLG_CLOSEGADGET)
-			addGadget( win, icon_s, GTYP_CLOSE );
+			addWinGadget( win, icon_s, GTYP_CLOSE );
 
 		if (win->Flags & WFLG_DRAGBAR)
-			addGadget( win, icon_s, GTYP_WDRAGGING );
+			addWinGadget( win, icon_s, GTYP_WDRAGGING );
 
 		if (win->Flags & WFLG_DEPTHGADGET)
-			addGadget( win, icon_s, GTYP_WDEPTH );
+			addWinGadget( win, icon_s, GTYP_WDEPTH );
 
 		if (win->Flags & WFLG_SIZEGADGET)
-			addGadget( win, icon_s, GTYP_SIZING );
+			addWinGadget( win, icon_s, GTYP_SIZING );
 	}
 }
 
@@ -81,7 +69,7 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 	win -> BorderTop = 0;
 	win -> BorderRight = 2;
 	win -> BorderBottom = 0;
-
+	win -> FirstGadget = NULL;
 	win -> Title = NULL;
 	win -> ScreenTitle = NULL;
 

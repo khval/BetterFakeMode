@@ -21,7 +21,8 @@ files_intuition = \
 	SizeWindow.c \
 	SetWindowTitles.c \
 	ActivateWindow.c \
-	CreateGadgetA.c
+	CreateGadgetA.c \
+	gadtools.c
 
 files_graphics = \
 	GetBitMapAttr.c \

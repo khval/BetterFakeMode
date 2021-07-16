@@ -17,6 +17,7 @@
 extern APTR video_mutex;
 
 extern void _free_fake_bitmap( struct BitMap *bm );
+extern void freeWinGadgets( struct Window *win );
 
 struct Window * fake_CloseWindow ( struct Window *w )
 {
@@ -59,6 +60,8 @@ struct Window * fake_CloseWindow ( struct Window *w )
 
 	if (w->ScreenTitle) free(w -> ScreenTitle);
 	w -> ScreenTitle = NULL;
+
+	freeWinGadgets( w );	// should only free intuition border gadgets.
 
 	FreeVec( w );
 

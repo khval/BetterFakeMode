@@ -19,6 +19,7 @@ void set_ng_gadget(struct Gadget *g ,const struct NewGadget *ng )
 	g -> GadgetID = ng -> ng_GadgetID ;
 //	g -> VisualInfo = ng -> ng_VisualInfo ;
 //	g -> TextAttr = ng -> ng_TextAttr ;
+	g -> NextGadget = NULL;
 }
 
 void set_gadget_tags( struct Gadget *g,const struct TagItem * tagList )
@@ -41,6 +42,8 @@ struct Gadget * fake_CreateGadgetA(ULONG kind,struct Gadget * previous,const str
 
 	if (g)
 	{
+		g -> MutualExclude = 0xFA8EFA8E;
+
 		if (ng) set_ng_gadget(g ,ng);
 
 		if (taglist) set_gadget_tags( g, taglist );

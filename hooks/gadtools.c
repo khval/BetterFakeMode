@@ -1,5 +1,6 @@
 
 #include <stdbool.h>
+#include <string.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -92,7 +93,7 @@ void ppc_func_GT_ReplyIMsg (struct GadToolsIFace *Self, struct IntuiMessage *msg
 	if (reply_port == msg -> ExecMessage.mn_ReplyPort)
 	{
 		FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
-		ReplyMsg( msg );
+		ReplyMsg( (struct Message *) msg );
 	}
 	else
 	{
@@ -101,4 +102,20 @@ void ppc_func_GT_ReplyIMsg (struct GadToolsIFace *Self, struct IntuiMessage *msg
 	}
 }
 
+// We don't wont fake gadgets, to be deleted by system, as its not the same.
+
+void ppc_func_FreeGadgets (struct GadToolsIFace *Self, struct Gadget * glist)
+{
+	struct Gadget *g = glist ? glist -> NextGadget :  NULL;
+
+	if (g)
+		if (g -> MutualExclude == 0xFA8EFA8E)
+		{
+			FPrintf( output, "%s:%ld NYI\n",__FUNCTION__,__LINE__);
+			return;
+		}
+
+	((void (*)( struct GadToolsIFace *, struct Gadget *))
+			old_ppc_func_FreeGadgets) ( Self, glist);
+}
 
