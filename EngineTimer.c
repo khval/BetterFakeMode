@@ -13,6 +13,7 @@
 #include <exec/emulation.h>
 #include <exec/ports.h>
 
+#include "Engine.h"
 #include "EngineTimer.h"
 
 int frame_skip = 0;
