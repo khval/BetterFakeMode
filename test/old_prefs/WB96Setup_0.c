@@ -223,7 +223,7 @@ int main()
 
 	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
-//		AttachGTList(1,0);
+		AttachGTList(1,0);
 
 		for (g = win[0] -> FirstGadget; g; g = g -> NextGadget)
 		{
@@ -256,7 +256,7 @@ int main()
 #endif
 		CloseWindow(win[0]);
 
-		FreeGadgets(glist);
+		FreeGTList(0);
 
 		Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 	}
