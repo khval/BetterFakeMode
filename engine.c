@@ -370,25 +370,30 @@ LONG clicked_x,clicked_y;
 
 bool ClickButtons( struct Window *win )
 {
-	ULONG x1,y1;
+	ULONG x0,y0,x1,y1;
 	LONG mx,my;
 	struct Gadget *g;
 
+	mouse_state = no_action;
 	mx = win -> MouseX;
 	my = win -> MouseY;
 
-	FPrintf( output, "mouse %ld,%ld\n",mx,my);
-
 	for (g = win -> FirstGadget; g ; g = g -> NextGadget )
 	{
+		x0 = g -> LeftEdge;
+		y0 = g -> TopEdge;
 		x1 = g -> LeftEdge +  g -> Width;
 		y1 = g -> TopEdge + g -> Height;
 		
 		if (
-			( mx >= g -> LeftEdge ) && ( mx < x1) &&
-			( my >= g -> TopEdge) && ( my < y1)
+			( mx >= x0 ) && ( mx < x1) &&
+			( my >= y0) && ( my < y1)
 		)
 		{
+			FPrintf( output, "Clicked button\n");
+			FPrintf( output, "X: %ld>%ld<%ld\n",x0,mx,x1);
+			FPrintf( output, "Y: %ld>%ld<%ld\n",x0,mx,x1);
+
 			switch ( g-> Flags)
 			{
 				case GTYP_CLOSE: 
@@ -445,7 +450,7 @@ bool WindowClick( struct Screen *src )
 	struct Window *clicked_win;
 	UWORD last_clicked_layer_priority = ~0;
 
-	FPrintf( output, "%s\n",__FUNCTION__);
+	FPrintf( output, "%s:%ld: Screen %08lx\n",__FUNCTION__,__LINE__, src);
 
 	// update mouse x,y in window, and check what window is clicked.
 
@@ -717,6 +722,19 @@ void cleanup_engine( struct emuIntuitionContext *c )
 	}
 }
 
+void update_screen(struct emuIntuitionContext *c, ULONG host_w, ULONG host_h)
+{
+	ULONG host_mx,host_my;
+	struct Window *win = c -> win;
+	struct Screen *src = c -> src;
+
+	host_mx = win -> WScreen -> MouseX - win -> LeftEdge - win -> BorderLeft;
+	host_my = win -> WScreen -> MouseY - win -> TopEdge - win -> BorderTop;
+
+	src -> MouseX = host_mx * src -> Width / host_w;
+	src -> MouseY = host_my * src -> Height / host_h;
+}
+
 void emuEngine()
 {
 	struct emuIntuitionContext c;
@@ -787,7 +805,6 @@ void emuEngine()
 	do
 	{
 		ULONG host_w,host_h;
-		ULONG host_mx,host_my;
 		ULONG sig = Wait( win_mask | c.tc.timer_mask | SIGBREAKF_CTRL_C | mask_reply_port);
 
 		if (sig & SIGBREAKF_CTRL_C)	break;
@@ -832,12 +849,7 @@ void emuEngine()
 					{
 						case IDCMP_MOUSEMOVE:
 
-							host_mx = c.win -> WScreen -> MouseX - c.win -> LeftEdge - c.win -> BorderLeft;
-							host_my = c.win -> WScreen -> MouseY - c.win -> TopEdge - c.win -> BorderTop;
-
-							c.src -> MouseX = host_mx * c.src -> Width / host_w;
-							c.src -> MouseY = host_my * c.src -> Height / host_h;
-
+							update_screen( &c, host_w, host_h );
 							update_fake_window_mouse_xy(c.src)	;
 						
 							switch (mouse_state)
@@ -897,6 +909,8 @@ void emuEngine()
 							else
 							{
 								FPrintf( output, "mouse_state: %lx\n", mouse_state);
+
+								update_screen( &c, host_w, host_h );
 
 								switch (mouse_state)
 								{
@@ -999,8 +1013,8 @@ static ULONG compositeHookFunc(
 
 	struct BitMap *bm = (struct BitMap *) hook->h_Data;
 
-	int src_width = 640;
-	int src_height = 480;
+//	int src_width = 640;
+//	int src_height = 480;
 	int DestWidth = msg->Bounds.MaxX - msg->Bounds.MinX;
 	int DestHeight = msg->Bounds.MaxY - msg->Bounds.MinY;
 	int offsetX = 0;
