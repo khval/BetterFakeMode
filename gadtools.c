@@ -71,7 +71,7 @@ ULONG attachGadget(struct Gadget *g, struct Window *win)
 
 void freeGadget( struct Gadget *g )
 {
-	free( g );
+	FreeVec( g );
 }
 
 void freeWinGadgets( struct Window *win )
