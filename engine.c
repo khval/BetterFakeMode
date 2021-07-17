@@ -361,12 +361,14 @@ enum
 	drag_action,
 	size_action,
 	close_action,
-	wdepth_action
+	wdepth_action,
+	gadget_action
 };
 
 LONG mouse_state = 0;
 struct Window *active_win=NULL;
 LONG clicked_x,clicked_y;
+struct Gadget *clicked_gadget;
 
 bool ClickButtons( struct Window *win )
 {
@@ -417,6 +419,10 @@ bool ClickButtons( struct Window *win )
 					return true;
 
 				default:
+					mouse_state = gadget_action;
+					clicked_gadget = g;
+					clicked_x = mx;
+					clicked_y = my;
 					return true;
 			}
 		}		
@@ -566,6 +572,15 @@ void size_window(struct Screen *src)
 	}
 }
 
+void copy_msg(struct IntuiMessage *source_msg,struct IntuiMessage *msg)
+{
+	msg -> Class = source_msg -> Class;
+	msg -> Code = source_msg -> Code;
+	msg -> Qualifier = source_msg -> Qualifier;
+	msg -> Seconds = source_msg -> Seconds;
+	msg -> Micros = source_msg -> Micros;
+}
+
 void send_copy( struct Window *win,  struct IntuiMessage *source_msg )
 {
 	if (win -> IDCMPFlags & source_msg -> Class)
@@ -578,12 +593,7 @@ void send_copy( struct Window *win,  struct IntuiMessage *source_msg )
 
 		if (msg)
 		{
-			msg -> Class = source_msg -> Class;
-			msg -> Code = source_msg -> Code;
-			msg -> Qualifier = source_msg -> Qualifier;
-			msg -> Seconds = source_msg -> Seconds;
-			msg -> Micros = source_msg -> Micros;
-
+			copy_msg(source_msg,msg);
 			msg -> IDCMPWindow = win;
 			msg -> MouseX = win -> MouseX;
 			msg -> MouseY = win -> MouseY;
@@ -611,16 +621,41 @@ void send_mouse_move( struct Window *win,  struct IntuiMessage *source_msg )
 
 		if (msg)
 		{
-			msg -> Class = source_msg -> Class;
-			msg -> Code = source_msg -> Code;
-			msg -> Qualifier = source_msg -> Qualifier;
-			msg -> Seconds = source_msg -> Seconds;
-			msg -> Micros = source_msg -> Micros;
-
+			copy_msg(source_msg,msg);
 			msg -> IDCMPWindow = win;
 			msg -> MouseX = win -> MouseX;
 			msg -> MouseY = win -> MouseY;
 
+
+			Forbid();
+			PutMsg( win -> UserPort, (struct Message *) msg);
+			Permit();
+		}
+	}
+}
+
+void send_button( struct Window *win,  struct IntuiMessage *source_msg )
+{
+	FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
+
+
+	if (win -> IDCMPFlags & IDCMP_GADGETUP)
+	{
+		struct IntuiMessage *msg;
+		msg = (struct IntuiMessage *) AllocSysObjectTags(ASOT_MESSAGE,
+			ASOMSG_Size, sizeof(struct IntuiMessage),
+			ASOMSG_ReplyPort, reply_port,
+			TAG_DONE);
+
+		if (msg)
+		{
+			copy_msg(source_msg,msg);
+			msg -> IDCMPWindow = win;
+			msg -> MouseX = win -> MouseX;
+			msg -> MouseY = win -> MouseY;
+			msg -> Code = clicked_gadget -> GadgetID;
+			msg -> IAddress = clicked_gadget;
+			msg -> Class = IDCMP_GADGETUP;
 
 			Forbid();
 			PutMsg( win -> UserPort, (struct Message *) msg);
@@ -896,7 +931,11 @@ void emuEngine()
 										break;
 
 									case wdepth_action:
-										wdepth_window( c.src );
+										if (has_active_win) wdepth_window( c.src );
+										break;
+									
+									case gadget_action:
+										if (has_active_win) send_button( active_win , m );
 										break;
 
 									default:
