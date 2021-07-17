@@ -63,8 +63,8 @@ struct TextAttr MyFont =
 struct NewScreen myscr = 
 	{
 		0,0,
-		320,
-		200,
+		640,
+		480,
 		2,
 		0,1,
 		(ULONG) NULL,
@@ -115,6 +115,8 @@ void dump_gadget(struct Gadget *g)
 		g -> Flags,
 		g -> GadgetText ? g -> GadgetText -> IText : "NULL");
 }
+
+#define rowy(n) ((wh*n)/rows)+2
 
 int main()
 {
@@ -170,7 +172,7 @@ int main()
 			WA_Left,src -> Width/2-162,
 			WA_Top,src -> Height/2-100,
 			WA_Width,320,
-			WA_Height,320,
+			WA_Height,300,
 			WA_Flags,WFLG_CLOSEGADGET|WFLG_DRAGBAR|WFLG_DEPTHGADGET|WFLG_GIMMEZEROZERO|WFLG_ACTIVATE,
 			WA_IDCMP,IDCMP_CLOSEWINDOW | IDCMP_GADGETUP | IDCMP_GADGETDOWN, 
 			WA_CustomScreen, src,
@@ -184,44 +186,49 @@ int main()
 
 	if (win[0])
 	{
-#if use_gadtools
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+		int button_height;
 
-		rows = 14;
+#if use_gadtools
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 		wh = win[0] -> GZZHeight ;
 		ww = win[0] -> GZZWidth ;
 
+		rows = 14;
+		button_height = (wh / rows) - 2;
+
 		centerw = win[0] -> GZZWidth /2 ;
 
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+	Printf("button_height %ld\n",button_height);
 
-		GTButton(1,index_b_logo,	ww-90,(wh*9)/rows,80,20,"Logo",0);
-		GTButton(1,index_b_texture1,	ww-90,(wh*10)/rows,80,20,"Texture1",0);
-		GTButton(1,index_b_texture2,	ww-90,(wh*11)/rows,80,20,"Texture2",0);
-		GTButton(1,index_b_save,	10,(wh*13)/rows,90,20,"Save",0);
-		GTButton(1,index_b_use,		centerw-45,(wh*13)/rows,90,20,"Use",0);
-		GTButton(1,index_b_cancell,	ww-100,(wh*13)/rows,90,20,"Cancell",0);
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+		GTButton(1,index_b_logo,		ww-90,		rowy(9),80,button_height,"Logo",0);
+		GTButton(1,index_b_texture1,	ww-90,		rowy(10),80,button_height,"Texture1",0);
+		GTButton(1,index_b_texture2,	ww-90,		rowy(11),80,button_height,"Texture2",0);
+		GTButton(1,index_b_save,	10,			rowy(13),90,button_height,"Save",0);
+		GTButton(1,index_b_use,		centerw-45,	rowy(13),90,button_height,"Use",0);
+		GTButton(1,index_b_cancell,	ww-100,		rowy(13),90,button_height,"Cancell",0);
 
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
+/*
 		if (GadgetHit = find_blitz_gadget(1,	index_o_open	))
 		{
 			GT_SetGadgetAttrs(GadgetHit,current_win,NULL,
 				GA_Disabled, TRUE,
 				TAG_DONE);
 		}
-
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
-
+*/
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
+/*
 		if (GadgetHit = find_blitz_gadget(1,	index_o_close	))
 		{
 			GT_SetGadgetAttrs(GadgetHit,current_win,NULL,
 				GA_Disabled, TRUE,
 				TAG_DONE);
 		}
-
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+*/
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 		AttachGTList(1,0);
 
@@ -230,10 +237,12 @@ int main()
 			dump_gadget(g);
 		}
 
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 		do
 		{
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
+
 			ev=WaitEvent();
 
 			Printf("ev: %08lx\n",ev);
@@ -242,19 +251,31 @@ int main()
 			{
 				case IDCMP_GADGETUP:
 
+					if (GadgetHit)
+					{
 						switch(GadgetHit -> GadgetID)
 						{
 							case index_b_cancell:	ev=IDCMP_CLOSEWINDOW;
 									Printf("Pressed Cancel button\n");
 									break;
 						}
-						break;
+					}
+					else
+					{
+						Printf("bad IDCMP_GADGETUP message\n");
+					}
+					break;
 			}
 			Delay(1);
 		}
 		while (ev!=IDCMP_CLOSEWINDOW);
 #endif
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
+
 		CloseWindow(win[0]);
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 		FreeGTList(0);
 
