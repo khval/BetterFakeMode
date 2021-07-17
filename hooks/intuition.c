@@ -20,8 +20,6 @@ void RenderGadgets(struct RastPort *rp, struct Gadget *g);
 
 VOID ppc_func_RefreshGList (struct IntuitionIFace *Self, struct Gadget * gadgets, struct Window * window, struct Requester * requester, WORD numGad)
 {
-	FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
-
 	if (is_fake_screen( window -> WScreen ))
 	{
 		struct RastPort *rp = window -> RPort;
