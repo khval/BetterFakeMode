@@ -176,7 +176,7 @@ int main()
 								break;
 						}
 
-						ReplyMsg( m );
+						ReplyMsg( (struct Message *) m );
 						m = (struct IntuiMessage *) GetMsg( win[n] -> UserPort );
 					}
 				}

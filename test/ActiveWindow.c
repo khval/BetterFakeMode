@@ -148,7 +148,7 @@ int main()
 							quit = true;
 							break;
 					}
-					ReplyMsg( m );
+					ReplyMsg( (struct Message *) m );
 					m = (struct IntuiMessage *) GetMsg( win[1] -> UserPort );
 				}
 			}

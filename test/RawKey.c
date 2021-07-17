@@ -178,7 +178,7 @@ int main()
 									m -> Qualifier );
 							break;
 					}
-					ReplyMsg( m );
+					ReplyMsg( (struct Message *) m );
 					m = (struct IntuiMessage *) GetMsg( win[1] -> UserPort );
 				}
 			}

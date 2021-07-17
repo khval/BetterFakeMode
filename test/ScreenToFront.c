@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>

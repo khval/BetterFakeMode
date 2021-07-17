@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -156,7 +157,7 @@ int main()
 							break;
 					}
 
-					ReplyMsg( m );
+					ReplyMsg( (struct Message *) m );
 
 					m = (struct IntuiMessage *) GetMsg( win[0] -> UserPort );
 				}
