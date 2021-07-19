@@ -18,6 +18,7 @@ void addWinGadget(struct Window *win, ULONG icon_s, ULONG flags)
 
 	if (g)
 	{
+		g -> Activation = 1;
 		g -> Flags = flags;
 		g -> NextGadget = win -> FirstGadget;
 		g -> Width = icon_s;

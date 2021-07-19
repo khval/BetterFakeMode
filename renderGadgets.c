@@ -35,7 +35,7 @@ void RenderGadgets(struct RastPort *rp, struct Gadget *g)
 {
 	for ( ; g ; g = g -> NextGadget )
 	{
-		RenderGadget(rp, g);
+		if (g -> Activation) RenderGadget(rp, g);
 	}
 }
 
