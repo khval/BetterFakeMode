@@ -17,8 +17,12 @@ void set_ng_gadget(struct Gadget *g ,const struct NewGadget *ng )
 	g -> Width = ng -> ng_Width ;
 	g -> Height = ng -> ng_Height ;
 	g -> GadgetID = ng -> ng_GadgetID ;
-//	g -> VisualInfo = ng -> ng_VisualInfo ;
-//	g -> TextAttr = ng -> ng_TextAttr ;
+
+	if (g -> GadgetText)
+	{
+		g -> GadgetText -> IText = ng -> ng_GadgetText;
+	}
+
 	g -> NextGadget = NULL;
 }
 
@@ -42,7 +46,10 @@ struct Gadget * fake_CreateGadgetA(ULONG kind,struct Gadget * previous,const str
 
 	if (g)
 	{
+		g -> Activation = 1;
+		g -> Flags = GFLG_GADGHNONE;
 		g -> MutualExclude = 0xFA8EFA8E;
+		g -> GadgetText = new_struct( IntuiText );
 
 		if (ng) set_ng_gadget(g ,ng);
 
