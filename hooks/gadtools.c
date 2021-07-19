@@ -79,8 +79,12 @@ struct IntuiMessage * ppc_func_GT_GetIMsg (struct GadToolsIFace *Self, struct Ms
 	{
 		if (strncmp(iport -> mp_Node.ln_Name,"FakeWindow",10)==0)
 		{
-			FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
-			return (struct IntuiMessage *) GetMsg( iport );
+			struct IntuiMessage *m;
+			m = (struct IntuiMessage *) GetMsg( iport );
+
+			FPrintf( output, "%08lx = %s(port: %08lx)\n",m,__FUNCTION__,iport);
+
+			return m;
 		}
 	}
 
@@ -92,7 +96,7 @@ void ppc_func_GT_ReplyIMsg (struct GadToolsIFace *Self, struct IntuiMessage *msg
 {
 	if (reply_port == msg -> ExecMessage.mn_ReplyPort)
 	{
-		FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
+		FPrintf( output, "%s( Message: %08lx )\n",__FUNCTION__, msg);
 		ReplyMsg( (struct Message *) msg );
 	}
 	else

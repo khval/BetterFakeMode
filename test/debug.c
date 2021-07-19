@@ -109,4 +109,43 @@ void show_win( struct Window *win )
 	printf("win -> BorderBottom: %d\n",win->BorderBottom);
 }
 
+void dump_gadget(struct Gadget *g)
+{
+	Printf("GadgetID: %04lx\n"
+		"\t Activation: %ld\n"
+		"\t LeftEdge: %ld\n"
+		"\t TopEdge: %ld\n"
+		"\t Width: %ld\n"
+		"\t Height: %ld\n"
+		"\t Flags: %04lx\n"
+		"\t GadgetType: %04lx\n"
+		"\t GadgetText: %s\n"
+		"\t MutualExclude: %08lx\n"
+		"\t SpecialInfo: %08lx\n"
+		"\t UserData: %08lx\n"
+		,
+		g -> GadgetID,
+		g -> Activation,
+		g -> LeftEdge,
+		g -> TopEdge,
+		g -> Width,
+		g -> Height,
+		g -> Flags,
+		g -> GadgetType,
+		(g -> GadgetText ? g -> GadgetText -> IText : "NULL"),
+		g -> MutualExclude,
+		g -> SpecialInfo,
+		g -> UserData
+		);
+}
 
+void dump_window_gadgets(struct Window *win)
+{
+	Printf("dump_window_gadgets(Window: %08lx)\n",win);
+
+	struct Gadget *g;
+	for (g = win -> FirstGadget; g; g = g -> NextGadget)
+	{
+		dump_gadget(g);
+	}
+}

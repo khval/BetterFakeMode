@@ -29,6 +29,7 @@
 #include <proto/asl.h>
 #include <proto/requester.h>
 #include <proto/commodities.h>
+#include <../debug.h>
 
 #include "common.h"
 
@@ -51,6 +52,7 @@ short		WBH=0;
 char 	*pPar[]={"ENVARC:Excalibur","ENV:Excalibur"};
 char		*prefs_name="ExcaliburSetup.prefs";
 
+#define waitkey(func,line) printf("%s:%d - wait key\n",func,line); getchar();
 
 struct TextAttr MyFont =
 {
@@ -104,17 +106,6 @@ void ChangeIcon();
 
 //char	**delay_opt;
 
-void dump_gadget(struct Gadget *g)
-{
-	Printf("id: %08lx LeftEdge: %ld, TopEdge: %ld, Width: %ld, Height: %ld, Flags: %08lx GadgetText: %s\n",
-		g -> GadgetID,
-		g -> LeftEdge,
-		g -> TopEdge,
-		g -> Width,
-		g -> Height,
-		g -> Flags,
-		g -> GadgetText ? g -> GadgetText -> IText : "NULL");
-}
 
 #define rowy(n) ((wh*n)/rows)+2
 
@@ -232,17 +223,10 @@ int main()
 
 		AttachGTList(1,0);
 
-		for (g = win[0] -> FirstGadget; g; g = g -> NextGadget)
-		{
-			dump_gadget(g);
-		}
-
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
+		dump_window_gadgets(win[0]);
 
 		do
 		{
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
-
 			ev=WaitEvent();
 
 			Printf("ev: %08lx\n",ev);
@@ -271,15 +255,8 @@ int main()
 		while (ev!=IDCMP_CLOSEWINDOW);
 #endif
 
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
-
 		CloseWindow(win[0]);
-
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
-
-		FreeGTList(0);
-
-		Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
+		FreeGTList(1);
 	}
 
 	if (vi)
@@ -298,11 +275,7 @@ int main()
 		src = NULL;
 	}
 
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
-
 	close_libs();
-
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);Delay(5);
 
 	return 0;
 

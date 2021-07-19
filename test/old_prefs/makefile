@@ -4,6 +4,7 @@ inc =-I../inc -I./
 
 files += blitz.c
 files += init.c 
+files += ../debug.c
 files_o = ${files:.c=.o}
 
 exe = wb96setup
