@@ -250,8 +250,11 @@ LONG _GetAEvent()
 {
 	struct Window *cwin;
 	struct IntuiMessage *imsg = 0;
-	ULONG	imsgClass;
+	ULONG	imsgClass = 0;
 	ULONG count;
+
+	EventCode = 0;
+	GadgetHit = NULL;
 
 	for (count=0;count<10;count++)	// try 10 times to find a event..
 	{
@@ -261,9 +264,11 @@ LONG _GetAEvent()
 		cwin = win[_win_index];	// get current window.
 		if (cwin)
 		{
-			Printf("GT_GetIMsg(cwin -> UserPort)\n");
+			imsg = GT_GetIMsg(cwin -> UserPort);
 
-			if (imsg = GT_GetIMsg(cwin -> UserPort))
+			Printf("%08lx = GT_GetIMsg(cwin -> UserPort: %08lx)\n", imsg, cwin -> UserPort);
+
+			if (imsg)
 			{
 				Printf("Success\n");
 				current_win = cwin;
@@ -271,7 +276,7 @@ LONG _GetAEvent()
 				EventCode	=	imsg->Code;
 				GadgetHit		=	(struct Gadget *) imsg -> IAddress;
 
-				Printf("GT_ReplyIMsg(imsg)\n");
+				Printf("GT_ReplyIMsg(imsg: %08lx)\n", imsg);
 				GT_ReplyIMsg(imsg);
 				Printf("Success\n");
 			}

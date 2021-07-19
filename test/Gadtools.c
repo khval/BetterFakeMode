@@ -13,6 +13,7 @@
 #include <proto/gadtools.h>
 
 #include "init.h"
+#include "debug.h"
 
 
 struct TextAttr MyFont =
@@ -136,6 +137,8 @@ int main()
 			lastGadget = CreateAllGadgets( lastGadget, vi, win -> BorderTop);
 			AddGList( (struct Window *) win,(struct Gadget *) glist,0,-1,NULL);
 			RefreshGList( (void *) glist,(void *) win,0,-1); 
+
+			dump_window_gadgets(win);
 
 //			GT_RefreshWindow(win,NULL);
 		}
