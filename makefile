@@ -6,7 +6,7 @@ opts += -Dmax_screens=100
 
 # Enable or disable patches... 1=enable, 0=disable
 
-opts += -Dpatch_gadtools=0
+opts += -Dpatch_gadtools=1
 opts += -Dpatch_GetBitMapAttr=1
 opts += -Dpatch_LockBitMap=1
 

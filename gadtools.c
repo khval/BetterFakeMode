@@ -70,10 +70,22 @@ ULONG attachGadget(struct Gadget *g, struct Window *win)
 	return index;
 }
 
-void freeGadget( struct Gadget *g )
+void freeGadgetOnlyStruct( struct Gadget *g )
 {
+	FPrintf( output, "freeGadgetOnlyStruct( Gadget: %lx)\n",g);
 	FreeVec( g );
 }
+
+void freeGadgetAndData( struct Gadget *g )
+{
+	FPrintf( output, "freeGadgetAndData( Gadget: %lx)  (GadgetID: %08lx (%ld))\n",g, g -> GadgetID, g -> GadgetID);
+
+	if ( g -> GadgetText ) FreeVec( g -> GadgetText );
+	g -> GadgetText = NULL;
+
+	FreeVec( g );
+}
+
 
 void freeWinGadgets( struct Window *win )
 {
@@ -85,7 +97,7 @@ void freeWinGadgets( struct Window *win )
 	while (g)
 	{
 		next_g = g -> NextGadget;
-		freeGadget(g);
+		freeGadgetOnlyStruct(g);
 		g = next_g;
 	}
 	

@@ -108,6 +108,31 @@ void ppc_func_GT_ReplyIMsg (struct GadToolsIFace *Self, struct IntuiMessage *msg
 
 // We don't wont fake gadgets, to be deleted by system, as its not the same.
 
+
+void fake_FreeGadgets(  struct Gadget * glist )
+{
+	// it can take some time before engine is done with the gadgets, 
+	// we need to make sure its safe.
+
+	MutexObtain(video_mutex);
+
+	struct Gadget *next_g;
+	struct Gadget *g = glist -> NextGadget;
+	glist -> NextGadget = NULL;
+
+	// we free the gadgets, as its not the context, (as its not patched)
+
+	while (g)
+	{
+		next_g = g -> NextGadget;
+		freeGadgetAndData(g);
+		g = next_g;
+	}
+
+	MutexRelease(video_mutex);
+}
+
+
 void ppc_func_FreeGadgets (struct GadToolsIFace *Self, struct Gadget * glist)
 {
 	struct Gadget *g = glist ? glist -> NextGadget :  NULL;
@@ -115,8 +140,7 @@ void ppc_func_FreeGadgets (struct GadToolsIFace *Self, struct Gadget * glist)
 	if (g)
 		if (g -> MutualExclude == 0xFA8EFA8E)
 		{
-			FPrintf( output, "%s:%ld NYI\n",__FUNCTION__,__LINE__);
-			return;
+			fake_FreeGadgets( glist );
 		}
 
 	((void (*)( struct GadToolsIFace *, struct Gadget *))
