@@ -61,6 +61,8 @@ union amiga_argb
 	};
 };
 
+void send_button( struct Window *win,  struct IntuiMessage *source_msg, ULONG idcmp );
+
 union amiga_argb palette[256];
 
 void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Window *win);
@@ -370,11 +372,15 @@ struct Window *active_win=NULL;
 LONG clicked_x,clicked_y;
 struct Gadget *clicked_gadget;
 
-bool ClickButtons( struct Window *win )
+bool ClickButtons( struct Window *win, struct IntuiMessage *m )
 {
 	ULONG x0,y0,x1,y1;
 	LONG mx,my;
 	struct Gadget *g;
+
+	clicked_gadget = NULL;
+	clicked_x = 0;
+	clicked_y = 0;
 
 	mouse_state = no_action;
 	mx = win -> MouseX;
@@ -394,7 +400,7 @@ bool ClickButtons( struct Window *win )
 		{
 			FPrintf( output, "Clicked button\n");
 			FPrintf( output, "X: %ld>%ld<%ld\n",x0,mx,x1);
-			FPrintf( output, "Y: %ld>%ld<%ld\n",x0,mx,x1);
+			FPrintf( output, "Y: %ld>%ld<%ld\n",y0,my,y1);
 
 			switch ( g-> Flags)
 			{
@@ -423,6 +429,9 @@ bool ClickButtons( struct Window *win )
 					clicked_gadget = g;
 					clicked_x = mx;
 					clicked_y = my;
+
+					send_button( win , m, IDCMP_GADGETDOWN );
+
 					return true;
 			}
 		}		
@@ -449,7 +458,7 @@ UWORD getMinLayerPriority( struct Screen *src )
 
 // return true, if you have clicked on button.
 
-bool WindowClick( struct Screen *src )
+bool WindowClick( struct Screen *src, struct IntuiMessage *m )
 {
 	ULONG mx,my;
 	struct Window *win;
@@ -484,7 +493,7 @@ bool WindowClick( struct Screen *src )
 	if (clicked_win)
 	{
 		no_block_ActivateWindow( clicked_win );
-	 	return ClickButtons( clicked_win );
+	 	return ClickButtons( clicked_win, m );
 		
 	}
 	return false;
@@ -527,8 +536,6 @@ void drag_window(struct Screen *src)
 
 void wdepth_window(struct Screen *src)
 {
-	LONG dx,dy;
-
 	FPrintf( output, "%s\n",__FUNCTION__);
 
 	if (window_open(src,active_win))
@@ -634,12 +641,12 @@ void send_mouse_move( struct Window *win,  struct IntuiMessage *source_msg )
 	}
 }
 
-void send_button( struct Window *win,  struct IntuiMessage *source_msg )
+void send_button( struct Window *win,  struct IntuiMessage *source_msg, ULONG idcmp )
 {
 	FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
 
 
-	if (win -> IDCMPFlags & IDCMP_GADGETUP)
+	if (win -> IDCMPFlags & idcmp)
 	{
 		struct IntuiMessage *msg;
 		msg = (struct IntuiMessage *) AllocSysObjectTags(ASOT_MESSAGE,
@@ -655,7 +662,7 @@ void send_button( struct Window *win,  struct IntuiMessage *source_msg )
 			msg -> MouseY = win -> MouseY;
 			msg -> Code = clicked_gadget -> GadgetID;
 			msg -> IAddress = clicked_gadget;
-			msg -> Class = IDCMP_GADGETUP;
+			msg -> Class = idcmp;
 
 			Forbid();
 			PutMsg( win -> UserPort, (struct Message *) msg);
@@ -775,7 +782,6 @@ void emuEngine()
 	struct emuIntuitionContext c;
 	ULONG win_mask = 0;
 	ULONG mask_reply_port = 0;
-	struct IntuiMessage *m;
 
 	bool no_screens = false;
 
@@ -935,7 +941,7 @@ void emuEngine()
 										break;
 									
 									case gadget_action:
-										if (has_active_win) send_button( active_win , m );
+										if (has_active_win) send_button( active_win , m, IDCMP_GADGETUP );
 										break;
 
 									default:
@@ -954,7 +960,7 @@ void emuEngine()
 								switch (mouse_state)
 								{
 									case no_action:
-										if (WindowClick( c.src ) == false)
+										if (WindowClick( c.src, m ) == false)
 										{
 											if (has_active_win) send_copy( active_win , m );
 										}
