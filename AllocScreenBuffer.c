@@ -68,9 +68,36 @@ void fake_FreeScreenBuffer( struct Screen *s, struct ScreenBuffer *sb )
 	FreeVec( sb );
 }
 
+
+static BOOL is_empty( struct MsgPort *mp)
+{
+	return (mp -> mp_MsgList.lh_Head -> ln_Succ) ? FALSE:TRUE;
+}
+
+// do not want the meesage to link to itself.
+
+void send_if_empty( struct Message *m )
+{
+	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
+	if (m -> mn_ReplyPort)
+	{
+		FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
+		if (is_empty( m -> mn_ReplyPort))
+		{
+			FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
+			PutMsg( m -> mn_ReplyPort, m  );
+		}
+		FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+	}
+
+	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+}
+
 ULONG fake_ChangeScreenBuffer( struct Screen * s, struct ScreenBuffer * sb)
 {
-	struct Task *me;
 	FPrintf( output,"fake_ChangeScreenBuffer\n");
 
 	if (sb -> sb_BitMap)
@@ -81,34 +108,19 @@ ULONG fake_ChangeScreenBuffer( struct Screen * s, struct ScreenBuffer * sb)
 		MutexRelease(video_mutex);
 	}
 
-	me = FindTask(NULL);
-
-	if (me)
+	if (sb->sb_DBufInfo)
 	{
-		if (sb->sb_DBufInfo)
-		{
-			if (sb->sb_DBufInfo->dbi_SafeMessage.mn_ReplyPort)
-			{
-				FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-				Signal( me,  1L << sb->sb_DBufInfo->dbi_SafeMessage.mn_ReplyPort ->mp_SigBit);
-			}
-			else	FPrintf( output,"no ReplyPort\n");
-
-			if (sb->sb_DBufInfo->dbi_DispMessage.mn_ReplyPort)
-			{
-				FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
-				Signal( me,  1L << sb->sb_DBufInfo->dbi_DispMessage.mn_ReplyPort ->mp_SigBit);
-			}
-			else	FPrintf( output,"no ReplyPort\n");	
-		}
-		else
-		{
-			FPrintf( output,"Missing sb_DBufInfoin ScreenBuffer\n");	
-			getchar();
-		}
-
 		FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
+		send_if_empty( &sb->sb_DBufInfo->dbi_SafeMessage );
+		send_if_empty( &sb->sb_DBufInfo->dbi_DispMessage );
 	}
+	else
+	{
+		FPrintf( output,"Missing sb_DBufInfoin ScreenBuffer\n");	
+	}
+
+	FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 	return TRUE;
 }

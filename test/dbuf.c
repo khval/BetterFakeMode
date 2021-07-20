@@ -144,11 +144,14 @@ Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 			do
 			{
+
+Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+
 				if (!SafeToWrite)
 				{
 					while (!GetMsg (safeport))
 					{
-						Printf ("wait safe\n");
+						Printf ("wait for safeport signal\n");
 
 						if (Wait ((1L << safeport->mp_SigBit) | SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C)
 						{
@@ -177,7 +180,7 @@ Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 					{
 						while (!GetMsg (dispport))
 						{
-							Printf ("wait disp\n");
+							Printf ("wait dispport signal\n");
 
 							if (Wait ((1L << dispport->mp_SigBit) | SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C)
 							{
@@ -189,7 +192,7 @@ Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 					}
 				}
 
-Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
+Printf("%s:%s:%ld - cont: %s\n",__FILE__,__FUNCTION__,__LINE__,cont ? "True" : "False");
 
 			show_screenbuffer( "sbuf[0]", sbuff[0] );
 			show_screenbuffer( "sbuf[1]", sbuff[1] );
@@ -238,7 +241,7 @@ Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 			{
 				while (!GetMsg (safeport))
 				{
-					Printf ("wait safe\n");
+					Printf ("wait for safeport signal\n");
 
 					if (Wait ((1L << safeport->mp_SigBit) | SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C)
 					{
@@ -254,7 +257,7 @@ Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 			{
 				while (!GetMsg (dispport))
 				{
-					Printf ("wait disp\n");
+					Printf ("wait for dispport signal\n");
 
 					if (Wait ((1L << dispport->mp_SigBit) | SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C)
 					{
@@ -269,13 +272,13 @@ Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 		{
 			FreeScreenBuffer (scr,sbuff[0]);
 		}
-		else printf("buffer 0 not allocated\n");
+		else Printf("buffer 0 not allocated\n");
 
 		if (sbuff[1])
 		{
 			FreeScreenBuffer (scr,sbuff[1]);
 		}
-		else printf("buffer 1 not allocated\n");
+		else Printf("buffer 1 not allocated\n");
 
 		if (safeport) DeleteMsgPort (safeport);
 		if (dispport) DeleteMsgPort (dispport);
@@ -284,7 +287,7 @@ Printf("%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 	}
 	else
 	{
-		printf("can't cant OpenScreen\n");
+		Printf("can't cant OpenScreen\n");
 	}
 
 	close_libs();
