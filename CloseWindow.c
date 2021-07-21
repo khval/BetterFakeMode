@@ -46,7 +46,14 @@ struct Window * fake_CloseWindow ( struct Window *w )
 
 		if (w -> RPort -> BitMap != w -> WScreen -> RastPort.BitMap)
 		{
-			_free_fake_bitmap( w -> RPort -> BitMap );
+			if (w -> RPort -> BitMap -> pad == 0xFA8E)
+			{
+				_free_fake_bitmap( w -> RPort -> BitMap );
+			}
+			else
+			{
+				FreeBitMap( w -> RPort -> BitMap );
+			}
 		}
 		w -> RPort -> BitMap  = NULL;	
 
