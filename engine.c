@@ -162,9 +162,9 @@ inline uint32 ham8( unsigned char color )
 	return ham.argb;
 }
 
-void draw_bits_argb( unsigned char *dest_ptr,unsigned int dest_bpr, unsigned char *b, int x,int  y )
+void draw_bits_argb( unsigned char *dest_ptr, unsigned char *b)
 {
-	uint32 *d_argb = (uint32 *)	(dest_ptr + dest_bpr * y + (x*4));
+	uint32 *d_argb = (uint32 *)	(dest_ptr);
 
 	*d_argb++ = palette[ *b++ ].argb ;
 	*d_argb++ = palette[ *b++ ].argb ;
@@ -176,9 +176,9 @@ void draw_bits_argb( unsigned char *dest_ptr,unsigned int dest_bpr, unsigned cha
 	*d_argb = palette[ *b ].argb ;
 }
 
-void draw_bits_argb_ham6( unsigned char *dest_ptr,unsigned int dest_bpr, unsigned char *b, int x,int  y )
+void draw_bits_argb_ham6( unsigned char *dest_ptr, unsigned char *b )
 {
-	uint32 *d_argb = (uint32 *)	(dest_ptr + dest_bpr * y + (x*4));
+	uint32 *d_argb = (uint32 *)	(dest_ptr);
 
 	*d_argb++ = ham6( *b++ ); // 0
 	*d_argb++ = ham6( *b++ ); // 1
@@ -190,9 +190,9 @@ void draw_bits_argb_ham6( unsigned char *dest_ptr,unsigned int dest_bpr, unsigne
 	*d_argb = ham6( *b ); // 7
 }
 
-void draw_bits_argb_ham8( unsigned char *dest_ptr,unsigned int dest_bpr, unsigned char *b, int x,int  y )
+void draw_bits_argb_ham8( unsigned char *dest_ptr, unsigned char *b)
 {
-	uint32 *d_argb = (uint32 *)	(dest_ptr + dest_bpr * y + (x*4));
+	uint32 *d_argb = (uint32 *)	(dest_ptr);	
 
 	*d_argb++ = ham8( *b++ ); // 0
 	*d_argb++ = ham8( *b++ ); // 1
@@ -296,17 +296,18 @@ void draw_screen( struct emuIntuitionContext *c)
 	int SizeOfPlane;
 	int x,y;
 	int bx,bpr;
-	unsigned char *yptr;
+	unsigned char *src_ptr_y;
 	uint64 data = 0;
 	uint max_height;
 
 	ULONG dest_format;
+	unsigned char *dest_ptr_image;
 	unsigned char *dest_ptr;
 	unsigned int dest_bpr;
 	APTR lock;
 
 	uint64 (*planar_routine) (unsigned char *ptr, int SizeOfPlane) = NULL;
-	void (*draw_bits) ( unsigned char *dest_ptr,unsigned int dest_bpr, unsigned char *b, int x,int  y ) = NULL;
+	void (*draw_bits) ( unsigned char *dest_ptr, unsigned char *b) = NULL;
 
 	bpr = bm -> BytesPerRow;
 	SizeOfPlane = bm -> BytesPerRow * bm -> Rows;
@@ -322,7 +323,7 @@ void draw_screen( struct emuIntuitionContext *c)
 	lock = LockBitMapTags( dest_bm,
 			LBM_PixelFormat, &dest_format,
 			LBM_BytesPerRow, &dest_bpr,
-			LBM_BaseAddress, &dest_ptr,
+			LBM_BaseAddress, &dest_ptr_image,
 			TAG_END	 );
 
 	max_height = c -> src -> ViewPort.DHeight;
@@ -330,16 +331,17 @@ void draw_screen( struct emuIntuitionContext *c)
 
 	for (y=0;y<max_height; y++)
 	{
-		x = 0;
-		yptr = bm -> Planes[0] + bpr*y;
-
 		ham.argb = 0xFF000000;
 
+		src_ptr_y = bm -> Planes[0] + bpr*y;
+		dest_ptr = dest_ptr_image + (dest_bpr*y);
+
+		x = 0;
 		for (bx=0;bx<bpr;bx++)
 		{
-			data = planar_routine( yptr + bx, SizeOfPlane );
-			draw_bits( dest_ptr,dest_bpr, (unsigned char *) &data ,  x,  y );
-			x+=8;
+			data = planar_routine( src_ptr_y + bx, SizeOfPlane );
+			draw_bits( dest_ptr, (unsigned char *) &data );
+			dest_ptr+=(8*4);		// 8 pixels 4 bytes per pixel
 		}
 	}
 
