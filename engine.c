@@ -847,6 +847,7 @@ void emuEngine()
 
 	do
 	{
+		bool has_active_win;
 		ULONG host_w,host_h;
 		ULONG sig = Wait( win_mask | c.tc.timer_mask | SIGBREAKF_CTRL_C | mask_reply_port);
 
@@ -860,7 +861,18 @@ void emuEngine()
 
 			MutexObtain(video_mutex);
 
+			has_active_win = false;
+
 			c.src = current_fake_screen();
+			if (c.src)
+			{
+				has_active_win = window_open(c.src,active_win);
+
+				if (has_active_win == false)
+				{
+					active_win = c.src -> FirstWindow;	// this is a hack....
+				}
+			}
 
 			host_w = c.win -> Width;
 			host_w -= c.win -> BorderLeft;
@@ -886,8 +898,6 @@ void emuEngine()
 
 				if (c.src)
 				{
-					bool has_active_win = window_open(c.src,active_win);
-						
 					switch (m -> Class)
 					{
 						case IDCMP_MOUSEMOVE:
