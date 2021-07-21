@@ -1159,8 +1159,8 @@ void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Windo
  	float destWidth = rect.MaxX - rect.MinX + 1;
  	float destHeight = rect.MaxY - rect.MinY + 1;
 
- 	float scaleX = (destWidth + 0.5f) / hookData.srcWidth;
- 	float scaleY = (destHeight + 0.5f) / hookData.srcHeight;
+ 	float scaleX = (destWidth + 0.5f) / (float) hookData.srcWidth;
+ 	float scaleY = (destHeight + 0.5f) / (float) hookData.srcHeight;
 
 	hookData.scaleX = COMP_FLOAT_TO_FIX(scaleX);
 	hookData.scaleY = COMP_FLOAT_TO_FIX(scaleY);
