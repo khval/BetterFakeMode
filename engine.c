@@ -1037,6 +1037,7 @@ void emuEngine()
 
 			MutexRelease(video_mutex);
 
+			WaitTOF();
 			reset_timer( c.tc.timer_io );
 		}
 
