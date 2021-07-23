@@ -11,6 +11,7 @@
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <proto/gadtools.h>
+#include <proto/asl.h>
 #include <exec/emulation.h>
 #include <exec/ports.h>
 
@@ -58,6 +59,11 @@ APTR old_ppc_func_CreateGadgetA = NULL;
 APTR old_ppc_func_AddGList = NULL;
 APTR old_ppc_func_RefreshGList = NULL;
 APTR old_ppc_func_FreeGadgets = NULL;
+
+// ASL
+
+APTR old_ppc_func_AllocAslRequest = NULL;
+APTR old_ppc_func_OBSOLETE_AllocFileRequest = NULL;
 
 #include "hooks/gadtools.h"
 #include "hooks/intuition.h"
@@ -165,6 +171,23 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 	return NULL;
 }
 
+APTR ppc_func_OBSOLETE_AllocFileRequest(struct AslIFace *Self, uint32 type, struct TagItem *tags)
+{
+	FPrintf( output,"%s\n",__FUNCTION__);
+
+	// need to look for ASLFR_Screen !!! in tags.
+
+	return ((APTR (*) ( struct AslIFace *, uint32, struct TagItem *)) old_ppc_func_OBSOLETE_AllocFileRequest) (Self, type, tags);
+}
+
+APTR ppc_func_AllocAslRequest(struct AslIFace *Self, uint32 type, struct TagItem *tags)
+{
+	FPrintf( output,"%s\n",__FUNCTION__);
+
+	// need to look for ASLFR_Screen !!! in tags.
+
+	return ((APTR (*) ( struct AslIFace *, uint32, struct TagItem *)) old_ppc_func_AllocAslRequest) (Self, type, tags);
+}
 
 ULONG ppc_func_ChangeScreenBuffer(struct IntuitionIFace *Self, struct Screen * s, struct ScreenBuffer * sb)
 {
@@ -377,6 +400,11 @@ BOOL set_patches( void )
 
 	IExec->Forbid();
 
+	// ASL
+	
+	set_new_ppc_patch(Asl,OBSOLETE_AllocFileRequest);	// like monitor...
+	set_new_ppc_patch(Asl,AllocAslRequest);				// avoid fake screens for ASL
+
 	// Intuition
 
 	set_new_ppc_patch(Intuition,OpenScreenTagList);
@@ -440,6 +468,11 @@ void undo_patches( void )
 	undo_ppc_patch(Graphics,LockBitMapTagList);
 	undo_ppc_patch(Graphics,UnlockBitMap);
 #endif
+
+	// ASL
+	
+	undo_ppc_patch(Asl,OBSOLETE_AllocFileRequest);
+	undo_ppc_patch(Asl,AllocAslRequest);	
 
 	// undo GadTools
 

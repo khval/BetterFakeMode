@@ -10,6 +10,7 @@
 #include <proto/gadtools.h>
 #include <proto/diskfont.h>
 #include <exec/emulation.h>
+#include <proto/asl.h>
 
 #include "common.h"
 #include "init.h"
@@ -28,6 +29,9 @@ struct GadToolsIFace	*IGadTools = NULL;
 
 struct Library			*DiskfontBase = NULL;
 struct DiskfontIFace		*IDiskfont = NULL;
+
+struct Library 			 *AslBase = NULL;
+struct AslIFace 			 *IAsl = NULL;
 
 APTR video_mutex = NULL;
 
@@ -122,6 +126,7 @@ bool open_libs()
 	if ( ! open_lib( "graphics.library", 54L , "main", 1, &GraphicsBase, (struct Interface **) &IGraphics  ) ) return FALSE;
 	if ( ! open_lib( "diskfont.library", 53L , "main", 1, &DiskfontBase, (struct Interface **) &IDiskfont  ) ) return FALSE;
 	if ( ! open_lib( "gadtools.library", 53L , "main", 1, &GadToolsBase, (struct Interface **) &IGadTools  ) ) return FALSE;
+	if ( ! open_lib( "asl.library", 53L , "main", 1, &AslBase, (struct Interface **) &IAsl  ) ) return FALSE;
 
 	video_mutex = (APTR) AllocSysObjectTags(ASOT_MUTEX, TAG_DONE);
 	if ( ! video_mutex) return FALSE;
@@ -155,6 +160,7 @@ void close_libs()
 		video_mutex = NULL;
 	}
 
+	close_lib(Asl);
 	close_lib(GadTools);
 	close_lib(Diskfont);
 	close_lib(Layers);
