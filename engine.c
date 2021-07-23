@@ -42,6 +42,12 @@ extern struct TextFont *default_font;
 
 struct MsgPort *reply_port = NULL;
 
+struct xy
+{
+	int x;
+	int y;
+};
+
 struct amiga_rgb
 {
 	uint32 r;
@@ -60,6 +66,9 @@ union amiga_argb
 		unsigned char b;
 	};
 };
+
+struct xy tmp_mouse = {0,0};
+struct xy delta_mouse = {0,0};
 
 void send_button( struct Window *win,  struct IntuiMessage *source_msg, ULONG idcmp );
 
@@ -632,9 +641,17 @@ void send_mouse_move( struct Window *win,  struct IntuiMessage *source_msg )
 		{
 			copy_msg(source_msg,msg);
 			msg -> IDCMPWindow = win;
-			msg -> MouseX = win -> MouseX;
-			msg -> MouseY = win -> MouseY;
 
+			if (win -> IDCMPFlags & IDCMP_DELTAMOVE)
+			{
+				msg -> MouseX = delta_mouse.x;
+				msg -> MouseY = delta_mouse.y;
+			}
+			else
+			{
+				msg -> MouseX = win -> MouseX;
+				msg -> MouseY = win -> MouseY;
+			}
 
 			Forbid();
 			PutMsg( win -> UserPort, (struct Message *) msg);
@@ -768,6 +785,7 @@ void cleanup_engine( struct emuIntuitionContext *c )
 
 void update_screen(struct emuIntuitionContext *c, ULONG host_w, ULONG host_h)
 {
+	struct xy new_mouse;
 	ULONG host_mx,host_my;
 	struct Window *win = c -> win;
 	struct Screen *src = c -> src;
@@ -775,8 +793,17 @@ void update_screen(struct emuIntuitionContext *c, ULONG host_w, ULONG host_h)
 	host_mx = win -> WScreen -> MouseX - win -> LeftEdge - win -> BorderLeft;
 	host_my = win -> WScreen -> MouseY - win -> TopEdge - win -> BorderTop;
 
-	src -> MouseX = host_mx * src -> Width / host_w;
-	src -> MouseY = host_my * src -> Height / host_h;
+	new_mouse.x = host_mx * src -> Width / host_w;
+	new_mouse.y = host_my * src -> Height / host_h;
+
+	tmp_mouse.x  = new_mouse.x - src -> MouseX ;
+	tmp_mouse.y  = new_mouse.y - src -> MouseY ;
+
+	delta_mouse.x = (abs(tmp_mouse.x) < 100)  ? tmp_mouse.x * 2 : 0;
+	delta_mouse.y = (abs(tmp_mouse.x) < 100)  ? tmp_mouse.y * 2 : 0;
+
+	src -> MouseX = new_mouse.x;
+	src -> MouseY = new_mouse.y;
 }
 
 void emuEngine()
