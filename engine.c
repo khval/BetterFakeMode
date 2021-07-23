@@ -76,6 +76,16 @@ union amiga_argb palette[256];
 
 void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Window *win);
 
+bool compare_IDCMP(ULONG mask, ULONG IDCMP1, ULONG IDCMP2)
+{
+	return ((mask & IDCMP1) == (mask & IDCMP2));
+}
+
+ULONG new_IDCMP( ULONG mask, ULONG old_IDCMP, ULONG new_IDCMP)
+{
+	return (old_IDCMP & ~mask) | (new_IDCMP & mask);
+}
+
 void update_argb_lookup( struct ColorMap *cm )
 {
 	int c;
@@ -900,6 +910,15 @@ void emuEngine()
 					active_win = c.src -> FirstWindow;	// this is a hack....
 				}
 			}
+
+			if (has_active_win)
+			{
+				if (compare_IDCMP( IDCMP_VANILLAKEY, c.win -> IDCMPFlags, active_win -> IDCMPFlags ) == FALSE)
+				{
+					ModifyIDCMP( c.win, new_IDCMP( IDCMP_VANILLAKEY, c.win -> IDCMPFlags, active_win -> IDCMPFlags) );
+				}
+			}
+
 
 			host_w = c.win -> Width;
 			host_w -= c.win -> BorderLeft;
