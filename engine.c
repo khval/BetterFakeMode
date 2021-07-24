@@ -1103,8 +1103,10 @@ float s, t, w;
 
 typedef struct CompositeHookData_s {
 	struct BitMap *srcBitMap; // The source bitmap
+	int32 srcX,srcY;
 	int32 srcWidth, srcHeight; // The source dimensions
 	int32 offsetX, offsetY; // The offsets to the destination area relative to the window's origin
+	int32 destWidth, destHeight;
 	int32 scaleX, scaleY; // The scale factors
 	uint32 retCode; // The return code from CompositeTags()
 } CompositeHookData;
@@ -1160,20 +1162,24 @@ static ULONG compositeHookFunc(
 		COMPOSITE_Src, 
 			hookData->srcBitMap, 
 			rastPort->BitMap,
+
+		COMPTAG_SrcX,      abs(hookData->srcX),
+		COMPTAG_SrcY,      abs(hookData->srcY),
 		COMPTAG_SrcWidth,   hookData->srcWidth,
 		COMPTAG_SrcHeight,  hookData->srcHeight,
+
 		COMPTAG_ScaleX, 	hookData->scaleX,
 		COMPTAG_ScaleY, 	hookData->scaleY,
-/*
-		COMPTAG_OffsetX,    msg->Bounds.MinX - (msg->OffsetX - hookData->offsetX),
-		COMPTAG_OffsetY,    msg->Bounds.MinY - (msg->OffsetY - hookData->offsetY),
-*/
+
 		COMPTAG_OffsetX,    msg->Bounds.MinX - (msg->OffsetX - msg->Bounds.MinX),
 		COMPTAG_OffsetY,    msg->Bounds.MinY - (msg->OffsetY - msg->Bounds.MinY),
+
 		COMPTAG_DestX,      msg->Bounds.MinX,
 		COMPTAG_DestY,      msg->Bounds.MinY,
-		COMPTAG_DestWidth,  msg->Bounds.MaxX - msg->Bounds.MinX + 1,
-		COMPTAG_DestHeight, msg->Bounds.MaxY - msg->Bounds.MinY + 1,
+
+		COMPTAG_DestWidth, hookData->destWidth,
+		COMPTAG_DestHeight, hookData->destHeight ,
+
 		COMPTAG_Flags,      COMPFLAG_SrcFilter | COMPFLAG_IgnoreDestAlpha | COMPFLAG_HardwareOnly,
 		TAG_END);
 
@@ -1188,6 +1194,8 @@ void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Windo
 	struct Rectangle rect;
 	register struct RastPort *RPort = win->RPort;
 
+//	FPrintf( output, "DyOffset: %ld\n", src -> ViewPort.DyOffset); 
+
  	rect.MinX = win->BorderLeft;
  	rect.MinY = win->BorderTop;
  	rect.MaxX = win->Width - win->BorderRight ;
@@ -1198,6 +1206,11 @@ void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Windo
 
 	hookData.srcBitMap = bitmap;
 
+//	I belive some games /demos might double buffer by moving the screen... 
+
+	hookData.srcX = src -> ViewPort.DxOffset;
+	hookData.srcY = src -> ViewPort.DyOffset;
+
 	hookData.srcWidth = src -> ViewPort.DWidth;
 	hookData.srcHeight = src -> Height < src -> ViewPort.DHeight ? src -> Height : src -> ViewPort.DHeight;
 
@@ -1205,14 +1218,11 @@ void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Windo
 	hookData.offsetY = win->BorderTop;
 	hookData.retCode = COMPERR_Success;
 
- 	float destWidth = rect.MaxX - rect.MinX + 1;
- 	float destHeight = rect.MaxY - rect.MinY + 1;
+ 	hookData.destWidth = rect.MaxX - rect.MinX + 1;
+ 	hookData.destHeight = rect.MaxY - rect.MinY + 1;
 
- 	float scaleX = (destWidth + 0.5f) / (float) hookData.srcWidth;
- 	float scaleY = (destHeight + 0.5f) / (float) hookData.srcHeight;
-
-	hookData.scaleX = COMP_FLOAT_TO_FIX(scaleX);
-	hookData.scaleY = COMP_FLOAT_TO_FIX(scaleY);
+	hookData.scaleX = COMP_FLOAT_TO_FIX((float) hookData.destWidth / (float) hookData.srcWidth);
+	hookData.scaleY = COMP_FLOAT_TO_FIX((float) hookData.destHeight / (float) hookData.srcHeight);
 
 	LockLayer(0, RPort->Layer);
 	DoHookClipRects(&hook, win->RPort, &rect);
