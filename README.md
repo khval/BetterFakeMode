@@ -101,7 +101,7 @@ Ok here is native plan for this project.
 
 Because this is an Ad Hoc development project, first thing is to find out if this is doable? So, first order of business is quickly proto type something, that shows if we are able open some screens, if get windows working etc, if I can get windows to not crash, and I can get normally draw commands to work. then 2en phase can start.
 
-2en
+2en - Done
 
 Work on user input, events, make sure windows and user input is forwarded to the correct fake window inside the fake screen.
 
@@ -109,7 +109,7 @@ Work on user input, events, make sure windows and user input is forwarded to the
 
 A fake gadtools hack, to make old gadtool based porgrams work.
 
-4th
+4th - in progress 
 
 When we can see if this project might work, the work on updating the code, so that it displays correct. remove any graphic glitches,
 Updated the engine: focus now shifts to making it display in full screen mode, fix the aspect ratio, preferences, and so on.
