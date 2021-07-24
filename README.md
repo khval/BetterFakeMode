@@ -107,7 +107,10 @@ Work on user input, events, make sure windows and user input is forwarded to the
 
 3rd - in progress 
 
-A fake gadtools hack, to make old gadtool based porgrams work.
+Due to hidden, not documented structure in AmigaOS, we can’t get OS Gadtools working.
+as result we need to hack the hell out of the OS, and make fake Gadtools, to force it to work.
+
+(Anyway if some of the structures can be declassified, we won’t need the gadtools hack..)
 
 4th - in progress 
 
