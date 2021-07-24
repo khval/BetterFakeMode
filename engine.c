@@ -314,8 +314,10 @@ void draw_screen( struct emuIntuitionContext *c)
 
 	int SizeOfPlane;
 	int x,y;
-	int bx,bpr;
-	unsigned char *src_ptr_y;
+	int bpr;
+	unsigned char *src_ptr;
+	unsigned char *src_ptr_y_start;
+	unsigned char *src_ptr_y_end;
 	uint64 data = 0;
 	uint max_height;
 
@@ -352,13 +354,14 @@ void draw_screen( struct emuIntuitionContext *c)
 	{
 		ham.argb = 0xFF000000;
 
-		src_ptr_y = bm -> Planes[0] + bpr*y;
+		src_ptr_y_start = bm -> Planes[0] + bpr*y;
+		src_ptr_y_end = src_ptr_y_start + bpr;
 		dest_ptr = dest_ptr_image + (dest_bpr*y);
 
 		x = 0;
-		for (bx=0;bx<bpr;bx++)
+		for (src_ptr=src_ptr_y_start;src_ptr<src_ptr_y_end;src_ptr++)
 		{
-			data = planar_routine( src_ptr_y + bx, SizeOfPlane );
+			data = planar_routine( src_ptr, SizeOfPlane );
 			draw_bits( dest_ptr, (unsigned char *) &data );
 			dest_ptr+=(8*4);		// 8 pixels 4 bytes per pixel
 		}
