@@ -17,6 +17,7 @@
 #include "EngineTimer.h"
 
 int frame_skip = 0;
+int line_skip = 0;
 
 void reset_timer(struct TimeRequest *timer_io)
 {

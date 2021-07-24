@@ -23,4 +23,6 @@ void draw_screen( struct emuIntuitionContext *c  );
 
 void dump_screen();
 
+extern int frame_skip;
+extern int line_skip;
 

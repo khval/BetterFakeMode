@@ -848,7 +848,9 @@ void emuEngine()
 				IDCMP_INTUITICKS |
 				IDCMP_RAWKEY |
 				IDCMP_VANILLAKEY |
-				IDCMP_GADGETUP
+				IDCMP_GADGETUP|
+				IDCMP_ACTIVEWINDOW |
+				IDCMP_INACTIVEWINDOW
 			,
 			WA_RMBTrap, true,
 			WA_ReportMouse, true,
@@ -949,6 +951,19 @@ void emuEngine()
 				{
 					switch (m -> Class)
 					{
+
+						case IDCMP_ACTIVEWINDOW:
+
+							frame_skip = 0;
+							line_skip =  0;
+							break;
+
+						case IDCMP_INACTIVEWINDOW:
+
+							frame_skip = 2;
+							line_skip =  2;
+							break;
+
 						case IDCMP_MOUSEMOVE:
 
 							update_screen( &c, host_w, host_h );
