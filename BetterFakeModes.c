@@ -173,20 +173,69 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 	return NULL;
 }
 
+void fix_asl_tags( struct TagItem * tagList )
+{
+	struct TagItem *tag;
+
+	if (tagList == NULL) 
+	{
+		FPrintf( output,"ASL is not using tags\n");
+		return;
+	}
+
+	FPrintf( output,"ASL uses tags.... checking....\n");
+
+	for (tag = tagList; tag -> ti_Tag != TAG_DONE; tag++)
+	{
+		switch (tag -> ti_Tag)
+		{
+			case ASLFR_Window:
+
+				{
+					struct Window *win = ((struct Window *) tag -> ti_Data);
+					if (win)
+					{
+						if (is_fake_screen( win -> WScreen ))
+						{
+							FPrintf( output,"prohibit ASL from crash\n");
+							tag -> ti_Data = (ULONG) NULL;
+						}
+					}
+				}
+
+				FPrintf( output,"ASLFR_Window\n");
+				break;
+
+			case ASLFR_PubScreenName:
+				FPrintf( output,"ASLFR_PubScreenName\n");
+				break;
+
+			case ASLFR_Screen:
+				if (is_fake_screen( (struct Screen *) tag -> ti_Data))
+				{
+					FPrintf( output,"prohibit ASL from crash\n");
+					tag -> ti_Data = (ULONG) NULL;
+				}
+				break;
+		}
+	}
+}
 APTR ppc_func_OBSOLETE_AllocFileRequest(struct AslIFace *Self, uint32 type, struct TagItem *tags)
 {
 	FPrintf( output,"%s\n",__FUNCTION__);
 
 	// need to look for ASLFR_Screen !!! in tags.
+	fix_asl_tags( tags );
 
 	return ((APTR (*) ( struct AslIFace *, uint32, struct TagItem *)) old_ppc_func_OBSOLETE_AllocFileRequest) (Self, type, tags);
 }
 
 APTR ppc_func_AllocAslRequest(struct AslIFace *Self, uint32 type, struct TagItem *tags)
 {
-	FPrintf( output,"%s\n",__FUNCTION__);
+	FPrintf( output,"%s -- type is %08lx (%ld)\n",__FUNCTION__,type,type);
 
 	// need to look for ASLFR_Screen !!! in tags.
+	fix_asl_tags( tags );
 
 	return ((APTR (*) ( struct AslIFace *, uint32, struct TagItem *)) old_ppc_func_AllocAslRequest) (Self, type, tags);
 }
@@ -404,7 +453,7 @@ BOOL set_patches( void )
 
 	// ASL
 	
-	set_new_ppc_patch(Asl,OBSOLETE_AllocFileRequest);	// like monitor...
+	set_new_ppc_patch(Asl,OBSOLETE_AllocFileRequest);	// avoid fake screens for ASL...
 	set_new_ppc_patch(Asl,AllocAslRequest);				// avoid fake screens for ASL
 
 	// Intuition
