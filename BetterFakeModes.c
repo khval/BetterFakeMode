@@ -42,6 +42,8 @@ APTR old_ppc_func_SizeWindow = NULL;
 APTR old_ppc_func_SetWindowTitles = NULL;
 APTR old_ppc_func_ActivateWindow = NULL;
 APTR old_ppc_func_GetBitMapAttr = NULL;
+APTR old_ppc_func_MoveScreen = NULL;
+APTR old_ppc_func_ScreenPosition = NULL;
 
 // graphics
 
@@ -420,6 +422,8 @@ BOOL set_patches( void )
 	set_new_ppc_patch(Intuition,ActivateWindow);
 	set_new_ppc_patch(Intuition,OpenWindowTagList);
 	set_new_ppc_patch(Intuition,CloseWindow);
+	set_new_ppc_patch(Intuition,MoveScreen);			// monitor
+	set_new_ppc_patch(Intuition,ScreenPosition);			// monitor
 
 #if patch_gadtools
 	set_new_ppc_patch(Intuition,AddGList);
@@ -505,6 +509,10 @@ void undo_patches( void )
 	undo_ppc_patch(Intuition,ActivateWindow);
 	undo_ppc_patch(Intuition,OpenWindowTagList);
 	undo_ppc_patch(Intuition,CloseWindow);
+	undo_ppc_patch(Intuition,MoveScreen);
+	undo_ppc_patch(Intuition,ScreenPosition);
+
+
 	IExec->Permit();
 }
 

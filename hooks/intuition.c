@@ -76,3 +76,15 @@ UWORD ppc_func_AddGList(struct IntuitionIFace *Self, struct Window * window, str
 }
 
 
+VOID ppc_func_ScreenPosition(struct IntuitionIFace *Self, struct Screen * screen, ULONG flags, LONG x1, LONG y1, LONG x2, LONG y2)
+{
+	FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
+	((VOID (*) (struct IntuitionIFace *, struct Screen * , ULONG , LONG , LONG , LONG , LONG )) old_ppc_func_ScreenPosition) (Self, screen, flags, x1,y1,x2,y2 );
+}
+
+VOID ppc_func_MoveScreen(struct IntuitionIFace *Self, struct Screen * screen, WORD dx, WORD dy)
+{
+	FPrintf( output, "%s:%ld\n",__FUNCTION__,__LINE__);
+	((VOID (*) (struct IntuitionIFace *, struct Screen * , WORD, WORD )) old_ppc_func_MoveScreen) (Self, screen, dx, dy );
+}
+
