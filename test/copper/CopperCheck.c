@@ -29,7 +29,7 @@ bool initScreen()
                 SA_DEPTH,1,
                 SA_WIDTH,320,
                 SA_HEIGHT,256,
-                SA_COLORS,[0,$FFF,0,0]:INT,
+                SA_COLORS,[0,0xFFF,0,0]:INT,
                 SA_TYPE,CUSTOMSCREEN,
                 TAG_END);
 
