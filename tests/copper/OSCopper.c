@@ -1,116 +1,127 @@
 // OSCopper.e
 // Native graphics example using OS friendly copperlist
 
-#include <graphics/gfxbase>
-#include <graphics/gfxmacros>
-#include <graphics/copper>
-#include <graphics/view>
-#include <hardware/custom>
-#include <intuition/intuition>
-#include <intuition/screens>
-#include <exec/memory>
+#include <stdbool.h>
+
+#include <proto/exec.h>
+#include <proto/dos.h>
+#include <proto/intuition.h>
+#include <proto/graphics.h>
+
+#include	<graphics/gfxbase.h>
+#include	<graphics/gfxmacros.h>
+#include	<graphics/copper.h>
+#include	<graphics/view.h>
+#include	<hardware/custom.h>
+#include	<intuition/intuition.h>
+#include	<intuition/screens.h>
+#include	<exec/memory.h>
+
+#include "common.h"
 
 bool initScreen()
 {
-    screen=OpenScreenTagList(NULL,
-                SA_TITLE,'OS Copper',
-                SA_PENS,[-1]:INT,
-                SA_DEPTH,4,
-                TAG_END);
+	screen=OpenScreenTags(NULL,
+					SA_Title,"OS Copper",
+//					SA_Pens,[-1]:INT,
+					SA_Depth,4,
+					TAG_END);
 
-    if (!screen) return false;
+	if (!screen) return false;
 
-    window=OpenWindowTags(NULL,[WA_IDCMP,IDCMP_MOUSEBUTTONS,
-                                WA_FLAGS,WFLG_NOCAREREFRESH |
-                                         WFLG_ACTIVATE |
-                                         WFLG_BORDERLESS |
-                                         WFLG_BACKDROP,
-                                WA_CUSTOMSCREEN,screen,NULL);
+	window=OpenWindowTags(NULL,
+					WA_IDCMP,IDCMP_MOUSEBUTTONS,
+					WA_Flags,WFLG_NOCAREREFRESH |
+							WFLG_ACTIVATE |
+							WFLG_BORDERLESS |
+							WFLG_BACKDROP,
+					WA_CustomScreen,screen,
+					TAG_END);
 
-    if (!window) return false;
+	if (!window) return false;
 
-    myucoplist=AllocMem(SIZEOF ucoplist,MEMF_PUBLIC OR MEMF_CLEAR);
+#ifdef __amigaos3__
+	myucoplist=AllocMem(sizeof(ucoplist),MEMF_PUBLIC | MEMF_CLEAR);
+#endif
 
-    if (!myucoplist) return false;  
+#ifdef __amigaos4__
 
-    return true;
-}
+#endif
 
-void closeDown()
-{
-    if (window)
-    {
-        if (viewport.ucopins)
-        {
-            FreeVPortCopLists(viewport)
-            RemakeDisplay()
-        }
-        CloseWindow(window)
-        window = NULL;
-    }
+	if (!myucoplist) return false;	
 
-    if (screen)
-    {
-        CloseScreen(screen);
-        screen = NULL;  
-    }
-
-    if (myucoplist)
-    {
-        FreeVec(myucoplist);
-        myucoplist = NULL;
-
-    }
+	return true;
 }
 
 void errors()
 {
-    if (!screen) PrintF('Unable to open screen.\n');
-    if (!window) PrintF('Unable to open window.\n');
-    if (!myucoplist) PrintF('Unable to allocate myucoplist memory.\n');
+	if (!screen) Printf("Unable to open screen.\n");
+	if (!window) Printf("Unable to open window.\n");
+	if (!myucoplist) Printf("Unable to allocate myucoplist memory.\n");
+}
+	
+int main_prog()
+{
+	if (initScreen())
+	{
+		ULONG backrgb;
+		int i;
+		int linestart=screen -> BarHeight+1;
+		int lines=screen -> Height-linestart;
+		int width=screen -> Width;
+		
+		struct ViewPort *viewport=ViewPortAddress(window);
+		struct RastPort *rport=window -> RPort;
+		backrgb = ((ULONG *) viewport -> ColorMap -> ColorTable)[0];
+
+		Box(rport,0,linestart,width-1,screen -> Height-1,1);
+				
+		CINIT(myucoplist,lines*4);
+		
+		for (i=linestart;i<lines;i++)
+		{
+			CWAIT(myucoplist,i,0);
+			CMOVEA(myucoplist,BPLCON3,0);
+			CMOVEA(myucoplist,COLOR+2,(i-linestart) & 0xFFF);
+			CMOVEA(myucoplist,BPLCON3,0x200);
+			CMOVEA(myucoplist,COLOR+2,(0xFFF-i) & 0xFFF);
+		}
+		
+		CWAIT(myucoplist,i,0);
+		CMOVEA(myucoplist,COLOR+2,backrgb);
+		CEND(myucoplist);
+		
+		Forbid();
+		viewport -> UCopIns=myucoplist;
+		Permit();
+		RethinkDisplay();
+		WaitLeftMouse(window);
+	}
+	else
+	{
+		errors();			 
+	}
+
+	closeDown();
+	
+	return 0;
 }
 
 int main()
 {
-    if (initScreen())
-    {
-        int linestart=screen.barheight+1;
-        int lines=screen.height-linestart;
-        int width=screen.width;
-    
-        viewport=ViewPortAddress(window);
-        rport=window.rport;
-        backrgb=Int(viewport.colormap.colortable);
-        SetStdRast(rport);
-        Box(0,linestart,width-1,screen.height-1);
-        
-        CINIT(myucoplist,lines*4);
-    
-        for (i=linestart;i<lines;i++)
-        {
-            CWAIT(myucoplist,i,0)
-            CMOVEA(myucoplist,BPLCON3,0)
-            CMOVEA(myucoplist,COLOR+2,(i-linestart) & 0xFFF)
-            CMOVEA(myucoplist,BPLCON3,0x200)
-            CMOVEA(myucoplist,COLOR+2,(0xFFF-i) & 0xFFF)
-        }
-    
-        CWAIT(myucoplist,i,0);
-        CMOVEA(myucoplist,COLOR+2,backrgb);
-        CEND(myucoplist);
-    
-        Forbid();
-        viewport.ucopins=myucoplist;
-        Permit();
-        RethinkDisplay();
-        WaitLeftMouse(window);
-    }
-    else
-    {
-        errors();       
-    }
+	int ret;
 
-    closeDown();
-  
-    return 0;
+	if (open_libs()==FALSE)
+	{
+		Printf("failed to open libs!\n");
+		close_libs();
+		return 0;
+	}
+
+	ret = main_prog();
+
+	close_libs();
+
+	return 0;
 }
+

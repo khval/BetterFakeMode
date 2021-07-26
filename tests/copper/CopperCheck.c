@@ -18,22 +18,13 @@
 #include	<intuition/screens.h>
 #include	<exec/memory.h>
 
-typedef void * PTR;
+#include "common.h"
 
-struct Screen *screen=NULL;
-struct Window *window=NULL;
-PTR myucoplist=NULL;
-struct ViewPort *viewport = NULL;
 struct RastPort *rport;
 
 int i;
 ULONG linestart,lines,backrgb;
 ULONG x,y;
-
-#define COLOR 0x180
-#define BPLCON3 0x106
-
-#define SetColour(src,a,r,g,b) SetRGB32( &(src -> ViewPort), a*0x01010101, r*0x01010101,g*0x01010101,b*0x01010101 )
 
 bool initScreen()
 {
@@ -76,32 +67,6 @@ bool initScreen()
 	return true;
 }
 
-void closeDown()
-{
-	if (window)
-	{
-		if (viewport -> UCopIns)
-		{
-			FreeVPortCopLists(viewport);
-			RemakeDisplay();
-		}
-		CloseWindow(window);
-		window = NULL;
-	}
-
-	if (screen)
-	{
-		CloseScreen(screen);
-		screen = NULL;	
-	}
-
-	if (myucoplist)
-	{
-		FreeVec(myucoplist);
-		myucoplist = NULL;
-
-	}
-}
 
 void errors()
 {
@@ -110,18 +75,18 @@ void errors()
 	if (!myucoplist) Printf("Unable to allocate myucoplist memory.\n");
 }
 
-int main()
+int main_prog()
 {
 	if (initScreen())
 	{
 		viewport=ViewPortAddress(window);
 		rport=window -> RPort;
-		backrgb=Int(viewport -> ColorMap -> ColorTable);
-		SetStdRast(rport);
+		backrgb = ((ULONG *) viewport -> ColorMap -> ColorTable)[0];
+
 		SetColour(screen,0,0,0,0);
 		SetColour(screen,1,255,255,255);
 	
-		for (y=0;y<256;y+=64) for (x=0;x<192;x+=64) Box(x,y,32,32,1);
+		for (y=0;y<256;y+=64) for (x=0;x<192;x+=64) Box(rport,x,y,32,32,1);
 	
 		CINIT(myucoplist,lines*4);
 	
@@ -143,43 +108,7 @@ int main()
 		Permit();
 		RethinkDisplay();
 
-		{
-			BOOL running = TRUE;
-			struct IntuiMessage *msg;
-			ULONG class, code;
-			ULONG win_mask = 1 << window -> UserPort ->mp_SigBit ;
-	
-		 	do
-			{
-				ULONG sig = Wait( win_mask | SIGBREAKF_CTRL_C);
-
-				do
-				{
-					msg = (struct IntuiMessage *) GetMsg( window );
-
-					if (msg)
-					{
-						code = msg -> Code;
-						class = msg -> Class;
-						switch (class)
-						{
-							case IDCMP_MOUSEBUTTONS :
-								running = false;
-								break;
-						}
-						ReplyMsg( (struct Message *) msg);
-					}
-				} while (msg);
-
-			} while (running);
-
-			ModifyIDCMP( window, 0L );  /* tell Intuition to stop sending more messages */
-
-			while (msg = (struct IntuiMessage *) GetMsg( window ))
-			{
-				ReplyMsg( (struct Message *) msg);
-			}
-		}
+		WaitLeftMouse(window);
 	}
 	else
 	{
@@ -190,3 +119,22 @@ int main()
 
 	return 0;
 }
+
+int main()
+{
+	int ret;
+
+	if (open_libs()==FALSE)
+	{
+		Printf("failed to open libs!\n");
+		close_libs();
+		return 0;
+	}
+
+	ret = main_prog();
+
+	close_libs();
+
+	return 0;
+}
+

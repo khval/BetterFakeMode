@@ -1,6 +1,7 @@
 
 deps = ../../init.c
 deps += ../debug.c
+deps += common.c
 
 files = ${deps}
 

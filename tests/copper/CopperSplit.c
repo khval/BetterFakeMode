@@ -1,122 +1,120 @@
 // OSCopper.e
 // Native graphics example using OS friendly copperlist
 		
-#include <graphics/gfxbase>
-#include <graphics/gfxmacros>
-#include <graphics/copper>
-#include <graphics/view>
-#include <graphics/gfx>
-#include <graphics/rastport>
-#include <hardware/custom>
-#include <intuition/intuition>
-#include <intuition/screens>
-#include <exec/memory>
+#include <stdbool.h>
+
+#include <proto/exec.h>
+#include <proto/dos.h>
+#include <proto/intuition.h>
+#include <proto/graphics.h>
+
+#include	<graphics/gfxbase.h>
+#include	<graphics/gfxmacros.h>
+#include	<graphics/copper.h>
+#include	<graphics/view.h>
+#include	<hardware/custom.h>
+#include	<intuition/intuition.h>
+#include	<intuition/screens.h>
+#include	<exec/memory.h>
+
+#include "common.h"
+
+//struct RastPort *rport;
+
+#define CMOVEA(c,a,b) { CMove(c,a,b);CBump(c); }
+
+#define COLOR 0x180
+#define BPLCON0 0x100
+#define BPLCON1 0x102
+#define BPLCON2 0x104
+#define BPLCON3 0x106
+#define BPL1MOD 0x108
+#define BPL2MOD 0x10A
+#define BPLPT 0x0E0
+
+#define SetColour(src,a,r,g,b) SetRGB32( &(src -> ViewPort), (ULONG) a*0x01010101, (ULONG) r*0x01010101,(ULONG) g*0x01010101,(ULONG) b*0x01010101 )
+
+#define Shr(x,n) (x << n)
 
 bool initScreen()
 {
 	screen=OpenScreenTags(NULL,
-			SA_TITLE,'OS Copper',
-			SA_PENS,[-1]:INT,
-			SA_DEPTH,4,
-			SA_WIDTH, 320,
-			SA_HEIGHT, 256,
+			SA_Title,"OS Copper",
+//	SA_Pens,,
+			SA_Depth,4,
+			SA_Width, 320,
+			SA_Height, 256,
 			TAG_END);
 
 	if (!screen) return false;
 
 	window=OpenWindowTags(NULL,
 			WA_IDCMP,IDCMP_MOUSEBUTTONS,
-			WA_FLAGS,WFLG_NOCAREREFRESH |
+			WA_Flags,WFLG_NOCAREREFRESH |
 					WFLG_ACTIVATE |
 					WFLG_BORDERLESS |
 					WFLG_BACKDROP,
-			WA_CUSTOMSCREEN,screen,
+			WA_CustomScreen,screen,
 			TAG_END);
 
 	if (!window) return false;
 
-	myucoplist=AllocMem(SIZEOF ucoplist,MEMF_PUBLIC OR MEMF_CLEAR);
+	myucoplist=AllocVecTags(sizeof(struct UCopList),MEMF_PUBLIC | MEMF_CLEAR);
 
 	if (!myucoplist) return false;	
 
 	return true;
 }
 
-void closeDown()
-{
-	if (window)
-	{
-		if (viewport.ucopins)
-		{
-			FreeVPortCopLists(viewport);
-			RemakeDisplay();
-		}
-		CloseWindow(window);
-		window = NULL;
-	}
-
-	if (screen)
-	{
-		CloseScreen(screen);
-		screen = NULL;	
-	}
-
-	if (myucoplist)
-	{
-		FreeVec(myucoplist);
-		myucoplist = NULL;
-
-	}
-}
-
 void errors()
 {
-	if (!screen) PrintF('Unable to open screen.\n');
-	if (!window) PrintF('Unable to open window.\n');
-	if (!myucoplist) PrintF('Unable to allocate myucoplist memory.\n');
+	if (!screen) Printf("Unable to open screen.\n");
+	if (!window) Printf("Unable to open window.\n");
+	if (!myucoplist) Printf("Unable to allocate myucoplist memory.\n");
 }
 
-int main()
+int main_prog()
 {
 
 	if (initScreen())
 	{
-
-		int x,y
-		int linestart=screen.barheight+1
-		int lines=screen.height-linestart
-		int width=screen.width
+		int i;
+		int x,y;
+		int linestart=screen -> BarHeight+1;
+		int lines=screen -> Height-linestart;
+		int width=screen -> Width;
 	
 		struct ViewPort *viewport=ViewPortAddress(window);
-		UInt32 backrgb=Int(viewport.colormap.colortable)
-		struct RastPort *rport=window.rport;
-		struct BitMap *bitmap=screen.rastport.bitmap;
-		UInt32 modulo=bitmap.bytesperrow-40;
-		UInt32 planesize=modulo*screen.height;
-		UInt32 bitplane=bitmap.planes[0];
+		uint32 backrgb= ((ULONG *) viewport -> ColorMap -> ColorTable)[0];
+		struct RastPort *rport=window -> RPort;
+		struct BitMap *bitmap=screen -> RastPort.BitMap;
+		uint32 modulo=bitmap -> BytesPerRow-40;
+		uint32 planesize=modulo*screen -> Height;
+		ULONG bitplane=(ULONG) bitmap -> Planes[0];
 	
-		SetStdRast(rport);
 		SetColour(screen,0,0,0,0);
 		SetColour(screen,1,255,255,255);
 		SetRast(rport,1);
-		Box(0,linestart,width-1,screen.height-1);
+		Box(rport,0,linestart,width-1,screen -> Height-1,1);
 	
 		for (y=0;y<64;y+=64)
+		{
 			for (x=0;x<256;x+=64)
 			{
-				RectFill(rport,x,y,x+31,y+31)
-				Box(x,y,32,32,1)
+				RectFill(rport,x,y,x+31,y+31);
+				Box(rport,x,y,32,32,1);
 			}
 			
 			for (x=32;x<288;x+=64)
 			{
-				RectFill(rport,x,y+32,x+31,y+63)
-				Box(x,y+32,32,32,1)
+				RectFill(rport,x,y+32,x+31,y+63);
+				Box(rport,x,y+32,32,32,1);
 			}
 		}
 		
 		CINIT(myucoplist,lines*4);
-		CMOVEA(myucoplist,COLOR+2,$FFF);
+		CMOVEA(myucoplist,COLOR+2,0xFFF);
+
 		for (i=linestart;i<lines;i++)
 		{
 			CWAIT(myucoplist,i,0);
@@ -126,34 +124,24 @@ int main()
 			if (i==127)
 			{
 				CMOVEA(myucoplist,BPLPT,Shr(bitplane,16));
-			    CMOVEA(myucoplist,BPLPT+2,bitplane AND $FFFF);
+				CMOVEA(myucoplist,BPLPT+2,bitplane & 0xFFFF);
 			}
 		
 			CMOVEA(myucoplist,BPLCON3,0);
-			CMOVEA(myucoplist,COLOR+2,(i-linestart) AND $FFF);
-			CMOVEA(myucoplist,BPLCON3,$200);
-			CMOVEA(myucoplist,COLOR+2,($FFF-i) AND $FFF);
+			CMOVEA(myucoplist,COLOR+2,(i-linestart)&0xFFF);
+			CMOVEA(myucoplist,BPLCON3,0x200);
+			CMOVEA(myucoplist,COLOR+2,(0xFFF-i)&0xFFF);
 		}
 		CWAIT(myucoplist,i,0);
 		CMOVEA(myucoplist,COLOR+2,backrgb);
 		CEND(myucoplist);
 	
 		Forbid();
-		viewport.ucopins=myucoplist;
+		viewport -> UCopIns = myucoplist;
 		Permit();
 		RethinkDisplay();
 	
-		WaitLeftMouse(window)
-	
-		if (window)
-		{
-			if (viewport.ucopins)
-			{
-				FreeVPortCopLists(viewport);
-				RemakeDisplay();
-			}
-			CloseWindow(window);
-		}
+		WaitLeftMouse(window);
 	}
 	else
 	{
@@ -164,3 +152,22 @@ int main()
 
 	return 0;
 }
+
+int main()
+{
+	int ret;
+
+	if (open_libs()==FALSE)
+	{
+		Printf("failed to open libs!\n");
+		close_libs();
+		return 0;
+	}
+
+	ret = main_prog();
+
+	close_libs();
+
+	return 0;
+}
+
