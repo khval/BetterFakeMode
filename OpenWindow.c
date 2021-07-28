@@ -177,6 +177,14 @@ struct Window * fake_OpenWindowTagList ( const struct NewWindow * nw, const stru
 
 	if (win->WScreen)
 	{
+		if (win -> Flags & WFLG_BACKDROP)
+		{
+			FPrintf( output, "Window is a backdrop\n");
+
+			win -> Width = win->WScreen->Width;
+			win -> Height = win->WScreen->Height;
+		}
+
 		// limit to screen size...
 
 		if (win->Width > win->WScreen->Width) win->Width = win ->WScreen -> Width;
