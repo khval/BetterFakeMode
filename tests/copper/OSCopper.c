@@ -18,6 +18,7 @@
 #include	<exec/memory.h>
 
 #include "common.h"
+#include "../debug.h"
 
 bool initScreen()
 {
@@ -41,11 +42,15 @@ bool initScreen()
 	if (!window) return false;
 
 #ifdef __amigaos3__
-	myucoplist=AllocMem(sizeof(ucoplist),MEMF_PUBLIC | MEMF_CLEAR);
+	myucoplist=AllocVec(sizeof(struct UCopList),MEMF_PUBLIC | MEMF_CLEAR);
 #endif
 
 #ifdef __amigaos4__
-
+	myucoplist=AllocVecTags(sizeof(struct UCopList),
+			AVT_Type, MEMF_SHARED, 
+			AVT_Alignment,  16, 
+			AVT_ClearWithValue, 0,
+			TAG_DONE);
 #endif
 
 	if (!myucoplist) return false;	
@@ -70,11 +75,23 @@ int main_prog()
 		int lines=screen -> Height-linestart;
 		int width=screen -> Width;
 		
-		struct ViewPort *viewport=ViewPortAddress(window);
+
+		show_screen( screen );
+		show_win(window);
+
+		viewport=ViewPortAddress(window);
 		struct RastPort *rport=window -> RPort;
 		backrgb = ((ULONG *) viewport -> ColorMap -> ColorTable)[0];
 
-		Box(rport,0,linestart,width-1,screen -> Height-1,1);
+		if (rport)
+		{
+			if (rport -> BitMap)
+			{
+				Box(rport,0,linestart,width-1,screen -> Height-1,1);
+			}
+			else Printf("wtf... no bitmap...\n");
+		}
+		else Printf("wtf... no rastport...\n");
 				
 		CINIT(myucoplist,lines*4);
 		
@@ -118,7 +135,11 @@ int main()
 		return 0;
 	}
 
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
+
 	ret = main_prog();
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 	close_libs();
 

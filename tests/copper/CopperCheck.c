@@ -60,7 +60,17 @@ bool initScreen()
 
 	if (!window) return false;
 
-	myucoplist=AllocVecTags(sizeof(struct UCopList),MEMF_PUBLIC | MEMF_CLEAR);
+#ifdef __amigaos3__
+	myucoplist=AllocVec(sizeof(struct UCopList),MEMF_PUBLIC | MEMF_CLEAR);
+#endif
+
+#ifdef __amigaos4__
+	myucoplist=AllocVecTags(sizeof(struct UCopList),
+				AVT_Type, MEMF_SHARED, 
+				AVT_Alignment,  16, 
+				AVT_ClearWithValue, 0,
+				TAG_DONE);
+#endif
 
 	if (!myucoplist) return false;
 

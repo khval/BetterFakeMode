@@ -10,7 +10,7 @@
 
 struct Screen *screen=NULL;
 struct Window *window=NULL;
-struct ViewPort *viewport = NULL;
+struct ViewPort *viewport=NULL;
 PTR myucoplist=NULL;
 
 void WaitLeftMouse(struct Window *window)
@@ -47,31 +47,47 @@ void WaitLeftMouse(struct Window *window)
 
 void closeDown()
 {
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
+
 	if (window)
 	{
 		struct IntuiMessage *msg;
 
-		ModifyIDCMP( window, 0L );  /* tell Intuition to stop sending more messages */
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 		while (msg = (struct IntuiMessage *) GetMsg( window -> UserPort ))
 		{
 			ReplyMsg( (struct Message *) msg);
 		}
 
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
+
 		if (viewport -> UCopIns)
 		{
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 			FreeVPortCopLists(viewport);
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 			RemakeDisplay();
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 		}
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
+
 		CloseWindow(window);
 		window = NULL;
 	}
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 	if (screen)
 	{
 		CloseScreen(screen);
 		screen = NULL;	
 	}
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 	if (myucoplist)
 	{

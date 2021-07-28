@@ -59,7 +59,17 @@ bool initScreen()
 
 	if (!window) return false;
 
-	myucoplist=AllocVecTags(sizeof(struct UCopList),MEMF_PUBLIC | MEMF_CLEAR);
+#ifdef __amigaos3__
+	myucoplist=AllocVec(sizeof(struct UCopList),MEMF_PUBLIC | MEMF_CLEAR);
+#endif
+
+#ifdef __amigaos4__
+	myucoplist=AllocVecTags(sizeof(struct UCopList),
+				AVT_Type, MEMF_SHARED, 
+				AVT_Alignment,  16, 
+				AVT_ClearWithValue, 0,
+				TAG_DONE);
+#endif
 
 	if (!myucoplist) return false;	
 
@@ -80,18 +90,20 @@ int main_prog()
 	{
 		int i;
 		int x,y;
+		uint32 backrgb;
 		int linestart=screen -> BarHeight+1;
 		int lines=screen -> Height-linestart;
 		int width=screen -> Width;
 	
-		struct ViewPort *viewport=ViewPortAddress(window);
-		uint32 backrgb= ((ULONG *) viewport -> ColorMap -> ColorTable)[0];
 		struct RastPort *rport=window -> RPort;
 		struct BitMap *bitmap=screen -> RastPort.BitMap;
 		uint32 modulo=bitmap -> BytesPerRow-40;
 		uint32 planesize=modulo*screen -> Height;
 		ULONG bitplane=(ULONG) bitmap -> Planes[0];
 	
+		viewport=ViewPortAddress(window);
+		backrgb= ((ULONG *) viewport -> ColorMap -> ColorTable)[0];
+
 		SetColour(screen,0,0,0,0);
 		SetColour(screen,1,255,255,255);
 		SetRast(rport,1);
