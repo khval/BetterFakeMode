@@ -52,7 +52,7 @@ extern void ReThinkGadgets(struct Window *w);
 
 extern ULONG get_default_icon_size(struct RastPort *rp);
 
-void RenderWindow(struct Window *win)
+void do_RenderWindow(struct Window *win)
 {
 	int icon_s;
 	int left_x = 0, right_x = 0;
@@ -98,3 +98,10 @@ void RenderWindow(struct Window *win)
 	SetAPen(rp,tmp_DetailPen);
 }
 
+void RenderWindow(struct Window *win)
+{
+	if ( ! (win -> Flags & WFLG_BORDERLESS) )
+	{
+		do_RenderWindow(win);
+	}
+}
