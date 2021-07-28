@@ -243,6 +243,9 @@ struct Screen * _new_fake_OpenScreenTagList( const struct NewScreen * newScreen,
 			update_screen_from_taglist(tagList, s, &depth);
 		}
 
+		if (s -> Width == 0) s -> Width = 320;
+		if (s -> Height == 0) s -> Height = 200;
+
 		_init_fake_screen(s,depth);
 
 		return s;
