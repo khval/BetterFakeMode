@@ -92,8 +92,12 @@ int main_prog()
 			else Printf("wtf... no bitmap...\n");
 		}
 		else Printf("wtf... no rastport...\n");
-				
-		CINIT(myucoplist,lines*4);
+
+#if 1
+		
+	// 5 instructions per line, and 3 extra at the end.
+		
+		CINIT(myucoplist,(lines*5) + 3 );
 		
 		for (i=linestart;i<lines;i++)
 		{
@@ -111,7 +115,11 @@ int main_prog()
 		Forbid();
 		viewport -> UCopIns=myucoplist;
 		Permit();
+#endif
+
+#if 0
 		RethinkDisplay();
+#endif
 		WaitLeftMouse(window);
 	}
 	else

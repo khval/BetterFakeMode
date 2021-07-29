@@ -124,26 +124,36 @@ int main_prog()
 			}
 		}
 		
-		CINIT(myucoplist,lines*4);
-		CMOVEA(myucoplist,COLOR+2,0xFFF);
+		CINIT(myucoplist, 1+ (lines*(1+3+4)) + 3 );
+
+
+		CMOVEA(myucoplist,COLOR+2,0xFFF);	// +1
 
 		for (i=linestart;i<lines;i++)
 		{
-			CWAIT(myucoplist,i,0);
-		
-			if (i==127) CMOVEA(myucoplist,BPL1MOD,-1*(planesize/2));
-			if (i==128) CMOVEA(myucoplist,BPL1MOD,modulo);
-			if (i==127)
+			CWAIT(myucoplist,i,0);		// +1
+
+			switch (i)
 			{
-				CMOVEA(myucoplist,BPLPT,Shr(bitplane,16));
-				CMOVEA(myucoplist,BPLPT+2,bitplane & 0xFFFF);
+				case 127:
+					CMOVEA(myucoplist,BPL1MOD,-1*(planesize/2));		// +3
+					CMOVEA(myucoplist,BPLPT,Shr(bitplane,16));
+					CMOVEA(myucoplist,BPLPT+2,bitplane & 0xFFFF);
+					break;
+
+				case 128:
+					CMOVEA(myucoplist,BPL1MOD,modulo);
+					break;
 			}
-		
-			CMOVEA(myucoplist,BPLCON3,0);
+
+			CMOVEA(myucoplist,BPLCON3,0);					// +4
 			CMOVEA(myucoplist,COLOR+2,(i-linestart)&0xFFF);
 			CMOVEA(myucoplist,BPLCON3,0x200);
 			CMOVEA(myucoplist,COLOR+2,(0xFFF-i)&0xFFF);
 		}
+
+		// +3
+
 		CWAIT(myucoplist,i,0);
 		CMOVEA(myucoplist,COLOR+2,backrgb);
 		CEND(myucoplist);

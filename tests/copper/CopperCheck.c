@@ -98,7 +98,7 @@ int main_prog()
 	
 		for (y=0;y<256;y+=64) for (x=0;x<192;x+=64) Box(rport,x,y,32,32,1);
 	
-		CINIT(myucoplist,lines*4);
+		CINIT(myucoplist,(lines*5)+3);
 	
 		for (i=linestart;i<lines;i++)
 		{
