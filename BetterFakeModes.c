@@ -80,7 +80,7 @@ APTR old_ppc_func_OBSOLETE_AllocFileRequest = NULL;
 extern APTR video_mutex ;
 
 struct Task *main_task = NULL;
-BPTR output;
+BPTR output = 0;
 
 bool monitor = false;
 
