@@ -14,3 +14,7 @@ extern void Box(struct RastPort *rp, int x0,int y0, int x1,int y1, int color);
 
 #define SetColour(src,a,r,g,b) SetRGB32( &(src -> ViewPort), (ULONG) a*0x01010101, (ULONG) r*0x01010101,(ULONG) g*0x01010101,(ULONG) b*0x01010101 )
 
+void dumpUCopList( struct UCopList *copper );
+void dumpCopList( struct CopList *cl );
+
+

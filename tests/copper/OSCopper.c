@@ -111,10 +111,20 @@ int main_prog()
 		CWAIT(myucoplist,i,0);
 		CMOVEA(myucoplist,COLOR+2,backrgb);
 		CEND(myucoplist);
-		
+
 		Forbid();
 		viewport -> UCopIns=myucoplist;
 		Permit();
+
+		if (viewport -> UCopIns)
+		{
+			dumpUCopList( viewport -> UCopIns );
+
+			if ( viewport -> UCopIns -> FirstCopList )
+			{
+				dumpCopList( viewport -> UCopIns -> FirstCopList );
+			}
+		}
 #endif
 
 #if 0

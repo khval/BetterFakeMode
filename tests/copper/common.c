@@ -53,41 +53,27 @@ void closeDown()
 	{
 		struct IntuiMessage *msg;
 
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
-
 		while (msg = (struct IntuiMessage *) GetMsg( window -> UserPort ))
 		{
 			ReplyMsg( (struct Message *) msg);
 		}
 
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
-
 		if (viewport -> UCopIns)
 		{
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 			FreeVPortCopLists(viewport);
-
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 			RemakeDisplay();
-
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
+			myucoplist = NULL; // prevent myucoplist from being freed twice.
 		}
-
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 		CloseWindow(window);
 		window = NULL;
 	}
-
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 	if (screen)
 	{
 		CloseScreen(screen);
 		screen = NULL;	
 	}
-
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 	if (myucoplist)
 	{
@@ -105,5 +91,43 @@ void Box(struct RastPort *rp, int x0,int y0, int x1,int y1, int color)
 	Draw( rp,x1,y1);
 	Draw( rp,x0,y1);
 	Draw( rp,x0,y0);
+}
+
+void dumpUCopList( struct UCopList *copper )
+{
+	Printf("struct UCopList\n{\n");
+
+   	Printf("	struct UCopList *Next: %08lx;\n", copper -> Next);
+	Printf("	struct CopList  *FirstCopList: %08lx;\n", copper -> FirstCopList);
+	Printf("	struct CopList  *CopList: %08lx;\n", copper -> CopList);
+	Printf("}\n");
+};
+
+
+void dumpCopList( struct CopList *cl )
+{
+	Printf("struct CopList\n");
+	Printf("{\n");
+	Printf("    struct CopList  *Next: %08lx\n", cl -> Next);
+	Printf("    struct CopList  *_CopList: %08lx\n", cl -> _CopList);
+	Printf("    struct ViewPort *_ViewPort: %08lx\n", cl -> _ViewPort);
+	Printf("    struct CopIns   *CopIns: %08lx\n", cl -> CopIns );
+	Printf("    struct CopIns   *CopPtr: %08lx\n", cl -> CopPtr);
+	Printf("    UWORD           *CopLStart: %08lx\n", cl -> CopLStart);
+	Printf("    UWORD           *CopSStart: %08lx\n", cl -> CopSStart);
+	Printf("    WORD             Count: %08lx\n", cl -> Count);
+	Printf("    WORD             MaxCount: %08lx\n", cl -> MaxCount);
+	Printf("    WORD             DyOffset: %08lx\n", cl -> DyOffset);
+/*
+	Printf("#ifdef V1_3\n");
+	Printf("    UWORD           *Cop2Start: %08lx\n", cl -> Cop2Start);
+	Printf("    UWORD           *Cop3Start: %08lx\n", cl -> Cop3Start);
+	Printf("    UWORD           *Cop4Start: %08lx\n", cl -> Cop4Start);
+	Printf("    UWORD           *Cop5Start: %08lx\n", cl -> Cop5Start);
+	Printf("#endif\n");
+*/
+	Printf("    UWORD            SLRepeat: %08lx\n", cl -> SLRepeat);
+	Printf("    UWORD            Flags: %08lx\n", cl -> Flags);
+	Printf("};\n");
 }
 
