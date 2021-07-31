@@ -25,16 +25,6 @@ extern struct Window *active_win;
 extern struct Screen * _new_fake_OpenScreenTagList( const struct NewScreen * newScreen, const struct TagItem * tagList);
 extern void _delete_fake_screen( struct Screen *s );
 
-extern struct Window * fake_OpenWindowTagList ( const struct NewWindow * newWindow, const struct TagItem * tagList);
-extern struct Window * fake_CloseWindow ( struct Window * window);
-
-extern struct ScreenBuffer * fake_AllocScreenBuffer ( struct Screen * sc, struct BitMap * bm, ULONG flags);
-extern ULONG fake_ChangeScreenBuffer ( struct Screen * sc, struct ScreenBuffer * bm);
-
-extern void fake_MoveWindow( struct Window *w, LONG dx, LONG dy  );
-extern void fake_SizeWindow( struct Window *w, LONG dx, LONG dy  );
-extern void fake_ActivateWindow( struct Window *w );
-
 extern void box(struct RastPort *rp,int x0,int y0,int x1, int y1);
 
 extern void RenderGadget(struct RastPort *rp, struct Gadget *g);
