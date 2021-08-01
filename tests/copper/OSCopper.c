@@ -87,7 +87,13 @@ int main_prog()
 		{
 			if (rport -> BitMap)
 			{
-				Box(rport,0,linestart,width-1,screen -> Height-1,1);
+				SetAPen(rport,1);
+				RectFill(rport,width/2,linestart,width-1,screen -> Height-1);
+
+				SetAPen(rport,1);
+				RectFill(rport,0,linestart,width/2,screen -> Height-1);
+
+				Box(rport,0,linestart,width-1,screen -> Height-1,2);
 			}
 		}
 

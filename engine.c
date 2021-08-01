@@ -323,6 +323,27 @@ void *planar_routines[]  =
 };
 
 
+void draw_hpixels(
+			uint64 (*planar_routine) (unsigned char *ptr, int SizeOfPlane) ,
+			void (*draw_bits) ( unsigned char *dest_ptr, unsigned char *b) ,
+			int SizeOfPlane, 
+			int x, 
+			unsigned char *scr_ptr_y_start, 
+			unsigned char *scr_ptr_y_end, 
+			unsigned char *dest_ptr )
+{
+	uint64 data = 0;
+	unsigned char *scr_ptr;
+	x = 0;
+	for (scr_ptr=scr_ptr_y_start;scr_ptr<scr_ptr_y_end;scr_ptr++)
+	{
+		data = planar_routine( scr_ptr, SizeOfPlane );
+		draw_bits( dest_ptr, (unsigned char *) &data );
+		dest_ptr+=(8*4);		// 8 pixels 4 bytes per pixel
+	}
+}
+
+
 void draw_screen( struct emuIntuitionContext *c) 
 {
 	struct BitMap *bm = c -> scr -> RastPort.BitMap;
@@ -872,47 +893,174 @@ void copMove( UWORD data, UWORD addr )
 {
 	switch (addr)
 	{
-		case 0x180: break;
+		case 0x180: palette[0].argb = 0xFF000000 | data; break;
+		case 0x182: palette[1].argb = 0xFF000000 | data; break;
+		case 0x184: palette[2].argb = 0xFF000000 | data; break;
+		case 0x186: palette[3].argb = 0xFF000000 | data; break;
+		case 0x188: palette[4].argb = 0xFF000000 | data; break;
+		case 0x18A: palette[5].argb = 0xFF000000 | data; break;
 	}
 }
 
-void drawCopIns( struct CopIns *c, int cnt, struct RastPort *rp )
+
+#define debug_copper 0
+
+#if debug_copper==1
+ULONG copColor[]=
 {
+	0xFFFF0000,
+	0xFF00FF00,
+	0xFF0000FF,
+	0xFFFF00FF
+};
+
+#endif
+
+void drawCopIns( struct emuIntuitionContext *c, struct CopIns *cop, int cnt )
+{
+
+	struct BitMap *bm = c -> scr -> RastPort.BitMap;
+	struct BitMap *dest_bm = c -> dest_bitmap;
+	ULONG last_pos =0;
+	ULONG new_pos = 0;
+	LONG delta_pos;
+	ULONG hpos,vpos;
+	ULONG bpr;
+	ULONG drawBytes;
+	ULONG last_VWaitPos = 0, last_HWaitPos = 0;
+	ULONG SizeOfPlane ;
+	ULONG dest_bpr;
+	ULONG dest_format;
+
+	unsigned char *scr_ptr_y_start;
+	unsigned char *scr_ptr_y_end;
+
+	unsigned char *dest_ptr_image;
+	unsigned char *dest_ptr;
+
+#if debug_copper==1
+	ULONG count =0;
+	struct RastPort *rp = &(c -> local_rp);
+#else
+	APTR lock;
+#endif
+
+	uint64 (*planar_routine) (unsigned char *ptr, int SizeOfPlane) = NULL;
+	void (*draw_bits) ( unsigned char *dest_ptr, unsigned char *b) = NULL;
+
+	bpr = bm -> BytesPerRow;
+
+	SizeOfPlane = bm -> BytesPerRow * bm -> Rows;
+	planar_routine = planar_routines[ bm -> Depth ];
+
+	switch ( (c -> scr -> ViewPort.Modes & 0x800) | bm -> Depth )
+	{
+		case 0x0806:	draw_bits = draw_bits_argb_ham6;		break;
+		case 0x0808:	draw_bits = draw_bits_argb_ham8;		break;
+		default:		draw_bits = draw_bits_argb;			break;
+	}
+
+
+#if debug_copper==0
+
+FPrintf(output,"debug mode is off...\n");
+
+	lock = LockBitMapTags( dest_bm,
+			LBM_PixelFormat, &dest_format,
+			LBM_BytesPerRow, &dest_bpr,
+			LBM_BaseAddress, &dest_ptr_image,
+			TAG_END	 );
+#else
+
+	Printf("Render copper list\n");
+
+#endif
+
 	while (cnt --)
 	{
-		switch (c -> OpCode)
+		switch (cop -> OpCode)
 		{
 			case 0:		// move.
-				copMove( c -> u3.u4.u2.DestData, c -> u3.u4.u1.DestAddr );
+				copMove( cop -> u3.u4.u2.DestData, cop -> u3.u4.u1.DestAddr );
 				break;
 
 			case 1:		// wait..
-				WritePixel( rp, c -> u3.u4.u2.HWaitPos, c -> u3.u4.u1.VWaitPos);
+
+				if ((cop -> u3.nxtlist == (void *) 0x271000FF ))	// END OF LIST....
+				{
+					cnt = 0;
+					break;
+				}
+
+				last_pos = (last_VWaitPos * bpr) + last_HWaitPos;
+				new_pos = cop -> u3.u4.u1.VWaitPos * bpr + cop -> u3.u4.u2.HWaitPos;
+
+#if debug_copper==1
+				FPrintf(output, "last_pixel_pos %ld, last_HWaitPos: %ld, last_VWaitPos: %ld\n",
+					last_pos, last_HWaitPos, last_VWaitPos);
+
+				FPrintf(output, "  to_pixel_pos %ld,   to_HWaitPos: %ld,   to_VWaitPos: %ld\n",
+					new_pos, cop -> u3.u4.u2.HWaitPos , cop -> u3.u4.u1.VWaitPos);
+#endif
+				delta_pos = new_pos - last_pos;
+
+				while (delta_pos>0)
+				{
+					hpos = last_pos % bpr;
+					vpos = last_pos / bpr;
+
+					drawBytes = hpos + delta_pos > bpr ? bpr :  delta_pos;	
+
+#if debug_copper==1
+					FPrintf(output, "last_pixel_pos %ld, delta_pos: %ld, drawBytes: %ld, v: %ld, h: %ld\n",
+						last_pos,
+						delta_pos,
+						drawBytes,
+						hpos,vpos);
+					SetRPAttrs( rp,  RPTAG_APenColor, copColor[count & 3], TAG_END );	count ++;
+#endif
+
+					if (drawBytes>0)
+					{
+#if debug_copper==1
+						Move(rp,hpos*8,vpos);
+						Draw(rp,(hpos+drawBytes)*8, vpos);
+#else
+						scr_ptr_y_start = bm -> Planes[0] + (bpr * vpos) + hpos;
+						scr_ptr_y_end = scr_ptr_y_start + drawBytes;
+						
+						dest_ptr = dest_ptr_image + (dest_bpr*vpos);
+
+						draw_hpixels( planar_routine , draw_bits ,SizeOfPlane, hpos*8, scr_ptr_y_start, scr_ptr_y_end, dest_ptr );
+#endif
+						last_pos += drawBytes;
+						delta_pos -= drawBytes;
+					}
+					else break;
+				}
+
+				last_VWaitPos = cop -> u3.u4.u1.VWaitPos;
+				last_HWaitPos = cop -> u3.u4.u2.HWaitPos;
 				break;
 		}
-		c++;
+		cop++;
 	}
+
+#if debug_copper==0
+	UnlockBitMap( lock );
+#endif
+
 }
 
 
-void draw_copper_screen( struct Screen *src, struct RastPort *rp )
+void draw_copper_screen( struct emuIntuitionContext *c )
 {
 	struct CopList  *cl;
-	const char info[]= "Obs no copper support";
-	RectFillColor( rp,0,0,src -> Width,src -> Height, 0xFF000000);
 
-	SetRPAttrs( rp,  
-		RPTAG_APenColor, 0xFFFFFFFF,
-		RPTAG_BPenColor, 0xFF000000,
-		TAG_END);
-
-	Move( rp, 20,20 );
-	Text( rp, info, strlen(info) );
-
-	cl = src -> ViewPort.UCopIns -> FirstCopList;
+	cl = c -> scr -> ViewPort.UCopIns -> FirstCopList;
 	if ( cl )
 	{
-		drawCopIns( cl -> CopIns, cl -> Count, rp );
+		drawCopIns( c, cl -> CopIns, cl -> Count );
 	}
 }
 
@@ -1193,7 +1341,9 @@ void emuEngine()
 
 				if (c.scr -> ViewPort.UCopIns)
 				{
-					draw_copper_screen( c.scr, &c.local_rp );
+					update_argb_lookup( c.scr -> ViewPort.ColorMap );
+					ham.a = 0xFF;
+					draw_copper_screen( &c );
 				} else {
 					update_argb_lookup( c.scr -> ViewPort.ColorMap );
 					ham.a = 0xFF;
