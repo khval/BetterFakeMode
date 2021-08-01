@@ -868,8 +868,36 @@ void draw_no_aga(struct Screen *src,struct RastPort *rp)
 	Text( rp, info, strlen(info) );
 }
 
+void copMove( UWORD data, UWORD addr )
+{
+	switch (addr)
+	{
+		case 0x180: break;
+	}
+}
+
+void drawCopIns( struct CopIns *c, int cnt, struct RastPort *rp )
+{
+	while (cnt --)
+	{
+		switch (c -> OpCode)
+		{
+			case 0:		// move.
+				copMove( c -> u3.u4.u2.DestData, c -> u3.u4.u1.DestAddr );
+				break;
+
+			case 1:		// wait..
+				WritePixel( rp, c -> u3.u4.u2.HWaitPos, c -> u3.u4.u1.VWaitPos);
+				break;
+		}
+		c++;
+	}
+}
+
+
 void draw_copper_screen( struct Screen *src, struct RastPort *rp )
 {
+	struct CopList  *cl;
 	const char info[]= "Obs no copper support";
 	RectFillColor( rp,0,0,src -> Width,src -> Height, 0xFF000000);
 
@@ -880,6 +908,12 @@ void draw_copper_screen( struct Screen *src, struct RastPort *rp )
 
 	Move( rp, 20,20 );
 	Text( rp, info, strlen(info) );
+
+	cl = src -> ViewPort.UCopIns -> FirstCopList;
+	if ( cl )
+	{
+		drawCopIns( cl -> CopIns, cl -> Count, rp );
+	}
 }
 
 void emuEngine()
