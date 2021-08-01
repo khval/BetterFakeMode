@@ -15,10 +15,15 @@
 #include <exec/emulation.h>
 #include <exec/ports.h>
 
+#include <intuition/imageclass.h>
+#include <intuition/gadgetclass.h>
+
 #include "common.h"
 #include "engine.h"
 #include "EngineTimer.h"
 #include "helper/screen.h"
+#include "init.h"
+
 
 extern unsigned char *bits2bytes[256*8];
 
@@ -41,6 +46,13 @@ extern struct Task *host_task;
 extern struct TextFont *default_font;
 
 struct MsgPort *reply_port = NULL;
+
+enum
+{
+	GID_SCREENDEPTH = 20,
+	GID_FULLSCREEN,
+	GID_ICONIFY
+};
 
 struct xy
 {
@@ -69,6 +81,10 @@ union amiga_argb
 
 struct xy tmp_mouse = {0,0};
 struct xy delta_mouse = {0,0};
+
+struct kIcon iconifyIcon = { NULL, NULL };
+struct kIcon zoomIcon = { NULL, NULL };
+struct kIcon screendepthicon = { NULL, NULL};
 
 void send_button( struct Window *win,  struct IntuiMessage *source_msg, ULONG idcmp );
 
@@ -309,15 +325,15 @@ void *planar_routines[]  =
 
 void draw_screen( struct emuIntuitionContext *c) 
 {
-	struct BitMap *bm = c -> src -> RastPort.BitMap;
+	struct BitMap *bm = c -> scr -> RastPort.BitMap;
 	struct BitMap *dest_bm = c -> dest_bitmap;
 
 	int SizeOfPlane;
 	int x,y;
 	int bpr;
-	unsigned char *src_ptr;
-	unsigned char *src_ptr_y_start;
-	unsigned char *src_ptr_y_end;
+	unsigned char *scr_ptr;
+	unsigned char *scr_ptr_y_start;
+	unsigned char *scr_ptr_y_end;
 	uint64 data = 0;
 	uint max_height;
 
@@ -334,7 +350,7 @@ void draw_screen( struct emuIntuitionContext *c)
 	SizeOfPlane = bm -> BytesPerRow * bm -> Rows;
 	planar_routine = planar_routines[ bm -> Depth ];
 
-	switch ( (c -> src -> ViewPort.Modes & 0x800) | bm -> Depth )
+	switch ( (c -> scr -> ViewPort.Modes & 0x800) | bm -> Depth )
 	{
 		case 0x0806:	draw_bits = draw_bits_argb_ham6;		break;
 		case 0x0808:	draw_bits = draw_bits_argb_ham8;		break;
@@ -347,21 +363,21 @@ void draw_screen( struct emuIntuitionContext *c)
 			LBM_BaseAddress, &dest_ptr_image,
 			TAG_END	 );
 
-	max_height = c -> src -> ViewPort.DHeight;
+	max_height = c -> scr -> ViewPort.DHeight;
 	if (bm -> Rows < max_height) max_height = bm -> Rows;
 
 	for (y=0;y<max_height; y++)
 	{
 		ham.argb = 0xFF000000;
 
-		src_ptr_y_start = bm -> Planes[0] + bpr*y;
-		src_ptr_y_end = src_ptr_y_start + bpr;
+		scr_ptr_y_start = bm -> Planes[0] + bpr*y;
+		scr_ptr_y_end = scr_ptr_y_start + bpr;
 		dest_ptr = dest_ptr_image + (dest_bpr*y);
 
 		x = 0;
-		for (src_ptr=src_ptr_y_start;src_ptr<src_ptr_y_end;src_ptr++)
+		for (scr_ptr=scr_ptr_y_start;scr_ptr<scr_ptr_y_end;scr_ptr++)
 		{
-			data = planar_routine( src_ptr, SizeOfPlane );
+			data = planar_routine( scr_ptr, SizeOfPlane );
 			draw_bits( dest_ptr, (unsigned char *) &data );
 			dest_ptr+=(8*4);		// 8 pixels 4 bytes per pixel
 		}
@@ -778,6 +794,11 @@ void cleanup_engine( struct emuIntuitionContext *c )
 			m = (struct IntuiMessage *) GetMsg( c->win->UserPort );
 		}
 	
+
+		dispose_icon( c->win,  &zoomIcon );
+		dispose_icon( c->win,  &iconifyIcon );
+		dispose_icon( c->win,  &screendepthicon );
+
 		CloseWindow( c->win );
 		c->win = NULL;
 	}
@@ -796,12 +817,18 @@ void cleanup_engine( struct emuIntuitionContext *c )
 	}
 }
 
+void do_ScreenDepth()
+{
+	struct Screen *scr = current_fake_screen();
+	fake_screen_to_back( scr );
+}
+
 void update_screen(struct emuIntuitionContext *c, ULONG host_w, ULONG host_h)
 {
 	struct xy new_mouse;
 	ULONG host_mx,host_my;
 	struct Window *win = c -> win;
-	struct Screen *src = c -> src;
+	struct Screen *src = c -> scr;
 
 	host_mx = win -> WScreen -> MouseX - win -> LeftEdge - win -> BorderLeft;
 	host_my = win -> WScreen -> MouseY - win -> TopEdge - win -> BorderTop;
@@ -819,13 +846,50 @@ void update_screen(struct emuIntuitionContext *c, ULONG host_w, ULONG host_h)
 	src -> MouseY = new_mouse.y;
 }
 
+void set_default_screen( struct Screen *src )
+{
+	src -> Width = 640;
+	src -> Height = 480;
+	src -> ViewPort.DWidth = src -> Width;
+	src -> ViewPort.DHeight = src -> Height;
+}
+
+void draw_no_aga(struct Screen *src,struct RastPort *rp)
+{
+	const char info[]= "No AGA Screens open";
+	RectFillColor( rp,0,0,src -> Width,src -> Height, 0xFF000000);
+
+	SetRPAttrs( rp,  
+		RPTAG_APenColor, 0xFFFFFFFF,
+		RPTAG_BPenColor, 0xFF000000,
+		TAG_END);
+
+	Move( rp, 20,20 );
+	Text( rp, info, strlen(info) );
+}
+
+void draw_copper_screen( struct Screen *src, struct RastPort *rp )
+{
+	const char info[]= "Obs no copper support";
+	RectFillColor( rp,0,0,src -> Width,src -> Height, 0xFF000000);
+
+	SetRPAttrs( rp,  
+		RPTAG_APenColor, 0xFFFFFFFF,
+		RPTAG_BPenColor, 0xFF000000,
+		TAG_END);
+
+	Move( rp, 20,20 );
+	Text( rp, info, strlen(info) );
+}
+
 void emuEngine()
 {
 	struct emuIntuitionContext c;
 	ULONG win_mask = 0;
 	ULONG mask_reply_port = 0;
-
 	bool no_screens = false;
+	struct Screen *new_active_screen = NULL;
+	ULONG GadgetID;
 
 	bzero( &c.tc , sizeof(struct TimerContext) );
 
@@ -842,6 +906,7 @@ void emuEngine()
 			WA_MaxHeight,	~0,
 
 			WA_IDCMP, 
+				IDCMP_GADGETUP |
 				IDCMP_CLOSEWINDOW |
 				IDCMP_MOUSEBUTTONS | 
 				IDCMP_MOUSEMOVE |
@@ -861,6 +926,18 @@ void emuEngine()
 			TAG_END);
 
 	if (!c.win) return ;
+
+	if (c.win)
+	{
+		struct DrawInfo *dri = GetScreenDrawInfo(c.win -> WScreen);
+
+		if (dri)
+		{
+//			open_icon( c.win, dri, GUPIMAGE, GID_FULLSCREEN, &zoomIcon );
+//			open_icon( c.win, dri, ICONIFYIMAGE, GID_ICONIFY, &iconifyIcon );
+			open_icon( c.win, dri, DEPTHIMAGE, GID_SCREENDEPTH, &screendepthicon );
+		}
+	}
 
 	c.dest_bitmap =AllocBitMap( 640, 480, 32, BMF_DISPLAYABLE, c.win ->RPort -> BitMap);
 
@@ -905,14 +982,14 @@ void emuEngine()
 
 			has_active_win = false;
 
-			c.src = current_fake_screen();
-			if (c.src)
+			c.scr = current_fake_screen();
+			if (c.scr)
 			{
-				has_active_win = window_open(c.src,active_win);
+				has_active_win = window_open(c.scr,active_win);
 
 				if (has_active_win == false)
 				{
-					active_win = c.src -> FirstWindow;	// this is a hack....
+					active_win = c.scr -> FirstWindow;	// this is a hack....
 				}
 			}
 
@@ -923,7 +1000,6 @@ void emuEngine()
 					ModifyIDCMP( c.win, new_IDCMP( IDCMP_VANILLAKEY, c.win -> IDCMPFlags, active_win -> IDCMPFlags) );
 				}
 			}
-
 
 			host_w = c.win -> Width;
 			host_w -= c.win -> BorderLeft;
@@ -938,19 +1014,29 @@ void emuEngine()
 			{
 				if (m -> Class)
 				{
+//					FPrintf( output, "Class: %08lx (%ld)\n", (int) m -> Class, (int) m -> Class);
+
 					switch (m -> Class)
 					{
 						case IDCMP_CLOSEWINDOW:
 
 							Signal( host_task, 1L << host_sig);
 							break;
-					}
-				}
 
-				if (c.src)
-				{
-					switch (m -> Class)
-					{
+						case IDCMP_GADGETUP:
+
+							FPrintf( output, "IDCMP_GADGETUP: %08lx (%ld)\n", (int) m -> Code, (int) m -> Code);
+
+							GadgetID = ((struct Gadget *) ( m -> IAddress)) -> GadgetID ;
+
+							switch(GadgetID)
+							{
+								case GID_SCREENDEPTH:
+									FPrintf( output, "GID_SCREENDEPTH\n");
+									do_ScreenDepth();
+									break;
+							}
+							break;
 
 						case IDCMP_ACTIVEWINDOW:
 
@@ -963,20 +1049,27 @@ void emuEngine()
 							frame_skip = 2;
 							line_skip =  2;
 							break;
+					}
+				}
+
+				if (c.scr)
+				{
+					switch (m -> Class)
+					{
 
 						case IDCMP_MOUSEMOVE:
 
 							update_screen( &c, host_w, host_h );
-							update_fake_window_mouse_xy(c.src)	;
+							update_fake_window_mouse_xy(c.scr)	;
 						
 							switch (mouse_state)
 							{
 								case size_action:
-										size_window( c.src );
+										size_window( c.scr );
 										break;
 
 								case drag_action:
-										drag_window( c.src );
+										drag_window( c.scr );
 										break;
 
 								default:
@@ -1013,7 +1106,7 @@ void emuEngine()
 										break;
 
 									case wdepth_action:
-										if (has_active_win) wdepth_window( c.src );
+										if (has_active_win) wdepth_window( c.scr );
 										break;
 									
 									case gadget_action:
@@ -1036,7 +1129,7 @@ void emuEngine()
 								switch (mouse_state)
 								{
 									case no_action:
-										if (WindowClick( c.src, m ) == false)
+										if (WindowClick( c.scr, m ) == false)
 										{
 											if (has_active_win) send_copy( active_win , m );
 										}
@@ -1059,42 +1152,27 @@ void emuEngine()
 		{
 			MutexObtain(video_mutex);
 
-			c.src = current_fake_screen();
-			if (c.src)
+			c.scr = current_fake_screen();
+			if (c.scr)
 			{
 				no_screens = false;
 
-				update_argb_lookup( c.src -> ViewPort.ColorMap );
+				if (c.scr -> ViewPort.UCopIns)
+				{
+					draw_copper_screen( c.scr, &c.local_rp );
+				} else {
+					update_argb_lookup( c.scr -> ViewPort.ColorMap );
+					ham.a = 0xFF;
+					draw_screen( &c );
+				}
 
-				ham.a = 0xFF;
-
-				draw_screen( &c );
- 				comp_window_update( c.src, c.dest_bitmap, c.win);
+ 				comp_window_update( c.scr, c.dest_bitmap, c.win);
 			}
 			else
 			{
 				struct Screen src;
-				const char info[]= "No AGA Screens open";
-
-				src.Width = 640;
-				src.Height = 480;
-				src.ViewPort.DWidth = src.Width;
-				src.ViewPort.DHeight = src.Height;
-
-				if (no_screens == false)
-				{
-					RectFillColor( &c.local_rp,0,0,src.Width,src.Height, 0xFF000000);
-
-					SetRPAttrs( &c.local_rp,  
-						RPTAG_APenColor, 0xFFFFFFFF,
-						RPTAG_BPenColor, 0xFF000000,
-						TAG_END);
-
-					Move( &c.local_rp, 20,20 );
-					Text( &c.local_rp, info, strlen(info) );
-					
-				}
-
+				set_default_screen( &src );
+				if (no_screens == false) draw_no_aga( &src, &c.local_rp );
 				no_screens = true;
  				comp_window_update( &src, c.dest_bitmap, c.win);
 			}
@@ -1103,6 +1181,12 @@ void emuEngine()
 
 			WaitTOF();
 			reset_timer( c.tc.timer_io );
+
+			if (new_active_screen)
+			{
+				c.scr = new_active_screen;
+				new_active_screen = NULL;
+			}
 		}
 
 	} while (!quit);
@@ -1117,9 +1201,9 @@ float s, t, w;
 }; 
 
 typedef struct CompositeHookData_s {
-	struct BitMap *srcBitMap; // The source bitmap
-	int32 srcX,srcY;
-	int32 srcWidth, srcHeight; // The source dimensions
+	struct BitMap *scrBitMap; // The source bitmap
+	int32 scrX,scrY;
+	int32 scrWidth, scrHeight; // The source dimensions
 	int32 offsetX, offsetY; // The offsets to the destination area relative to the window's origin
 	int32 destWidth, destHeight;
 	int32 scaleX, scaleY; // The scale factors
@@ -1137,8 +1221,8 @@ static ULONG compositeHookFunc(
 
 	struct BitMap *bm = (struct BitMap *) hook->h_Data;
 
-//	int src_width = 640;
-//	int src_height = 480;
+//	int scr_width = 640;
+//	int scr_height = 480;
 	int DestWidth = msg->Bounds.MaxX - msg->Bounds.MinX;
 	int DestHeight = msg->Bounds.MaxY - msg->Bounds.MinY;
 	int offsetX = 0;
@@ -1147,10 +1231,10 @@ static ULONG compositeHookFunc(
 	CompositeTags(
 		COMPOSITE_Src, bm, rastPort->BitMap,
 
-		COMPTAG_SrcWidth,   src_width,
-		COMPTAG_SrcHeight,  src_height,
-		COMPTAG_ScaleX, 	COMP_FLOAT_TO_FIX( (float) DestWidth /  (float) src_width),
-		COMPTAG_ScaleY, 	COMP_FLOAT_TO_FIX( (float) DestHeight / (float) src_height),
+		COMPTAG_SrcWidth,   scr_width,
+		COMPTAG_SrcHeight,  scr_height,
+		COMPTAG_ScaleX, 	COMP_FLOAT_TO_FIX( (float) DestWidth /  (float) scr_width),
+		COMPTAG_ScaleY, 	COMP_FLOAT_TO_FIX( (float) DestHeight / (float) scr_height),
 		COMPTAG_OffsetX,    msg->Bounds.MinX - (msg->OffsetX - msg->Bounds.MinX),
 		COMPTAG_OffsetY,    msg->Bounds.MinY - (msg->OffsetY - msg->Bounds.MinY),
 		COMPTAG_DestX,      msg->Bounds.MinX,
@@ -1175,13 +1259,13 @@ static ULONG compositeHookFunc(
 
 	hookData->retCode = CompositeTags(
 		COMPOSITE_Src, 
-			hookData->srcBitMap, 
+			hookData->scrBitMap, 
 			rastPort->BitMap,
 
-		COMPTAG_SrcX,      abs(hookData->srcX),
-		COMPTAG_SrcY,      abs(hookData->srcY),
-		COMPTAG_SrcWidth,   hookData->srcWidth,
-		COMPTAG_SrcHeight,  hookData->srcHeight,
+		COMPTAG_SrcX,      abs(hookData->scrX),
+		COMPTAG_SrcY,      abs(hookData->scrY),
+		COMPTAG_SrcWidth,   hookData->scrWidth,
+		COMPTAG_SrcHeight,  hookData->scrHeight,
 
 		COMPTAG_ScaleX, 	hookData->scaleX,
 		COMPTAG_ScaleY, 	hookData->scaleY,
@@ -1219,15 +1303,15 @@ void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Windo
 	hook.h_Entry = (HOOKFUNC) compositeHookFunc;
 	hook.h_Data = &hookData;
 
-	hookData.srcBitMap = bitmap;
+	hookData.scrBitMap = bitmap;
 
 //	I belive some games /demos might double buffer by moving the screen... 
 
-	hookData.srcX = src -> ViewPort.DxOffset;
-	hookData.srcY = src -> ViewPort.DyOffset;
+	hookData.scrX = src -> ViewPort.DxOffset;
+	hookData.scrY = src -> ViewPort.DyOffset;
 
-	hookData.srcWidth = src -> ViewPort.DWidth;
-	hookData.srcHeight = src -> Height < src -> ViewPort.DHeight ? src -> Height : src -> ViewPort.DHeight;
+	hookData.scrWidth = src -> ViewPort.DWidth;
+	hookData.scrHeight = src -> Height < src -> ViewPort.DHeight ? src -> Height : src -> ViewPort.DHeight;
 
 	hookData.offsetX = win->BorderLeft;
 	hookData.offsetY = win->BorderTop;
@@ -1236,8 +1320,8 @@ void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Windo
  	hookData.destWidth = rect.MaxX - rect.MinX + 1;
  	hookData.destHeight = rect.MaxY - rect.MinY + 1;
 
-	hookData.scaleX = COMP_FLOAT_TO_FIX((float) hookData.destWidth / (float) hookData.srcWidth);
-	hookData.scaleY = COMP_FLOAT_TO_FIX((float) hookData.destHeight / (float) hookData.srcHeight);
+	hookData.scaleX = COMP_FLOAT_TO_FIX((float) hookData.destWidth / (float) hookData.scrWidth);
+	hookData.scaleY = COMP_FLOAT_TO_FIX((float) hookData.destHeight / (float) hookData.scrHeight);
 
 	LockLayer(0, RPort->Layer);
 	DoHookClipRects(&hook, win->RPort, &rect);

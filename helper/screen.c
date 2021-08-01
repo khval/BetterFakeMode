@@ -17,8 +17,6 @@ struct Screen screens[max_screens];
 struct Layer_Info *LayerInfos[max_screens];
 bool allocatedScreen[max_screens];
 
-#define GetFakeScreen(n) (screens + n)
-
 extern BPTR output;
 
 int alloc_screen_in_list()

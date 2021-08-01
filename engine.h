@@ -11,7 +11,7 @@ struct emuIntuitionContext
 {
 	struct RastPort local_rp;
 	struct TimerContext tc;
-	struct Screen *src;
+	struct Screen *scr;
 	struct Window *win;
 	struct BitMap *dest_bitmap;
 };
