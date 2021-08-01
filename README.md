@@ -18,6 +18,8 @@ will allow old programs and games to be displayed correct.)
 
 * Lots of missing modes like Porductivity Modes, DBPAL, DBNTSC
 
+* No support for copper lists.
+
 # Current status.
 
 Many of problems might not be OpenScreen actually it can be in definitions of the fake modes as well.
@@ -77,6 +79,8 @@ Vista Pro V3 ( Fully working :-) )
 * It does send some events.
 
 * Ham6 and Ham8 modes.
+
+* Simple copper list support.
 
 # How can you help.
 
