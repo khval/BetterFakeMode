@@ -300,66 +300,93 @@ struct Task *host_task;
 
 extern void emuEngine();
 
+const char *porg_name = "BetterFakeMode";
+struct MsgPort *prog_port = NULL;
+
+bool prog_has_started()
+{
+	struct MsgPort *have_port;
+
+	IExec -> Forbid();
+	have_port = IExec -> FindPort(porg_name);
+	IExec -> Permit();
+
+	if (have_port == NULL)
+	{
+		prog_port = (APTR) IExec -> AllocSysObjectTags(ASOT_PORT, 
+					ASOPORT_Name, porg_name ,
+					ASOPORT_CopyName, TRUE,
+					TAG_DONE);
+	}
+
+	return prog_port ? true : false;
+}
+
 int main( void )
 {
 	struct Process *display_proc;
 	BPTR disp_output;
 
-	printf("sizeof(screens) %d\n",sizeof(screens));
-
-	main_task = IExec->FindTask(NULL);
-
-	if (IS_PROCESS(main_task))
+	if (prog_has_started())
 	{
-		output = ((struct Process *) main_task) -> pr_COS;
-	}
+		main_task = IExec->FindTask(NULL);
 
-	if (open_libs()==FALSE)
-	{
-		Printf("failed to open libs!\n");
-		close_libs();
-		return 0;
-	}
+		if (IS_PROCESS(main_task))
+		{
+			output = ((struct Process *) main_task) -> pr_COS;
+		}
 
-	host_sig = IExec -> AllocSignal(-1);
-	host_task = IExec -> FindTask(NULL);
+		if (open_libs()==FALSE)
+		{
+			Printf("failed to open libs!\n");
+			close_libs();
+			return 0;
+		}
+
+		host_sig = IExec -> AllocSignal(-1);
+		host_task = IExec -> FindTask(NULL);
 
 //	disp_output = IDOS -> Open("CON:660/32/320/200/display debug", MODE_NEWFILE );
 	disp_output = IDOS -> Open("NIL:", MODE_NEWFILE );
 
-	display_proc = spawn( emuEngine, "emuEngine", disp_output );
+		display_proc = spawn( emuEngine, "emuEngine", disp_output );
 
-	if (set_patches())
-	{
-
-		for(;;) 
+		if (set_patches())
 		{
-			IExec -> Wait( 1L << host_sig  | SIGBREAKF_CTRL_C);
 
-			if (num_of_open_screens)
+			for(;;) 
 			{
-				Printf("you can't quit before all fake screens are closed\n");
+				IExec -> Wait( 1L << host_sig  | SIGBREAKF_CTRL_C);
+
+				if (num_of_open_screens)
+				{
+					Printf("you can't quit before all fake screens are closed\n");
+				}
+				else 
+				{
+					Printf("Quit..\n");
+					break;
+				}
 			}
-			else 
-			{
-				Printf("Quit..\n");
-				break;
-			}
+
+			undo_patches();
+		}
+		else
+		{
+			Printf("failed to patch\n");
 		}
 
-		undo_patches();
+		quit = true;
+		wait_spawns();
+
+		IExec->FreeSignal( host_sig );
+
+		close_libs();
+
+		IExec -> FreeSysObject(ASOT_PORT, prog_port );
+		prog_port = NULL;
+
 	}
-	else
-	{
-		Printf("failed to patch\n");
-	}
-
-	quit = true;
-	wait_spawns();
-
-	IExec->FreeSignal( host_sig );
-
-	close_libs();
 
 	return 0;
 }
