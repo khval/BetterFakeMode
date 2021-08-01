@@ -131,3 +131,18 @@ void dumpCopList( struct CopList *cl )
 	Printf("};\n");
 }
 
+void dumpCopIns( struct CopIns *c, int cnt )
+{
+	while (cnt --)
+	{
+		Printf("%08lx: OpCode: %04lx, nxtlist: %08lx, Data: %04lx, %04lx\n", 
+			c, 
+			c -> OpCode,
+			c -> u3.nxtlist,
+			c -> u3.u4.u1.VWaitPos,
+			c -> u3.u4.u2.HWaitPos
+		);
+		c++;
+	}
+}
+

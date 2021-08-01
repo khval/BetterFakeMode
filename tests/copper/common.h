@@ -16,5 +16,5 @@ extern void Box(struct RastPort *rp, int x0,int y0, int x1,int y1, int color);
 
 void dumpUCopList( struct UCopList *copper );
 void dumpCopList( struct CopList *cl );
-
+void dumpCopIns( struct CopIns *c, int cnt );
 

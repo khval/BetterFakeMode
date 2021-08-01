@@ -20,6 +20,7 @@
 #include "common.h"
 #include "../debug.h"
 
+
 bool initScreen()
 {
 	screen=OpenScreenTags(NULL,
@@ -75,7 +76,6 @@ int main_prog()
 		int lines=screen -> Height-linestart;
 		int width=screen -> Width;
 		
-
 		show_screen( screen );
 		show_win(window);
 
@@ -89,9 +89,7 @@ int main_prog()
 			{
 				Box(rport,0,linestart,width-1,screen -> Height-1,1);
 			}
-			else Printf("wtf... no bitmap...\n");
 		}
-		else Printf("wtf... no rastport...\n");
 
 #if 1
 		
@@ -118,11 +116,18 @@ int main_prog()
 
 		if (viewport -> UCopIns)
 		{
+			struct CopList  *cl;
+			struct CopIns *c;
+
 			dumpUCopList( viewport -> UCopIns );
 
-			if ( viewport -> UCopIns -> FirstCopList )
+			cl = viewport -> UCopIns -> FirstCopList;
+			if ( cl )
 			{
-				dumpCopList( viewport -> UCopIns -> FirstCopList );
+				dumpCopList( cl );
+
+				c = cl -> CopIns;
+				dumpCopIns( c, cl -> Count );
 			}
 		}
 #endif
@@ -130,7 +135,9 @@ int main_prog()
 #if 0
 		RethinkDisplay();
 #endif
+
 		WaitLeftMouse(window);
+
 	}
 	else
 	{
@@ -153,14 +160,12 @@ int main()
 		return 0;
 	}
 
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
-
 	ret = main_prog();
-
-	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 	close_libs();
 
 	return 0;
 }
+
+
 
