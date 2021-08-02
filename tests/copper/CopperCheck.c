@@ -91,12 +91,17 @@ int main_prog()
 	{
 		viewport=ViewPortAddress(window);
 		rport=window -> RPort;
+
+		lines = window -> RPort -> BitMap -> Rows;
+
 		backrgb = ((ULONG *) viewport -> ColorMap -> ColorTable)[0];
 
 		SetColour(screen,0,0,0,0);
 		SetColour(screen,1,255,255,255);
 	
-		for (y=0;y<256;y+=64) for (x=0;x<192;x+=64) Box(rport,x,y,32,32,1);
+		SetAPen(rport,1);
+
+		for (y=0;y<256;y+=64) for (x=0;x<192;x+=64) RectFill(rport,x,y,x+31,y+31);
 	
 		CINIT(myucoplist,(lines*5)+3);
 	
@@ -104,18 +109,36 @@ int main_prog()
 		{
 			CWAIT(myucoplist,i,0);
 	  		CMOVEA(myucoplist,BPLCON3,0);
-	  		CMOVEA(myucoplist,COLOR+2,(i-linestart) & 0xFFF);
+	  		CMOVEA(myucoplist,COLOR(1),(i-linestart) & 0xFFF);
 	  		CMOVEA(myucoplist,BPLCON3,0x200);
-	  		CMOVEA(myucoplist,COLOR+2,(0xFFF-i) & 0xFFF);
+	  		CMOVEA(myucoplist,COLOR(1),(0xFFF-i) & 0xFFF);
 		}
 	
 		CWAIT(myucoplist,i,0);
-		CMOVEA(myucoplist,COLOR+2,backrgb);
+		CMOVEA(myucoplist,COLOR(1),backrgb);
 		CEND(myucoplist);
 	
 		Forbid();
 	 	viewport -> UCopIns=myucoplist;
 		Permit();
+
+		if (viewport -> UCopIns)
+		{
+			struct CopList  *cl;
+			struct CopIns *c;
+
+			dumpUCopList( viewport -> UCopIns );
+
+			cl = viewport -> UCopIns -> FirstCopList;
+			if ( cl )
+			{
+				dumpCopList( cl );
+
+				c = cl -> CopIns;
+				dumpCopIns( c, cl -> Count );
+			}
+		}
+
 		RethinkDisplay();
 
 		WaitLeftMouse(window);
