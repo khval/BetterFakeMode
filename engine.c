@@ -952,28 +952,29 @@ void draw_no_aga(struct Screen *src,struct RastPort *rp)
 	Text( rp, info, strlen(info) );
 }
 
+ULONG colorLoc = 0xF0F0F0F0;
+ULONG bplcon3 = 0;
+ULONG bplcon2 = 0;
+ULONG no_half_bright = 1;
+
 void copMove( UWORD data, UWORD addr )
 {
+	if ((addr >= 0x180) && (addr<=0x19E ))
+	{
+		int i = (addr - 0x180) >> 1;
+		palette[i].argb = (palette[i].argb & ~colorLoc) | (OCS_lookup[data].argb & colorLoc);
+		return;
+	}
+
 	switch (addr)
 	{
-		case 0x180: palette[0].argb = OCS_lookup[data].argb; break;
-		case 0x182: palette[1].argb = OCS_lookup[data].argb; break;
-		case 0x184: palette[2].argb = OCS_lookup[data].argb; break;
-		case 0x186: palette[3].argb = OCS_lookup[data].argb; break;
-		case 0x188: palette[4].argb = OCS_lookup[data].argb; break;
-		case 0x18A: palette[5].argb = OCS_lookup[data].argb; break;
-		case 0x18C: palette[6].argb = OCS_lookup[data].argb; break;
-		case 0x18E: palette[7].argb = OCS_lookup[data].argb; break;
-		case 0x190: palette[8].argb = OCS_lookup[data].argb; break;
-		case 0x192: palette[9].argb = OCS_lookup[data].argb; break;
-		case 0x194: palette[2].argb = OCS_lookup[data].argb; break;
-		case 0x196: palette[3].argb = OCS_lookup[data].argb; break;
-		case 0x198: palette[4].argb = OCS_lookup[data].argb; break;
-		case 0x19A: palette[5].argb = OCS_lookup[data].argb; break;
-		case 0x19C: palette[6].argb = OCS_lookup[data].argb; break;
-		case 0x19E: palette[7].argb = OCS_lookup[data].argb; break;
-		case 0x1A0: palette[8].argb = OCS_lookup[data].argb; break;
-		case 0x1A2: palette[9].argb = OCS_lookup[data].argb; break;
+		case 0x104:	bplcon2 = data;
+					no_half_bright = bplcon2 & 0x0200;
+					break;
+
+		case 0x106: 	bplcon3 = data;
+					colorLoc = bplcon3 & 0x0200 ? 0x0F0F0F0F : 0xF0F0F0F0;
+					break;
 	}
 }
 
