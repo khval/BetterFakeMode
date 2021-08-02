@@ -23,7 +23,6 @@
 
 #define CMOVEA(c,a,b) { CMove(c,a,b);CBump(c); }
 
-#define COLOR 0x180
 #define BPLCON0 0x100
 #define BPLCON1 0x102
 #define BPLCON2 0x104
@@ -127,7 +126,7 @@ int main_prog()
 		CINIT(myucoplist, 1+ (lines*(1+3+4)) + 3 );
 
 
-		CMOVEA(myucoplist,COLOR+2,0xFFF);	// +1
+		CMOVEA(myucoplist,COLOR(1),0xFFF);	// +1
 
 		for (i=linestart;i<lines;i++)
 		{
@@ -147,15 +146,15 @@ int main_prog()
 			}
 
 			CMOVEA(myucoplist,BPLCON3,0);					// +4
-			CMOVEA(myucoplist,COLOR+2,(i-linestart)&0xFFF);
+			CMOVEA(myucoplist,COLOR(1),(i-linestart)&0xFFF);
 			CMOVEA(myucoplist,BPLCON3,0x200);
-			CMOVEA(myucoplist,COLOR+2,(0xFFF-i)&0xFFF);
+			CMOVEA(myucoplist,COLOR(1),(0xFFF-i)&0xFFF);
 		}
 
 		// +3
 
 		CWAIT(myucoplist,i,0);
-		CMOVEA(myucoplist,COLOR+2,backrgb);
+		CMOVEA(myucoplist,COLOR(1),backrgb);
 		CEND(myucoplist);
 	
 		Forbid();
