@@ -65,6 +65,8 @@ void errors()
 	if (!window) Printf("Unable to open window.\n");
 	if (!myucoplist) Printf("Unable to allocate myucoplist memory.\n");
 }
+
+const char *txt = "Cooper test";
 	
 int main_prog()
 {
@@ -94,6 +96,12 @@ int main_prog()
 				RectFill(rport,0,linestart,width/2,screen -> Height-1);
 
 				Box(rport,0,linestart,width-1,screen -> Height-1,2);
+
+				SetAPen(rport,3);
+				SetBPen(rport,2);
+
+				Move(rport,20,50);
+				Text(rport,txt,strlen(txt));
 			}
 		}
 
@@ -107,13 +115,13 @@ int main_prog()
 		{
 			CWAIT(myucoplist,i,0);
 			CMOVEA(myucoplist,BPLCON3,0);
-			CMOVEA(myucoplist,COLOR+2,(i-linestart) & 0xFFF);
+			CMOVEA(myucoplist,COLOR(1),(i-linestart) & 0xFFF);
 			CMOVEA(myucoplist,BPLCON3,0x200);
-			CMOVEA(myucoplist,COLOR+2,(0xFFF-i) & 0xFFF);
+			CMOVEA(myucoplist,COLOR(3),(0xFFF-i) & 0xFFF);
 		}
 		
 		CWAIT(myucoplist,i,0);
-		CMOVEA(myucoplist,COLOR+2,backrgb);
+		CMOVEA(myucoplist,COLOR(1),backrgb);
 		CEND(myucoplist);
 
 		Forbid();
