@@ -79,6 +79,21 @@ union amiga_argb
 	};
 };
 
+
+union amiga_argb OCS_lookup[0x10000];
+
+void init_ocs_lookup()
+{
+	int i;
+	for (i=0;i<0x10000;i++)
+	{
+		OCS_lookup[i].a = 0xFF;
+		OCS_lookup[i].r = ((i & 0xF00) >> 8) * 0x11;
+		OCS_lookup[i].g = ((i & 0x0F0) >> 4) * 0x11;
+		OCS_lookup[i].b = (i & 0x00F) * 0x11;
+	}
+}
+
 struct xy tmp_mouse = {0,0};
 struct xy delta_mouse = {0,0};
 
@@ -90,6 +105,9 @@ void send_button( struct Window *win,  struct IntuiMessage *source_msg, ULONG id
 
 union amiga_argb palette[256];
 
+uint64 qLookup_i64[256*256];
+double *qLookup_d64 = (double *) qLookup_i64;
+
 void comp_window_update( struct Screen *src, struct BitMap *bitmap, struct Window *win);
 
 bool compare_IDCMP(ULONG mask, ULONG IDCMP1, ULONG IDCMP2)
@@ -100,6 +118,53 @@ bool compare_IDCMP(ULONG mask, ULONG IDCMP1, ULONG IDCMP2)
 ULONG new_IDCMP( ULONG mask, ULONG old_IDCMP, ULONG new_IDCMP)
 {
 	return (old_IDCMP & ~mask) | (new_IDCMP & mask);
+}
+
+void initQLookup()
+{
+	uint32 *p;
+	int i;
+
+	// pixel [0,256],[0..256]
+
+	for (i=0;i<(256*256);i++)
+	{
+		p = (uint32 *) (qLookup_d64+i);
+		p[0] = 0xFF000000 | palette[(i & 0xFF00) >> 8].argb;
+		p[1] = 0xFF000000 | palette[(i & 0x00FF) ].argb;
+	}
+}
+
+
+// update min index for a color, in quick lookup table...
+
+void initQLookupColor( int max_colors, int color)
+{
+	uint32 *p;
+	int i_1st =color << 8;
+	int i_2en;
+	int i;
+
+	for (i_2en=0;i_2en<max_colors;i_2en++)
+	{
+		i = i_1st | i_2en;
+
+		p = (uint32 *) (qLookup_d64+i);
+		p[0] = 0xFF000000 | palette[ color ].argb;
+		p[1] = 0xFF000000 | palette[ i_2en ].argb;
+	}
+
+	i_2en = color;
+
+	for (i_1st= 0;i_1st<max_colors;i_1st++)
+	{
+		i = (i_1st << 8) | i_2en;
+
+		p = (uint32 *) (qLookup_d64+i);
+		p[0] = 0xFF000000 | palette[ i_1st ].argb;
+		p[1] = 0xFF000000 | palette[ color ].argb;
+	}
+
 }
 
 void update_argb_lookup( struct ColorMap *cm )
@@ -121,7 +186,11 @@ void update_argb_lookup( struct ColorMap *cm )
 		palette[ c ].g = d[1];
 		palette[ c ].b = d[2];
 	}
+
+	initQLookup();
 }
+
+
 
 void dump_colors( struct ColorMap *cm )
 {
@@ -136,22 +205,6 @@ void dump_colors( struct ColorMap *cm )
 	}
 
 }
-
-/*
-void draw_bits(struct RastPort *rp, unsigned char *b, int x,int  y )
-{
-	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
-	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
-	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
-	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
-
-	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
-	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
-	WritePixelColor(rp,  x++,  y,  palette[ *b++ ].argb );
-	WritePixelColor(rp,  x,  y,  palette[ *b ].argb );
-
-}
-*/
 
 union amiga_argb ham;
 
@@ -197,7 +250,7 @@ inline uint32 ham8( unsigned char color )
 	return ham.argb;
 }
 
-void draw_bits_argb( unsigned char *dest_ptr, unsigned char *b)
+void draw_bits_argb32( unsigned char *dest_ptr, unsigned char *b)
 {
 	uint32 *d_argb = (uint32 *)	(dest_ptr);
 
@@ -209,6 +262,16 @@ void draw_bits_argb( unsigned char *dest_ptr, unsigned char *b)
 	*d_argb++ = palette[ *b++ ].argb ;
 	*d_argb++ = palette[ *b++ ].argb ;
 	*d_argb = palette[ *b ].argb ;
+}
+
+void draw_bits_argb64( unsigned char *dest_ptr, unsigned short *b)
+{
+	double *d_argb_argb = (double *)	(dest_ptr);
+
+	*d_argb_argb++ = qLookup_d64[ *b++ ] ;
+	*d_argb_argb++ = qLookup_d64[ *b++ ] ;
+	*d_argb_argb++ = qLookup_d64[ *b++ ] ;
+	*d_argb_argb = qLookup_d64[ *b ] ;
 }
 
 void draw_bits_argb_ham6( unsigned char *dest_ptr, unsigned char *b )
@@ -375,7 +438,7 @@ void draw_screen( struct emuIntuitionContext *c)
 	{
 		case 0x0806:	draw_bits = draw_bits_argb_ham6;		break;
 		case 0x0808:	draw_bits = draw_bits_argb_ham8;		break;
-		default:		draw_bits = draw_bits_argb;			break;
+		default:		draw_bits = draw_bits_argb64;			break;
 	}
 
 	lock = LockBitMapTags( dest_bm,
@@ -893,28 +956,30 @@ void copMove( UWORD data, UWORD addr )
 {
 	switch (addr)
 	{
-		case 0x180: palette[0].argb = 0xFF000000 | data; break;
-		case 0x182: palette[1].argb = 0xFF000000 | data; break;
-		case 0x184: palette[2].argb = 0xFF000000 | data; break;
-		case 0x186: palette[3].argb = 0xFF000000 | data; break;
-		case 0x188: palette[4].argb = 0xFF000000 | data; break;
-		case 0x18A: palette[5].argb = 0xFF000000 | data; break;
+		case 0x180: palette[0].argb = OCS_lookup[data].argb; break;
+		case 0x182: palette[1].argb = OCS_lookup[data].argb; break;
+		case 0x184: palette[2].argb = OCS_lookup[data].argb; break;
+		case 0x186: palette[3].argb = OCS_lookup[data].argb; break;
+		case 0x188: palette[4].argb = OCS_lookup[data].argb; break;
+		case 0x18A: palette[5].argb = OCS_lookup[data].argb; break;
+		case 0x18C: palette[6].argb = OCS_lookup[data].argb; break;
+		case 0x18E: palette[7].argb = OCS_lookup[data].argb; break;
+		case 0x190: palette[8].argb = OCS_lookup[data].argb; break;
+		case 0x192: palette[9].argb = OCS_lookup[data].argb; break;
+		case 0x194: palette[2].argb = OCS_lookup[data].argb; break;
+		case 0x196: palette[3].argb = OCS_lookup[data].argb; break;
+		case 0x198: palette[4].argb = OCS_lookup[data].argb; break;
+		case 0x19A: palette[5].argb = OCS_lookup[data].argb; break;
+		case 0x19C: palette[6].argb = OCS_lookup[data].argb; break;
+		case 0x19E: palette[7].argb = OCS_lookup[data].argb; break;
+		case 0x1A0: palette[8].argb = OCS_lookup[data].argb; break;
+		case 0x1A2: palette[9].argb = OCS_lookup[data].argb; break;
 	}
 }
 
 
 #define debug_copper 0
 
-#if debug_copper==1
-ULONG copColor[]=
-{
-	0xFFFF0000,
-	0xFF00FF00,
-	0xFF0000FF,
-	0xFFFF00FF
-};
-
-#endif
 
 void drawCopIns( struct emuIntuitionContext *c, struct CopIns *cop, int cnt )
 {
@@ -928,6 +993,7 @@ void drawCopIns( struct emuIntuitionContext *c, struct CopIns *cop, int cnt )
 	ULONG bpr;
 	ULONG drawBytes;
 	ULONG last_VWaitPos = 0, last_HWaitPos = 0;
+	ULONG VWaitPos = 0, HWaitPos = 0;
 	ULONG SizeOfPlane ;
 	ULONG dest_bpr;
 	ULONG dest_format;
@@ -957,13 +1023,11 @@ void drawCopIns( struct emuIntuitionContext *c, struct CopIns *cop, int cnt )
 	{
 		case 0x0806:	draw_bits = draw_bits_argb_ham6;		break;
 		case 0x0808:	draw_bits = draw_bits_argb_ham8;		break;
-		default:		draw_bits = draw_bits_argb;			break;
+		default:		draw_bits = draw_bits_argb32;			break;
 	}
 
 
 #if debug_copper==0
-
-FPrintf(output,"debug mode is off...\n");
 
 	lock = LockBitMapTags( dest_bm,
 			LBM_PixelFormat, &dest_format,
@@ -988,19 +1052,24 @@ FPrintf(output,"debug mode is off...\n");
 
 				if ((cop -> u3.nxtlist == (void *) 0x271000FF ))	// END OF LIST....
 				{
-					cnt = 0;
-					break;
+					HWaitPos = bm -> BytesPerRow ;
+					VWaitPos = bm -> Rows -1;
+				}
+				else
+				{
+					HWaitPos = cop -> u3.u4.u2.HWaitPos;
+					VWaitPos = cop -> u3.u4.u1.VWaitPos ;
 				}
 
 				last_pos = (last_VWaitPos * bpr) + last_HWaitPos;
-				new_pos = cop -> u3.u4.u1.VWaitPos * bpr + cop -> u3.u4.u2.HWaitPos;
+				new_pos = VWaitPos * bpr + HWaitPos;
 
 #if debug_copper==1
 				FPrintf(output, "last_pixel_pos %ld, last_HWaitPos: %ld, last_VWaitPos: %ld\n",
 					last_pos, last_HWaitPos, last_VWaitPos);
 
 				FPrintf(output, "  to_pixel_pos %ld,   to_HWaitPos: %ld,   to_VWaitPos: %ld\n",
-					new_pos, cop -> u3.u4.u2.HWaitPos , cop -> u3.u4.u1.VWaitPos);
+					new_pos, HWaitPos , VWaitPos);
 #endif
 				delta_pos = new_pos - last_pos;
 
@@ -1039,8 +1108,8 @@ FPrintf(output,"debug mode is off...\n");
 					else break;
 				}
 
-				last_VWaitPos = cop -> u3.u4.u1.VWaitPos;
-				last_HWaitPos = cop -> u3.u4.u2.HWaitPos;
+				last_VWaitPos = VWaitPos;
+				last_HWaitPos = HWaitPos;
 				break;
 		}
 		cop++;
@@ -1072,6 +1141,8 @@ void emuEngine()
 	bool no_screens = false;
 	struct Screen *new_active_screen = NULL;
 	ULONG GadgetID;
+
+	init_ocs_lookup();
 
 	bzero( &c.tc , sizeof(struct TimerContext) );
 
