@@ -8,7 +8,7 @@ files = ${deps}
 tests_c += CopperCheck.c
 tests_c += CopperSplit.c
 tests_c += OSCopper.c
-
+tests_c += copperbar.c
 
 incdir = -I../ -I./
 
