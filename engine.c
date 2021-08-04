@@ -998,6 +998,7 @@ void drawCopIns( struct emuIntuitionContext *c, struct CopIns *cop, int cnt )
 	ULONG SizeOfPlane ;
 	ULONG dest_bpr;
 	ULONG dest_format;
+	int bad_vpos = 0, bad_hpos = 0;
 
 	unsigned char *scr_ptr_y_start;
 	unsigned char *scr_ptr_y_end;
@@ -1099,6 +1100,13 @@ void drawCopIns( struct emuIntuitionContext *c, struct CopIns *cop, int cnt )
 						scr_ptr_y_start = bm -> Planes[0] + (bpr * vpos) + hpos;
 						scr_ptr_y_end = scr_ptr_y_start + drawBytes;
 						
+						if ( scr_ptr_y_end - bm -> Planes[0]  >  SizeOfPlane )
+						{
+							bad_vpos = vpos;
+							bad_hpos = hpos;
+							scr_ptr_y_end = bm -> Planes[0] + SizeOfPlane;
+						}
+
 						dest_ptr = dest_ptr_image + (dest_bpr*vpos);
 
 						draw_hpixels( planar_routine , draw_bits ,SizeOfPlane, hpos*8, scr_ptr_y_start, scr_ptr_y_end, dest_ptr );
@@ -1119,6 +1127,12 @@ void drawCopIns( struct emuIntuitionContext *c, struct CopIns *cop, int cnt )
 #if debug_copper==0
 	UnlockBitMap( lock );
 #endif
+
+
+	if ((bad_vpos) || (bad_hpos))
+	{
+		FPrintf(output, "copper outside of bitmap, beam hpos %ld, vpos: %ld\n", bad_hpos, bad_vpos);
+	}
 
 }
 
