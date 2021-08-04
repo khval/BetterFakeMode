@@ -15,6 +15,7 @@ tests_c += ActiveWindow.c
 tests_c += paint.c
 tests_c += RawKey.c
 tests_c += ScreenToFront.c
+tests_c += SetWindowAttr.c
 
 incdir = -I../ -I./
 
