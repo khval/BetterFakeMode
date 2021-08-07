@@ -29,15 +29,26 @@ void fake_SizeWindow ( struct Window *win, LONG dx, LONG dy )
 void no_block_SizeWindow ( struct Window *win, LONG dx, LONG dy )
 {
 	int w,h;
+	int miw = win -> MinWidth;
+	int mih = win -> MinHeight;
+	int maw = win -> MaxWidth;
+	int mah = win -> MaxHeight;
+
+	if (maw <=0) maw = win -> WScreen -> Width;
+	if (mah <=0)  mah = win -> WScreen -> Height;
+	if (maw < 30) maw = 30;
+	if (mah < 30) mah = 30;
+	if (miw < 30) miw = 30;
+	if (mih < 30) mih = 30;
 
 	w = win -> Width + dx;
 	h = win -> Height + dy;
 
-	if (w> win -> MaxWidth) w = win -> MaxWidth;
-	if (h> win -> MaxHeight) h = win -> MaxHeight;
+	if (w> maw ) w = maw;
+	if (h> mah ) h = mah;
 
-	if (w< win -> MinWidth) w = win -> MinWidth;
-	if (h< win -> MinHeight) h = win -> MinHeight;
+	if (w< miw) w = miw;
+	if (h< mih) h = mih;
 
 	dx = w - win -> Width;
 	dy = h - win -> Height;
