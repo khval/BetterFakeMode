@@ -363,3 +363,32 @@ struct Screen * ppc_func_OpenScreenTagList(struct IntuitionIFace *Self, const st
 
 	return NULL;
 }
+
+LONG ppc_func_SetWindowAttrsA (struct IntuitionIFace *Self, struct Window * win, struct TagItem * taglist)
+{
+	if (is_fake_screen( win -> WScreen ))
+	{
+		return fake_SetWindowAttrsA( win, taglist );
+	}
+	else
+	{
+		return ((LONG (*) ( struct IntuitionIFace *, struct Window *,struct TagItem *)) old_ppc_func_SetWindowAttrsA) (Self, win, taglist);
+	}
+
+	return 0;
+}
+
+LONG ppc_func_SetWindowAttr (struct IntuitionIFace *Self, struct Window * win,ULONG attr, APTR data, ULONG size)
+{
+	if (is_fake_screen( win -> WScreen ))
+	{
+		return fake_SetWindowAttr( win, attr, data, size );
+	}
+	else
+	{
+		return ((LONG (*) ( struct IntuitionIFace *, ULONG , APTR , ULONG )) old_ppc_func_SetWindowAttr) (Self, attr, data, size);
+	}
+
+	return 0;
+}
+
