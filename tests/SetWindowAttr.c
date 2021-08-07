@@ -121,7 +121,7 @@ int main()
 			WA_CustomScreen, src, TAG_END);
 
 		win[1] = OpenWindowTags( NULL, 
-//			WA_IDCMP, IDCMP_CLOSEWINDOW,
+			WA_IDCMP, IDCMP_CLOSEWINDOW,
 			WA_Flags, WFLG_DRAGBAR | WFLG_CLOSEGADGET,
 			WA_Title, "Front Win",
 			WA_Left, 50, WA_Top, 50,
@@ -139,7 +139,7 @@ int main()
 
 		setText( win[1] -> RPort, 20,20,"Wait is over...");
 
-		if (win[0])
+		if (win[1])
 		{
 			char buffer[100];
 			ULONG *f;
@@ -151,6 +151,20 @@ int main()
 				setText(win[1] -> RPort, 20,20,buffer);
 				SetWindowAttr( win[1], WA_Flags , (APTR) *f, sizeof(ULONG) );
 			}
+			Delay(20);
+
+			SetWindowAttr( win[1], WA_Left , (APTR) 100, sizeof(ULONG) );
+			Delay(20);
+
+			SetWindowAttr( win[1], WA_Top , (APTR) 100, sizeof(ULONG) );
+			Delay(20);
+
+			SetWindowAttr( win[1], WA_Width , (APTR) 50, sizeof(ULONG) );
+			Delay(20);
+
+			SetWindowAttr( win[1], WA_Height , (APTR) 50, sizeof(ULONG) );
+			Delay(20);
+
 		}
 
 
