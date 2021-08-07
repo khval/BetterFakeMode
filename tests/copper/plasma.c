@@ -1,6 +1,8 @@
 
 #include <proto/exec.h>
 #include <proto/graphics.h>
+#include <string.h>
+#include <stdbool.h>
 #include "binrary.h"
 
 //Programmé par Yragael pour Stash of Code (http://www.stashofcode.fr) en 2017.
@@ -83,19 +85,26 @@
 
 #define WAITBLIT()	WaitBlit()
 
-uint32 bitplane = 0;
-uint32 rgbOffsets = 0;
-uint32 rowOffsets = 0;
-uint16 *copperList0 = 0 ;
-uint16 *copperList1 = 0 ;
+uint32 *bitplane = NULL;
+uint16 *rgbOffsets = NULL;
+uint16 *rowOffsets = NULL;
+uint16 *copperList0 = NULL ;
+uint16 *copperList1 = NULL ;
 uint16 dmacon = 0 ;
 uint16 intena = 0 ;
 uint16 intreq = 0 ;
-uint16 redSinus[]={ RED_START };
-uint16 greenSinus[]={ GREEN_START };
-uint16 blueSinus[]={ BLUE_START };
+uint16 redSinus = RED_START ;
+uint16 greenSinus = GREEN_START ;
+uint16 blueSinus= BLUE_START ;
 
-uint32 d0,d1,d2,d4,d5,d6,d7;
+extern uint16 sinus[];
+extern uint16 bltcon0[];
+extern uint16 red[];
+extern uint16 green[];
+extern uint16 blue[];
+
+
+uint32 d0,d1,d2,d3,d4,d5,d6,d7;
 uint32 a0,a1,a2,a3,a4,a5,a6,a7;
 
 #define ptr_w(a) *( (uint16 *) (a) )
@@ -104,11 +113,19 @@ uint32 a0,a1,a2,a3,a4,a5,a6,a7;
 
 #define ptr_l(a) *( (uint32 *) (a) )
 #define swap_w(x) (((d2 & 0xFFFF0000) >> 16) | (d2 & 0xFFFF << 16))
-#define bclr(b,s) s = s & (~(1<<b)
+#define bclr(b,s) s = s & (~(1<<b))
 
-int main()
+int  degree, amplitude;
+uint16 *row_w;
+uint16 *rgb_ptr;
+uint16 *sin_ptr;
+int offset;
+int timer;
+void *tmp_ptr;
+int idx;
+
+bool init_mem()
 {
-	uint16 *p_w = NULL;
 
 //---------- Initialisations ----------
 
@@ -119,19 +136,34 @@ int main()
 //Allouer de la mémoire en CHIP mise à 0 pour la Copper list
 
 	copperList0 = AllocVec( COPSIZE, 0x10002 );
+	if ( ! copperList0 ) return false;
+
 	copperList1 = AllocVec( COPSIZE, 0x10002 );
+	if ( ! copperList1 ) return false;
 
 //Allouer de la mémoire en CHIP mise à 0 pour le bitplane
 
 	bitplane = AllocVec( DISPLAY_DY*(DISPLAY_DX>>3), 0x10002);
+	if ( ! bitplane ) return false;
 
 //Allouer de la mémoire pour les offsets des lignes
 	
 	rowOffsets = AllocVec( DISPLAY_DY<<1, 0x10002 );
+	if ( ! rowOffsets ) return false;
 
 //Allouer de la mémoire pour les offsets des composantes
 	
 	rgbOffsets = AllocVec(3*(360<<1),0x10002);
+	if ( ! rgbOffsets ) return false;
+
+	return true;
+}
+
+
+int main_prog()
+{
+	uint16 *p_w = NULL;
+
 
 //Couper le système
 
@@ -184,10 +216,10 @@ int main()
 //Adresse du bitplane
 
 	*p_w++ = BPL1PTL;
-	*p_w++ = bitplane & 0xFFFF;
+	*p_w++ = (ULONG) bitplane & 0xFFFF;
 
 	*p_w++ = BPL1PTH;
-	*p_w++ = bitplane >> 16;
+	*p_w++ = (ULONG) bitplane >> 16;
 
 //Palette
 
@@ -225,7 +257,7 @@ int main()
 
 //Démarrer la Copper list
 
-	ptr_l(a5 | COP1LCH)	= copperList0;	//	move.l copperList0,COP1LCH(a5)
+	ptr_l(a5 | COP1LCH)	= (ULONG) copperList0;	//	move.l copperList0,COP1LCH(a5)
 	ptr_w(a5 | COPJMP1) = 0;			//	clr.w COPJMP1(a5)
 
 //---------- Précalculs ----------
@@ -242,7 +274,7 @@ int main()
 
 //Offsets des lignes
 
-	row = rowOffsets;											//		movea.l rowOffsets,a0
+	row_w = rowOffsets;											//		movea.l rowOffsets,a0
 															//		lea sinus,a1
 	degree = (360-1)<<1;										//		move.w #(360-1)<<1,d1					
 	for (d0 = DISPLAY_DY-1;d0;d0--)								//		move.w #DISPLAY_DY-1,d0
@@ -253,7 +285,7 @@ int main()
 															//		rol.l #2,d2
 															//		addi.w #OFFSET_AMPLITUDE,d2
 		bclr(0,amplitude);										//		bclr #0,d2					//Revient à diviser Dn par 2 pour le rapport à [0, AMPLITUDE] puis à le multiplier par 2 pour qu'il permette d'adresser un WORD
-		*row++=amplitude;										//		move.w d2,(a0)+
+		*row_w++=amplitude;									//		move.w d2,(a0)+
 		degree -= OFFSET_ROW_SPEED<<1;						//		subi.w #OFFSET_ROW_SPEED<<1,d1
 		if (degree<0)
 		{													//		bge _rowOffsetsLoopNoSinusUnderflow
@@ -263,7 +295,7 @@ int main()
 
 //Offsets des composantes
 
-	rgb_ptr = rgbOffsets											//		movea.l rgbOffsets,a0
+	rgb_ptr = rgbOffsets;										//		movea.l rgbOffsets,a0
 	sin_ptr = sinus;											//		lea sinus,a1
 	degree = 360-1;											//		move.w #360-1,d0
 	for (degree = 360-1; degree>=0; degree--) 						//	_redOffsetsLoop:
@@ -321,47 +353,47 @@ int main()
 
 //Boucle principale
 
-do										 //	_loop:
-{
+	do															 //	_loop:
+	{
 
 //Attendre la fin de la trame
 
-	do															//	_waitEndOfFrame:
-	{															//		move.l VPOSR(a5),d0
-		d0 = getCopper_W(VPOSR) >> 8;								//		lsr.l #8,d0
+		do														//	_waitEndOfFrame:
+		{														//		move.l VPOSR(a5),d0
+			d0 = getCopper_w(VPOSR) >> 8;							//		lsr.l #8,d0
 																//		and.w #0x01FF,d0
-		d0 &= 0x01FF;												//		cmp.w #DISPLAY_Y+DISPLAY_DY,d0
-	} while (d0>DISPLAY_Y+DISPLAY_DY);								//		blt _waitEndOfFrame
+			d0 &= 0x01FF;											//		cmp.w #DISPLAY_Y+DISPLAY_DY,d0
+		} while (d0>DISPLAY_Y+DISPLAY_DY);							//		blt _waitEndOfFrame
 	
-	//Changer de copper list
+//Changer de copper list
 	
-	setCopper_L(COP1LCH,copperList0);								//		move.l copperList0,COP1LCH(a5)
-	setCopper_W(COPJMP1,0);										//		clr.w COPJMP1(a5)
-	tmp = copperList1;												//		move.l copperList1,a0
-	copperList1 = copperList0;										//		move.l copperList0,copperList1
-	copperList0 = tmp;												//		move.l a0,copperList0
+		setCopper_L(COP1LCH,copperList0);							//		move.l copperList0,COP1LCH(a5)
+		setCopper_W(COPJMP1,0);									//		clr.w COPJMP1(a5)
+		tmp_ptr = copperList1;										//		move.l copperList1,a0
+		copperList1 = copperList0;									//		move.l copperList0,copperList1
+		copperList0 = tmp_ptr;										//		move.l a0,copperList0
 	
 //Configurer les minterms (tous sauf abc pour D = A | B | C)
 	
-	WAITBLIT();													//		WAITBLIT
-	timer--;														//		subq.w #1,d7
-	if (timer<1)													//		bge _mintermsNoChange
-	 {																
-		timer = MINTERMS_SPEED;									//		move.w #MINTERMS_SPEED,d7
+		WAITBLIT();												//		WAITBLIT
+		timer--;													//		subq.w #1,d7
+		if (timer<1)												//		bge _mintermsNoChange
+		 {																
+			timer = MINTERMS_SPEED;								//		move.w #MINTERMS_SPEED,d7
 																//		swap d7
 																//		lea bltcon0,a1
-		setCopper_w(BLTCON0,bltcon0[index])							//		move.w (a1,d7.w),BLTCON0(a5)
-		index-=2;													//		subq.w #2,d7
-		if (index<0)
-		{														//		bne _mintermsNoUnderflow
-			index = (256-1)<<1;									//		move.w #(256-1)<<1,d7
-		}														//	_mintermsNoUnderflow:
+			setCopper_w(BLTCON0,bltcon0[idx]);						//		move.w (a1,d7.w),BLTCON0(a5)
+			idx-=2;												//		subq.w #2,d7
+			if (idx<0)
+			{													//		bne _mintermsNoUnderflow
+				idx = (256-1)<<1;									//		move.w #(256-1)<<1,d7
+			}													//	_mintermsNoUnderflow:
 																//		swap d7
-	}															//	_mintermsNoChange:
+		}														//	_mintermsNoChange:
 
 //Générer la copper list
 
-	a0 += (13*4)													//	lea 13*4(a0),a0
+	a0 += (13*4);													//	lea 13*4(a0),a0
 																//	movea.l rowOffsets,a6
 	d3=redSinus;													//	move.w redSinus,d3
 	d4=greenSinus;												//	move.w greenSinus,d4
@@ -371,97 +403,96 @@ do										 //	_loop:
 
 	//WAIT (alterner la position horizontale entre DISPLAY_X-4 et DISPLAY_X d'une ligne à l'autre pour atténuer l'effet de blocs généré par la longueur des MOV, 8 pixels)
 
-	for(d1=0;d1<_rows;d1++)											//	_rows:
-	{																//		btst #0,d1
-		if (d1&1 == 0)													//		beq _lineEven
-			d0 |= (1<<1);												//		bset #1,d0
-		else															//		bra _lineOdd
+		for(d1=DISPLAY_DY-1;d1>-1;d1--)										//	_rows:
+		{																//		btst #0,d1
+			if (d1&1 == 0)													//		beq _lineEven
+				d0 |= (1<<1);												//		bset #1,d0
+			else															//		bra _lineOdd
 			d0 &= ~(1<<1);											//	_lineEven:
 																	//		bclr #1,d0
 																	//	_lineOdd:
-		*a0++ = d0;													//		move.w d0,(a0)+
-		*a0++ = 0xFFFE;												//		move.w #0xFFFE,(a0)+
+			ptr_w(a0) = d0;		a0+=2;										//		move.w d0,(a0)+
+			ptr_w(a0) = 0xFFFE;	a0+=2;										//		move.w #0xFFFE,(a0)+
 	
-		//Offsets de départ sinusoïdaux dans les composantes
+//Offsets de départ sinusoïdaux dans les composantes
 		
-		a1 = rgbOffsets;												//	movea.l rgbOffsets,a1
-		d6 = ptr_w(a1+d3);												//	move.w (a1,d3.w),d6
-		d6 += *rowOffsets_ptr;											//	add.w (a6),d6
+			a1 = (ULONG) rgbOffsets;											//	movea.l rgbOffsets,a1
+			d6 = ptr_w(a1+d3);												//	move.w (a1,d3.w),d6
+			d6 += ptr_w(a6);												//	add.w (a6),d6
 																	//	lea red,a2
-		a2 = red+d6;													//	lea (a2,d6.w),a2
+			a2 = (ULONG) red+d6;											//	lea (a2,d6.w),a2
 	
-		a1 =+ (360<<1);												//	lea 360<<1(a1),a1
-		d6 = ptr_w(a1+d4);												//	move.w (a1,d4.w),d6
-		d6 += *rowOffsets_ptr;											//	add.w (a6),d6
+			a1 =+ (360<<1);												//	lea 360<<1(a1),a1
+			d6 = ptr_w(a1+d4);												//	move.w (a1,d4.w),d6
+			d6 += ptr_w(a6);												//	add.w (a6),d6
 																	//	lea green,a3
-		a3 = green + d6;												//	lea (a3,d6.w),a3
+			a3 = (ULONG) green + d6;										//	lea (a3,d6.w),a3
 	
-		a1 += (360<<1);												//	lea 360<<1(a1),a1
-		d6 = ptr_w(a1+d5);												//	move.w (a1,d5.w),d6
-		d6 += *a6++;													//	add.w (a6)+,d6		//Passer à la ligne suivante par la même occasion
+			a1 += (360<<1);												//	lea 360<<1(a1),a1
+			d6 = ptr_w(a1+d5);												//	move.w (a1,d5.w),d6
+			d6 += ptr_w(a6);	a6+=2;										//	add.w (a6)+,d6		//Passer à la ligne suivante par la même occasion
 				 													//	lea blue,a4
-		a4 = blue + d6;												//	lea (a4,d6.w),a4
+			a4 = (ULONG) blue + d6;											//	lea (a4,d6.w),a4
 	
-		//Série de MOV
+//Série de MOV
 		
-		WAITBLIT();													//	WAITBLIT
-		setCopper_W(BLTAPTH,a2);										//	move.l a2,BLTAPTH(a5)
-		setCopper_W(BLTBPTH,a3);										//	move.l a3,BLTBPTH(a5)
-		setCopper_W(BLTCPTH,a4);										//	move.l a4,BLTCPTH(a5)
-		a0+=2;														//	lea 2(a0),a0
-		setCopper_L(BLTAPTH,a2);										//	move.l a2,BLTAPTH(a5)																//	move.l a0,BLTDPTH(a5)
-		setCopper_W(BLTSIZE,a2);										//	move.w #1|(((DISPLAY_DX>>3)+1)<<6),BLTSIZE(a5)
+			WAITBLIT();													//	WAITBLIT
+			setCopper_W(BLTAPTH,a2);										//	move.l a2,BLTAPTH(a5)
+			setCopper_W(BLTBPTH,a3);										//	move.l a3,BLTBPTH(a5)
+			setCopper_W(BLTCPTH,a4);										//	move.l a4,BLTCPTH(a5)
+			a0+=2;														//	lea 2(a0),a0
+			setCopper_L(BLTAPTH,a2);										//	move.l a2,BLTAPTH(a5)																//	move.l a0,BLTDPTH(a5)
+			setCopper_W(BLTSIZE,a2);										//	move.w #1|(((DISPLAY_DX>>3)+1)<<6),BLTSIZE(a5)
 	
-		//Passer à la ligne suivante
+//Passer à la ligne suivante
 	
-		d0+=0x0100;													//	addi.w #0x0100,d0
-		a0 += 4*((DISPLAY_DX>>3)+1)-2;									//	lea 4*((DISPLAY_DX>>3)+1)-2(a0),a0
+			d0+=0x0100;													//	addi.w #0x0100,d0
+			a0 += 4*((DISPLAY_DX>>3)+1)-2;									//	lea 4*((DISPLAY_DX>>3)+1)-2(a0),a0
 	
-		//Incrémenter les sinus de la ligne
+//Incrémenter les sinus de la ligne
 	
-		d3 -= RED_ROW_SPEED<<1;										//		subi.w #RED_ROW_SPEED<<1,d3
-		if (d3<0)														//		bge _noRedRowSinusUnderflow
-			d3 += 360<<1;											//		addi.w #360<<1,d3
+			d3 -= RED_ROW_SPEED<<1;										//		subi.w #RED_ROW_SPEED<<1,d3
+			if (d3<0)														//		bge _noRedRowSinusUnderflow
+				d3 += 360<<1;											//		addi.w #360<<1,d3
 																	//	_noRedRowSinusUnderflow:
-		d4 -= GREEN_ROW_SPEED<<1;									//		subi.w #GREEN_ROW_SPEED<<1,d4
-		if (d4<0)														//		bge _noGreenRowSinusUnderflow
-			d4 += 360<<1;											//		addi.w #360<<1,d4
+			d4 -= GREEN_ROW_SPEED<<1;									//		subi.w #GREEN_ROW_SPEED<<1,d4
+			if (d4<0)														//		bge _noGreenRowSinusUnderflow
+				d4 += 360<<1;											//		addi.w #360<<1,d4
 																	//	_noGreenRowSinusUnderflow:
-		d5 -= BLUE_ROW_SPEED<<1;										//		subi.w #BLUE_ROW_SPEED<<1,d5
-		if (d5<0)														//		bge _noBlueRowSinusUnderflow
-			d5 += 360<<1;											//		addi.w #360<<1,d5
+			d5 -= BLUE_ROW_SPEED<<1;										//		subi.w #BLUE_ROW_SPEED<<1,d5
+			if (d5<0)														//		bge _noBlueRowSinusUnderflow
+				d5 += 360<<1;											//		addi.w #360<<1,d5
 																	//	_noBlueRowSinusUnderflow:
-	
-	}																//	dbf d1,_rows
+		}															//	dbf d1,_rows
 
 //Animer les sinus des composantes
 
-	d3=redSinus;														//		move.w redSinus,d3
-	d3 -= RED_FRAME_SPEED<<1;										//		subi.w #RED_FRAME_SPEED<<1,d3
-	if (d3<0)															//		bge _noRedSinusUnderflow
-		d3 += 360<<1;												//		addi.w #360<<1,d3
+		d3=redSinus;													//		move.w redSinus,d3
+		d3 -= RED_FRAME_SPEED<<1;									//		subi.w #RED_FRAME_SPEED<<1,d3
+		if (d3<0)														//		bge _noRedSinusUnderflow
+			d3 += 360<<1;											//		addi.w #360<<1,d3
 																	//	_noRedSinusUnderflow:
-	redSinus = d3;														//		move.w d3,redSinus
+		redSinus = d3;													//		move.w d3,redSinus
 																	//	
-	d4 = greenSinus;													//		move.w greenSinus,d4
-	d4 -= GREEN_FRAME_SPEED<<1;										//		subi.w #GREEN_FRAME_SPEED<<1,d4
-	if (d4<0)															//		bge _noGreenSinusUnderflow
-		d4 += 360<<1;												//		addi.w #360<<1,d4
+		d4 = greenSinus;												//		move.w greenSinus,d4
+		d4 -= GREEN_FRAME_SPEED<<1;									//		subi.w #GREEN_FRAME_SPEED<<1,d4
+		if (d4<0)														//		bge _noGreenSinusUnderflow
+			d4 += 360<<1;											//		addi.w #360<<1,d4
 																	//	_noGreenSinusUnderflow:
-	greenSinus = d4;													//		move.w d4,greenSinus
+		greenSinus = d4;												//		move.w d4,greenSinus
 																	//	
-	d5 = blueSinus;													//		move.w blueSinus,d5
-	d5 -= BLUE_FAME_SPEED<<1;										//		subi.w #BLUE_FRAME_SPEED<<1,d5
-	if (d5<0)															//		bge _noBlueSinusUnderflow
-		d5 += 360<<1;												//		addi.w #360<<1,d5
+		d5 = blueSinus;												//		move.w blueSinus,d5
+		d5 -= BLUE_FRAME_SPEED<<1;									//		subi.w #BLUE_FRAME_SPEED<<1,d5
+		if (d5<0)														//		bge _noBlueSinusUnderflow
+			d5 += 360<<1;											//		addi.w #360<<1,d5
 																	//	_noBlueSinusUnderflow:
-	blueSinus = d5;													//		move.w d5,blueSinus
+		blueSinus = d5;												//		move.w d5,blueSinus
 	
 //Tester la pression du bouton gauche de la souris
 
 																	//	btst #6,0xbfe001
-} while ( ! mouse_button_pressed );											//	bne _loop
-WAITBLIT();															//	WAITBLIT
+	} while ( ! mouse_button_pressed );										//	bne _loop
+	WAITBLIT();														//	WAITBLIT
 
 //---------- Finalisations ----------
 
@@ -469,69 +500,95 @@ WAITBLIT();															//	WAITBLIT
 
 	setCopper_w(INTENA,0x7FFF);											//	move.w #0x7FFF,INTENA(a5)
 	setCopper_w(INTREQ,0x7FFF);											//	move.w #0x7FFF,INTREQ(a5)
-	setCopper_w(DMACON,0x07FF);											//	move.w #0x07FF,DMACON(a5)
+	setCopper_w(DMACON,0x07FF);										//	move.w #0x07FF,DMACON(a5)
 
 //Rétablir les interruptions hardware et les DMA
 
-	d0 = getCopper_W(DMACON);											//	move.w dmacon,d0
+	d0 = getCopper_w(DMACON);											//	move.w dmacon,d0
 	bSet(15,d0);														//	bset #15,d0
 	setCopper_w(DMACON,d0);												//	move.w d0,DMACON(a5)
-	d0 = getCopper_W(INTREQ);											//	move.w intreq,d0
+	d0 = getCopper_w(INTREQ);											//	move.w intreq,d0
 	bSet(15,d0);														//	bset #15,d0
 	setCopper_w(INTREQ,d0);												//	move.w d0,INTREQ(a5)
-	d0 = getCopper_W(INTENA);											//	move.w intena,d0
+	d0 = getCopper_w(INTENA);											//	move.w intena,d0
 	bSet(15,d0);														//	bset #15,d0
 	setCopper_w(INTENA,d0);												//	move.w d0,INTENA(a5)
 
 //Rétablir la Copper list
 
-	lea graphicslibrary,a1
-	movea.l 0x4,a6
-	jsr -408(a6)
-	move.l d0,a1
-	move.l 38(a1),COP1LCH(a5)
-	clr.w COPJMP1(a5)
-	jsr -414(a6)
+																	//	lea graphicslibrary,a1
+																	//	movea.l 0x4,a6
+																	//	jsr -408(a6)
+																	//	move.l d0,a1
+																	//	move.l 38(a1),COP1LCH(a5)
+																	//	clr.w COPJMP1(a5)
+																	//	jsr -414(a6)
 
 //Rétablir le système
 
-																		//	movea.l 0x4,a6
-																		//	jsr -138(a6)
+																	//	movea.l 0x4,a6
+																	//	jsr -138(a6)
+
+	return 0;
+}
+
+void free_mem()
+{
 
 //Libérer la mémoire
-
-																		//	movea.l copperList0,a1
-	if (copperList0)													//	move.l #COPSIZE,d0
-	{																	//	movea.l 0x4,a6
+																	//	movea.l copperList0,a1
+	if (copperList0)														//	move.l #COPSIZE,d0
+	{																//	movea.l 0x4,a6
 		FreeVec(copperList0);											//	jsr -210(a6)
-	}																	//
-																		//	movea.l copperList1,a1
-	if (copperList1)													//	move.l #COPSIZE,d0
-	{																	//	movea.l 0x4,a6
+	}																//
+																	//	movea.l copperList1,a1
+	if (copperList1)														//	move.l #COPSIZE,d0
+	{																//	movea.l 0x4,a6
 		FreeVec(copperList1);											//	jsr -210(a6)
-	}																	//
-																		//	movea.l bitplane,a1
+	}																//
+																	//	movea.l bitplane,a1
 	if (bitplane)														//	move.l #DISPLAY_DY*(DISPLAY_DX>>3),d0
-	{																	//	movea.l 0x4,a6
+	{																//	movea.l 0x4,a6
 		FreeVec(bitplane);												//	jsr -210(a6)
-	}																	//
-																		//	movea.l rowOffsets,a1
+	}																//
+																	//	movea.l rowOffsets,a1
 	if (rowOffsets)														//	move.l #DISPLAY_DY<<1,d0
-	{																	//	movea.l 0x4,a6
+	{																//	movea.l 0x4,a6
 		FreeVec(rowOffsets);											//	jsr -210(a6)
-	}																	//
-																		//	movea.l rgbOffsets,a1
+	}																//
+																	//	movea.l rgbOffsets,a1
 	if (rgbOffsets)														//	move.l #3*(360<<1),d0
-	{																	//	movea.l 0x4,a6
+	{																//	movea.l 0x4,a6
 		FreeVec(rgbOffsets);											//	jsr -210(a6)
 	}
 
-																		//  Dépiler les registres
+}																	//  Dépiler les registres
+																	//	movem.l (sp)+,d0-d7/a0-a6
 
-																		//	movem.l (sp)+,d0-d7/a0-a6
+
+int main()
+{
+	int ret = 3;
+
+	if (open_libs()==FALSE)
+	{
+		Printf("failed to open libs!\n");
+		close_libs();
+		return 0;
+	}
+
+	if (init_mem())
+	{
+		ret = main_prog();
+	}
+	
+	free_mem();
+
+	close_libs();
+
+	return ret;
 }
-	return 0;
-}
+
 
 //---------- Données ----------
 

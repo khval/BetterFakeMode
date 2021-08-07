@@ -270,7 +270,7 @@ int main()
 
 	close_libs();
 
-	return 0;
+	return ret;
 }
 
 
