@@ -3,7 +3,7 @@ deps = ../../init.c
 deps += ../debug.c
 deps += common.c
 
-files = ${deps}
+files =binary.h ${deps} 
 
 tests_c += CopperCheck.c
 tests_c += CopperSplit.c
@@ -29,6 +29,12 @@ all: ${all_files}
 		gcc -D__USE_INLINE__ ${incdir} ${libdir} $(opts) -c $<   -o $@
 
 
+binary.h: gen_binary.elf
+		gen_binary.elf > binrary.h
+
+gen_binary.elf: gen_binary.c
+		gcc -D__USE_INLINE__  $(opts)  $<   -o $@
+		
 
 clean:
 	rm ${all_files}
