@@ -438,7 +438,7 @@ void draw_screen( struct emuIntuitionContext *c)
 	{
 		case 0x0806:	draw_bits = draw_bits_argb_ham6;		break;
 		case 0x0808:	draw_bits = draw_bits_argb_ham8;		break;
-		default:		draw_bits = draw_bits_argb64;			break;
+		default:		draw_bits = (void (*)( unsigned char *, unsigned char *)) draw_bits_argb64;		break;
 	}
 
 	lock = LockBitMapTags( dest_bm,
