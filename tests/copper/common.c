@@ -13,36 +13,46 @@ struct Window *window=NULL;
 struct ViewPort *viewport=NULL;
 PTR myucoplist=NULL;
 
+bool checkMouse(ULONG bcode)
+{
+	BOOL ret = false;
+	struct IntuiMessage *msg;
+	ULONG code;
+	ULONG win_mask = 1 << window -> UserPort ->mp_SigBit ;
+	ULONG sig = Wait( win_mask | SIGBREAKF_CTRL_C);
+
+	do
+	{
+		msg = (struct IntuiMessage *) GetMsg( window -> UserPort );
+
+		if (msg)
+		{
+			switch (msg -> Class)
+			{
+				case IDCMP_MOUSEBUTTONS :
+						ret = (bcode & msg -> Code) ? true : false ;
+						break;
+			}
+			ReplyMsg( (struct Message *) msg);
+		}
+	} while (msg);
+
+	return ret;
+}
+
 void WaitLeftMouse(struct Window *window)
 {
-			BOOL running = TRUE;
-			struct IntuiMessage *msg;
-			ULONG class, code;
-			ULONG win_mask = 1 << window -> UserPort ->mp_SigBit ;
+	bool running = true;
+	struct IntuiMessage *msg;
+	ULONG class, code;
+	ULONG win_mask = 1 << window -> UserPort ->mp_SigBit ;
 	
-		 	do
-			{
-				ULONG sig = Wait( win_mask | SIGBREAKF_CTRL_C);
+ 	do
+	{
+		ULONG sig = Wait( win_mask | SIGBREAKF_CTRL_C);
+		if (sig & win_mask) if (checkMouse(1)) running = false;
 
-				do
-				{
-					msg = (struct IntuiMessage *) GetMsg( window -> UserPort );
-
-					if (msg)
-					{
-						code = msg -> Code;
-						class = msg -> Class;
-						switch (class)
-						{
-							case IDCMP_MOUSEBUTTONS :
-								running = false;
-								break;
-						}
-						ReplyMsg( (struct Message *) msg);
-					}
-				} while (msg);
-
-			} while (running);
+	} while (running);
 }
 
 void closeDown()
@@ -58,22 +68,29 @@ void closeDown()
 			ReplyMsg( (struct Message *) msg);
 		}
 
-		if (viewport -> UCopIns)
+		if (viewport)
 		{
-			FreeVPortCopLists(viewport);
-			RemakeDisplay();
-			myucoplist = NULL; // prevent myucoplist from being freed twice.
+			if (viewport -> UCopIns)
+			{
+				FreeVPortCopLists(viewport);
+				RemakeDisplay();
+				myucoplist = NULL; // prevent myucoplist from being freed twice.
+			}
 		}
 
 		CloseWindow(window);
 		window = NULL;
 	}
 
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
+
 	if (screen)
 	{
 		CloseScreen(screen);
 		screen = NULL;	
 	}
+
+	Printf("%s:%ld\n",__FUNCTION__,__LINE__);
 
 	if (myucoplist)
 	{
