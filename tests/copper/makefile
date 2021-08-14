@@ -1,5 +1,5 @@
 
-deps = ../../init.c
+deps = ../init.c
 deps += ../debug.c
 deps += common.c
 
