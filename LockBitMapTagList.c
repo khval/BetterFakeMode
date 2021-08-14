@@ -27,7 +27,7 @@ APTR fake_LockBitMapTagList( struct BitMap * bitMap, struct TagItem * tagList)
 			switch (tag -> ti_Tag)
 			{
 				case LBM_BaseAddress:
-					*((ULONG *) (tag -> ti_Data)) = bitMap -> Planes[0];
+					*((ULONG *) (tag -> ti_Data)) = (ULONG) bitMap -> Planes[0];
 					break;
 				case LBM_BytesPerRow:
 					*((ULONG *) (tag -> ti_Data)) = bitMap -> BytesPerRow;
@@ -47,3 +47,4 @@ APTR fake_LockBitMapTagList( struct BitMap * bitMap, struct TagItem * tagList)
 	}
 	return success ? (APTR) 0xFA8E : (APTR) 0x0000;
 }
+

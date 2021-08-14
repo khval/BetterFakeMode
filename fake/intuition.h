@@ -10,6 +10,6 @@ extern void _delete_fake_screen( struct Screen *s );
 extern struct Screen * _new_fake_OpenScreenTagList( const struct NewScreen * newScreen, const struct TagItem * tagList);
 extern void fake_SetWindowTitles( struct Window *win, const char *winStr, const char *srcStr );
 extern void fake_FreeScreenBuffer( struct Screen *s, struct ScreenBuffer *sb );
-extern LONG fake_SetWindowAttrsA( struct Window *win, struct TagItem *taglist );
-extern LONG fake_SetWindowAttr( struct Window * win, ULONG attr, APTR data, ULONG size);
+extern LONG fake_SetWindowAttrsA( struct IntuitionIFace *Self,struct Window *win, struct TagItem *taglist );
+extern LONG fake_SetWindowAttr( struct IntuitionIFace *Self,struct Window * win, ULONG attr, APTR data, ULONG size);
 

@@ -15,27 +15,32 @@
 
 extern APTR video_mutex;
 
+extern APTR old_ppc_func_SetWindowAttrsA ;
+extern APTR old_ppc_func_SetWindowAttr ;
+
 extern void no_block_MoveWindow ( struct Window *win, LONG dx, LONG dy );
 extern void no_block_SizeWindow ( struct Window *win, LONG dx, LONG dy );
 
-LONG fake_SetWindowAttr (struct Window * win, ULONG attr, APTR data, ULONG size);
+LONG fake_SetWindowAttr (struct IntuitionIFace *Self, struct Window * win, ULONG attr, APTR data, ULONG size);
 
-LONG fake_SetWindowAttrsA( struct Window *win, struct TagItem *tagList )
+
+LONG fake_SetWindowAttrsA( struct IntuitionIFace *Self, struct Window *win, struct TagItem *tagList )
 {
-	LONG ret;
+	LONG ret = 0;
 	struct TagItem *tag;
 
 FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 	for (tag = tagList; tag -> ti_Tag != TAG_DONE; tag++)
 	{
-		fake_SetWindowAttr (  win, tag -> ti_Tag, (APTR) tag -> ti_Data, sizeof(ULONG));
+		fake_SetWindowAttr (  Self, win, tag -> ti_Tag, (APTR) tag -> ti_Data, sizeof(ULONG));
 	}
-	return 0;
+	return ret;
 }
 
-LONG fake_SetWindowAttr ( struct Window * win, ULONG attr, APTR data, ULONG size)
+LONG fake_SetWindowAttr (struct IntuitionIFace *Self, struct Window * win, ULONG attr, APTR data, ULONG size)
 {
+	LONG ret = 0;
 FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 
 	MutexObtain(video_mutex);
@@ -56,10 +61,18 @@ FPrintf( output,"%s:%s:%ld\n",__FILE__,__FUNCTION__,__LINE__);
 		case WA_Height:
 				no_block_SizeWindow ( win, 0, (LONG) data - win -> Height );
 				break;
+
+		case WA_Title:
+
+				break;
+
+		default:
+				ret = ((LONG (*) ( struct IntuitionIFace *, ULONG , APTR , ULONG )) old_ppc_func_SetWindowAttr) (Self, attr, data, size);
+				break;
 	}
 
 	MutexRelease(video_mutex);
-	return 0;
+	return ret;
 }
 
 

@@ -55,7 +55,7 @@ extern ULONG get_default_icon_size(struct RastPort *rp);
 void do_RenderWindow(struct Window *win)
 {
 	int icon_s;
-	int left_x = 0, right_x = 0;
+	int left_x = 0;
 	int x1,y1;
 	int tmp_DetailPen;
 	struct RastPort *rp = win -> RPort;

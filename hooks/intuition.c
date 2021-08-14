@@ -368,7 +368,7 @@ LONG ppc_func_SetWindowAttrsA (struct IntuitionIFace *Self, struct Window * win,
 {
 	if (is_fake_screen( win -> WScreen ))
 	{
-		return fake_SetWindowAttrsA( win, taglist );
+		return fake_SetWindowAttrsA( Self, win, taglist );
 	}
 	else
 	{
@@ -382,7 +382,7 @@ LONG ppc_func_SetWindowAttr (struct IntuitionIFace *Self, struct Window * win,UL
 {
 	if (is_fake_screen( win -> WScreen ))
 	{
-		return fake_SetWindowAttr( win, attr, data, size );
+		return fake_SetWindowAttr( Self, win, attr, data, size );
 	}
 	else
 	{
