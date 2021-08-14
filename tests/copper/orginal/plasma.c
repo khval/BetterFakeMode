@@ -3,26 +3,13 @@
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
-#include <proto/libblitter.h>
 #include <intuition/intuition.h>
 #include <intuition/screens.h>
-
-#pragma pack(push,2)
-#include <hardware/custom.h>
-#pragma pack(pop)
-
 #include <string.h>
 #include <stdbool.h>
 
 #include "binrary.h"
 #include "common.h"
-
-#ifdef __amigaos4__
-struct Custom _custom;
-struct Custom *custom = &_custom;	// store locally... handle things with do_functions();
-#else
-struct Custom *custom = 0xDFF000;
-#endif
 
 //Programmé par Yragael pour Stash of Code (http://www.stashofcode.fr) en 2017.
 //Cette œuvre est mise à disposition selon les termes de la Licence Creative Commons Attribution - Pas d’Utilisation Commerciale - Partage dans les Mêmes Conditions 4.0 France.
@@ -136,15 +123,15 @@ uint32 a0,a1,a2,a3,a4,a5,a6,a7;
 #define bSet(b,s) s |= 1<<b; 
 
 #ifdef __amigaos4__
-#define setCustom_w(hwreg,value) *((uint16 *) ((char *) custom + hwreg))=(uint16) value
-#define getCustom_w(hwreg) *((uint16 *) ((char *) custom + hwreg))
-#define setCustom_l(hwreg,value) *((uint32 *) ((char *) custom + hwreg))= (uint32) value
+#define setCopper_w(hwreg,value)
+#define getCopper_w(hwreg) 0
+#define setCopper_l(hwreg,value) 
 #endif
 
 #ifdef __amigaos3__
-#define setCustom_w(hwreg,value) *((uint16 *) (0xDFF000 | hwreg)) = (uint16) value
-#define getCustom_w(hwreg) 0
-#define setCustom_l(hwreg,value) *((uint32 *) (0xDFF000 | hwreg)) = (uint32) value
+#define setCopper_w(hwreg,value) *((uint16 *) (0xDFF000 | hwreg)) = (uint16) value
+#define getCopper_w(hwreg) 0
+#define setCopper_l(hwreg,value) *((uint32 *) (0xDFF000 | hwreg)) = (uint32) value
 #endif
 
 
@@ -155,10 +142,7 @@ uint16 *sin_ptr;
 int offset;
 int timer;
 void *tmp_ptr;
-int idx = 0;
-
-struct BitMap bltSrcBM;
-struct BitMap bltDstBM;
+int idx;
 
 bool init_mem()
 {
@@ -196,11 +180,35 @@ bool init_mem()
 }
 
 
-void make_copper_list()
+int main_prog()
 {
-	uint16 *p_w = copperList0;
+	ULONG sig = 0;
+	ULONG mouse_button_pressed = false;
+	uint16 *p_w = NULL;
+	ULONG win_mask = 1 << window -> UserPort ->mp_SigBit ;
+	ULONG sigs = win_mask | SIGBREAKF_CTRL_C;
+
+//Couper le système
+
+/*
+	movea.l 0x4,a6
+	jsr -132(a6)
+*/
+
+//Couper les interruptions hardware et les DMA
+
+/*
+	move.w INTENAR(a5),intena
+	move.w #0x7FFF,INTENA(a5)
+	move.w INTREQR(a5),intreq
+	move.w #0x7FFF,INTREQ(a5)
+	move.w DMACONR(a5),dmacon
+	move.w #0x07FF,DMACON(a5)
+*/
 
 //---------- Copper list ----------
+
+	p_w = copperList0;
 
 //Configuration de l'écran
 
@@ -261,41 +269,6 @@ void make_copper_list()
 
 	*p_w++ = 0xFFFF;
 	*p_w++ = 0xFFFE;
-}
-
-
-int main_prog()
-{
-	ULONG sig = 0;
-	ULONG mouse_button_pressed = false;
-	ULONG win_mask = 1 << window -> UserPort ->mp_SigBit ;
-	ULONG sigs = win_mask | SIGBREAKF_CTRL_C;
-
-	printf("%s:%d\n",__FUNCTION__,__LINE__);
-
-//Couper le système
-
-/*
-	movea.l 0x4,a6
-	jsr -132(a6)
-*/
-
-//Couper les interruptions hardware et les DMA
-
-/*
-	move.w INTENAR(a5),intena
-	move.w #0x7FFF,INTENA(a5)
-	move.w INTREQR(a5),intreq
-	move.w #0x7FFF,INTREQ(a5)
-	move.w DMACONR(a5),dmacon
-	move.w #0x07FF,DMACON(a5)
-*/
-
-	printf("%s:%d\n",__FUNCTION__,__LINE__);
-
-	make_copper_list();
-
-	printf("%s:%d\n",__FUNCTION__,__LINE__);
 
 //Double buffering de la Copper list
 
@@ -303,29 +276,26 @@ int main_prog()
 
 //Activer les DMA
 
-	setCustom_w(DMACON,0x83C0); 	//DMAEN=1, COPEN=1, BPLEN=1, COPEN=1, BLTEN=1
+	ptr_w(a5 | DMACON) = 0x83C0; 	//DMAEN=1, COPEN=1, BPLEN=1, COPEN=1, BLTEN=1
 
 //Démarrer la Copper list
 
-	setCustom_l(COP1LCH,copperList0);		//	move.l copperList0,COP1LCH(a5)
-	setCustom_w(COPJMP1,0);				//	clr.w COPJMP1(a5)
+	ptr_l(a5 | COP1LCH)	= (ULONG) copperList0;	//	move.l copperList0,COP1LCH(a5)
+	ptr_w(a5 | COPJMP1) = 0;			//	clr.w COPJMP1(a5)
 
 //---------- Précalculs ----------
 
 //Surface du plasma (simple rectangle de couleur 1)
 
 	WAITBLIT();
-	setCustom_w(BLTADAT , 0xFFFF);
-	setCustom_w(BLTAMOD , 0);
-	setCustom_w(BLTCON0 , 0x01F0);	//Ne pas utiliser la source A pour alimenter BLTADAT mais D = Abc | AbC | ABc | ABC = A
-	setCustom_w(BLTCON1 , 0x0000);
-	setCustom_l(BLTDPTH , bitplane);
-	setCustom_w(BLTSIZE , (DISPLAY_DX>>4)|(DISPLAY_DY<<6));
-	doBlitter( custom );
+	setCopper_w(BLTADAT , 0xFFFF);
+	setCopper_w(BLTAMOD , 0);
+	setCopper_w(BLTCON0 , 0x01F0);	//Ne pas utiliser la source A pour alimenter BLTADAT mais D = Abc | AbC | ABc | ABC = A
+	setCopper_w(BLTCON1 , 0x0000);
+	setCopper_l(BLTDPTH , bitplane);
+	setCopper_w(BLTSIZE , (DISPLAY_DX>>4)|(DISPLAY_DY<<6));
 
 //Offsets des lignes
-
-	printf("%s:%d\n",__FUNCTION__,__LINE__);
 
 	row_w = rowOffsets;											//		movea.l rowOffsets,a0
 															//		lea sinus,a1
@@ -346,9 +316,6 @@ int main_prog()
 		}													//	_rowOffsetsLoopNoSinusUnderflow:
 	}														//		dbf d0,_rowOffsetsLoop
 
-
-	printf("%s:%d\n",__FUNCTION__,__LINE__);
-
 //Offsets des composantes
 
 	rgb_ptr = rgbOffsets;										//		movea.l rgbOffsets,a0
@@ -360,12 +327,10 @@ int main_prog()
 															//		swap d1
 		amplitude = (swap_w(d1) >> 2) + RED_AMPLITUDE;			//		rol.l #2,d1
 															//		addi.w #RED_AMPLITUDE,d1
-		bClr(0,d1);											//		bClr #0,d1					//Revient à diviser Dn par 2 pour le rapport à [0, AMPLITUDE] puis à le multiplier par 2 pour qu'il permette d'adresser un WORD
+		bClr(0,d1);												//		bClr #0,d1					//Revient à diviser Dn par 2 pour le rapport à [0, AMPLITUDE] puis à le multiplier par 2 pour qu'il permette d'adresser un WORD
 		*rgb_ptr++=amplitude;									//		move.w d1,(a0)+
 	};														//		dbf d0,_redOffsetsLoop
 	
-	printf("%s:%d\n",__FUNCTION__,__LINE__);
-
 	sin_ptr = sinus;											//		lea sinus,a1
 	for (degree = 360-1; degree>=0; degree--)						//		move.w #360-1,d0
 	{														//	_greenOffsetsLoop:
@@ -374,12 +339,10 @@ int main_prog()
 		amplitude = (swap_w(d1) >> 2) + GREEN_AMPLITUDE;			//		swap d1
 															//		rol.l #2,d1
 															//		addi.w #GREEN_AMPLITUDE,d1
-		bClr(0,d1);											//		bClr #0,d1					//Revient à diviser Dn par 2 pour le rapport à [0, AMPLITUDE] puis à le multiplier par 2 pour qu'il permette d'adresser un WORD
+		bClr(0,d1);												//		bClr #0,d1					//Revient à diviser Dn par 2 pour le rapport à [0, AMPLITUDE] puis à le multiplier par 2 pour qu'il permette d'adresser un WORD
 		*rgb_ptr++=amplitude;									//		move.w d1,(a0)+
 	}														//		dbf d0,_greenOffsetsLoop
 	
-	printf("%s:%d\n",__FUNCTION__,__LINE__);
-
 	sin_ptr = sinus;											//		lea sinus,a1
 	for (degree = 360-1; degree>=0; degree--)						//		move.w #360-1,d0
 	{														//	_blueOffsetsLoop:
@@ -388,22 +351,20 @@ int main_prog()
 		amplitude = (swap_w(d1) >> 2) + BLUE_AMPLITUDE;			//		swap d1
 															//		rol.l #2,d1
 															//		addi.w #BLUE_AMPLITUDE,d1
-		bClr(0,d1);											//		bClr #0,d1					//Revient à diviser Dn par 2 pour le rapport à [0, AMPLITUDE] puis à le multiplier par 2 pour qu'il permette d'adresser un WORD
+		bClr(0,d1);												//		bClr #0,d1					//Revient à diviser Dn par 2 pour le rapport à [0, AMPLITUDE] puis à le multiplier par 2 pour qu'il permette d'adresser un WORD
 		*rgb_ptr++=amplitude;									//		move.w d1,(a0)+
 	}														//		dbf d0,_blueOffsetsLoop
 
 //Configuration du Blitter
 
-	printf("%s:%d\n",__FUNCTION__,__LINE__);
-
 	WAITBLIT();
-	setCustom_w(BLTCON1,0x0000);
-	setCustom_w(BLTAMOD,0);
-	setCustom_w(BLTBMOD,0);
-	setCustom_w(BLTCMOD,0);
-	setCustom_w(BLTDMOD,2);
-	setCustom_w(BLTAFWM,0xFFFF);
-	setCustom_w(BLTALWM,0xFFFF);
+	setCopper_w(BLTCON1,0x0000);
+	setCopper_w(BLTAMOD,0);
+	setCopper_w(BLTBMOD,0);
+	setCopper_w(BLTCMOD,0);
+	setCopper_w(BLTDMOD,2);
+	setCopper_w(BLTAFWM,0xFFFF);
+	setCopper_w(BLTALWM,0xFFFF);
 
 //Timer et offset pour cycler les valeurs de BLTCON0 afin de tester les 256 combinaisons de minterms
 
@@ -412,8 +373,6 @@ int main_prog()
 	timer = 1;													//	move.w #1,d7			//Timer
 
 //---------- Programme principal ----------
-
-	printf("%s:%d\n",__FUNCTION__,__LINE__);
 
 //Boucle principale
 
@@ -424,21 +383,19 @@ int main_prog()
 
 		do														//	_waitEndOfFrame:
 		{														//		move.l VPOSR(a5),d0
-			d0 = getCustom_w(VPOSR) >> 8;							//		lsr.l #8,d0
+			d0 = getCopper_w(VPOSR) >> 8;							//		lsr.l #8,d0
 																//		and.w #0x01FF,d0
 			d0 &= 0x01FF;											//		cmp.w #DISPLAY_Y+DISPLAY_DY,d0
 		} while (d0>DISPLAY_Y+DISPLAY_DY);							//		blt _waitEndOfFrame
 	
 //Changer de copper list
 	
-		setCustom_l(COP1LCH,copperList0);							//		move.l copperList0,COP1LCH(a5)
-		setCustom_w(COPJMP1,0);									//		clr.w COPJMP1(a5)
+		setCopper_l(COP1LCH,copperList0);							//		move.l copperList0,COP1LCH(a5)
+		setCopper_w(COPJMP1,0);									//		clr.w COPJMP1(a5)
 		tmp_ptr = copperList1;										//		move.l copperList1,a0
 		copperList1 = copperList0;									//		move.l copperList0,copperList1
 		copperList0 = tmp_ptr;										//		move.l a0,copperList0
 	
-		a0 = (ULONG) tmp_ptr;
-
 //Configurer les minterms (tous sauf abc pour D = A | B | C)
 	
 		WAITBLIT();												//		WAITBLIT
@@ -448,7 +405,7 @@ int main_prog()
 			timer = MINTERMS_SPEED;								//		move.w #MINTERMS_SPEED,d7
 																//		swap d7
 																//		lea bltcon0,a1
-			setCustom_w(BLTCON0,bltcon0[idx]);						//		move.w (a1,d7.w),BLTCON0(a5)
+			setCopper_w(BLTCON0,bltcon0[idx]);						//		move.w (a1,d7.w),BLTCON0(a5)
 			idx-=2;												//		subq.w #2,d7
 			if (idx<0)
 			{													//		bne _mintermsNoUnderflow
@@ -459,12 +416,12 @@ int main_prog()
 
 //Générer la copper list
 
-		a0 += (13*4);												//	lea 13*4(a0),a0
+	a0 += (13*4);													//	lea 13*4(a0),a0
 																//	movea.l rowOffsets,a6
-		d3=redSinus;												//	move.w redSinus,d3
-		d4=greenSinus;											//	move.w greenSinus,d4
-		d5=blueSinus;												//	move.w blueSinus,d5
-		d0 = ((DISPLAY_Y&0x00FF)<<8)|((((DISPLAY_X-4)>>2)<<1)&0x00FE)|0x0001;	//	move.w #((DISPLAY_Y&0x00FF)<<8)|((((DISPLAY_X-4)>>2)<<1)&0x00FE)|0x0001,d0
+	d3=redSinus;													//	move.w redSinus,d3
+	d4=greenSinus;												//	move.w greenSinus,d4
+	d5=blueSinus;													//	move.w blueSinus,d5
+																//	move.w #((DISPLAY_Y&0x00FF)<<8)|((((DISPLAY_X-4)>>2)<<1)&0x00FE)|0x0001,d0
 																//	move.w #DISPLAY_DY-1,d1
 
 	//WAIT (alterner la position horizontale entre DISPLAY_X-4 et DISPLAY_X d'une ligne à l'autre pour atténuer l'effet de blocs généré par la longueur des MOV, 8 pixels)
@@ -474,9 +431,9 @@ int main_prog()
 			if (d1&1 == 0)													//		beq _lineEven
 				d0 |= (1<<1);												//		bset #1,d0
 			else															//		bra _lineOdd
-				d0 &= ~(1<<1);											//	_lineEven:
-																		//		bClr #1,d0
-																		//	_lineOdd:
+			d0 &= ~(1<<1);											//	_lineEven:
+																	//		bClr #1,d0
+																	//	_lineOdd:
 			ptr_w(a0) = d0;		a0+=2;										//		move.w d0,(a0)+
 			ptr_w(a0) = 0xFFFE;	a0+=2;										//		move.w #0xFFFE,(a0)+
 	
@@ -485,31 +442,30 @@ int main_prog()
 			a1 = (ULONG) rgbOffsets;											//	movea.l rgbOffsets,a1
 			d6 = ptr_w(a1+d3);												//	move.w (a1,d3.w),d6
 			d6 += ptr_w(a6);												//	add.w (a6),d6
-																		//	lea red,a2
+																	//	lea red,a2
 			a2 = (ULONG) red+d6;											//	lea (a2,d6.w),a2
 	
 			a1 =+ (360<<1);												//	lea 360<<1(a1),a1
 			d6 = ptr_w(a1+d4);												//	move.w (a1,d4.w),d6
 			d6 += ptr_w(a6);												//	add.w (a6),d6
-																		//	lea green,a3
+																	//	lea green,a3
 			a3 = (ULONG) green + d6;										//	lea (a3,d6.w),a3
 	
 			a1 += (360<<1);												//	lea 360<<1(a1),a1
 			d6 = ptr_w(a1+d5);												//	move.w (a1,d5.w),d6
 			d6 += ptr_w(a6);	a6+=2;										//	add.w (a6)+,d6		//Passer à la ligne suivante par la même occasion
-				 														//	lea blue,a4
+				 													//	lea blue,a4
 			a4 = (ULONG) blue + d6;											//	lea (a4,d6.w),a4
 	
 //Série de MOV
 		
 			WAITBLIT();													//	WAITBLIT
-			setCustom_l(BLTAPTH, (APTR) a2);									//	move.l a2,BLTAPTH(a5)
-			setCustom_l(BLTBPTH, (APTR) a3);									//	move.l a3,BLTBPTH(a5)
-			setCustom_l(BLTCPTH, (APTR) a4);									//	move.l a4,BLTCPTH(a5)
+			setCopper_w(BLTAPTH,a2);										//	move.l a2,BLTAPTH(a5)
+			setCopper_w(BLTBPTH,a3);										//	move.l a3,BLTBPTH(a5)
+			setCopper_w(BLTCPTH,a4);										//	move.l a4,BLTCPTH(a5)
 			a0+=2;														//	lea 2(a0),a0
-			setCustom_l(BLTDPTH, (APTR) a3);									//	move.l a0,BLTDPTH(a5)
-			setCustom_w(BLTSIZE, (APTR) 1|(((DISPLAY_DX>>3)+1)<<6));			//	move.w #1|(((DISPLAY_DX>>3)+1)<<6),BLTSIZE(a5)
-			doBlitter( custom );
+			setCopper_l(BLTAPTH,a2);										//	move.l a2,BLTAPTH(a5)																//	move.l a0,BLTDPTH(a5)
+			setCopper_w(BLTSIZE,a2);										//	move.w #1|(((DISPLAY_DX>>3)+1)<<6),BLTSIZE(a5)
 	
 //Passer à la ligne suivante
 	
@@ -521,16 +477,16 @@ int main_prog()
 			d3 -= RED_ROW_SPEED<<1;										//		subi.w #RED_ROW_SPEED<<1,d3
 			if (d3<0)														//		bge _noRedRowSinusUnderflow
 				d3 += 360<<1;											//		addi.w #360<<1,d3
-																		//	_noRedRowSinusUnderflow:
+																	//	_noRedRowSinusUnderflow:
 			d4 -= GREEN_ROW_SPEED<<1;									//		subi.w #GREEN_ROW_SPEED<<1,d4
 			if (d4<0)														//		bge _noGreenRowSinusUnderflow
 				d4 += 360<<1;											//		addi.w #360<<1,d4
-																		//	_noGreenRowSinusUnderflow:
+																	//	_noGreenRowSinusUnderflow:
 			d5 -= BLUE_ROW_SPEED<<1;										//		subi.w #BLUE_ROW_SPEED<<1,d5
 			if (d5<0)														//		bge _noBlueRowSinusUnderflow
 				d5 += 360<<1;											//		addi.w #360<<1,d5
-																		//	_noBlueRowSinusUnderflow:
-		}																//	dbf d1,_rows
+																	//	_noBlueRowSinusUnderflow:
+		}															//	dbf d1,_rows
 
 //Animer les sinus des composantes
 
@@ -559,7 +515,7 @@ int main_prog()
 
 		sig = SetSignal( 0L , sigs );
 		if (sig & win_mask) if (checkMouse(1)) mouse_button_pressed = true;
-																	//	btst #6,0xbfe001
+																			//	btst #6,0xbfe001
 	} while ( ! mouse_button_pressed );										//	bne _loop
 	WAITBLIT();														//	WAITBLIT
 
@@ -567,30 +523,30 @@ int main_prog()
 
 //Couper les interruptions hardware et les DMA
 
-	setCustom_w(INTENA,0x7FFF);											//	move.w #0x7FFF,INTENA(a5)
-	setCustom_w(INTREQ,0x7FFF);											//	move.w #0x7FFF,INTREQ(a5)
-	setCustom_w(DMACON,0x07FF);										//	move.w #0x07FF,DMACON(a5)
+	setCopper_w(INTENA,0x7FFF);											//	move.w #0x7FFF,INTENA(a5)
+	setCopper_w(INTREQ,0x7FFF);											//	move.w #0x7FFF,INTREQ(a5)
+	setCopper_w(DMACON,0x07FF);										//	move.w #0x07FF,DMACON(a5)
 
 //Rétablir les interruptions hardware et les DMA
 
-	d0 = getCustom_w(DMACON);											//	move.w dmacon,d0
+	d0 = getCopper_w(DMACON);											//	move.w dmacon,d0
 	bSet(15,d0);														//	bset #15,d0
-	setCustom_w(DMACON,d0);											//	move.w d0,DMACON(a5)
-	d0 = getCustom_w(INTREQ);											//	move.w intreq,d0
+	setCopper_w(DMACON,d0);												//	move.w d0,DMACON(a5)
+	d0 = getCopper_w(INTREQ);											//	move.w intreq,d0
 	bSet(15,d0);														//	bset #15,d0
-	setCustom_w(INTREQ,d0);											//	move.w d0,INTREQ(a5)
-	d0 = getCustom_w(INTENA);											//	move.w intena,d0
+	setCopper_w(INTREQ,d0);												//	move.w d0,INTREQ(a5)
+	d0 = getCopper_w(INTENA);											//	move.w intena,d0
 	bSet(15,d0);														//	bset #15,d0
-	setCustom_w(INTENA,d0);											//	move.w d0,INTENA(a5)
+	setCopper_w(INTENA,d0);												//	move.w d0,INTENA(a5)
 
 //Rétablir la Copper list
 
 																	//	lea graphicslibrary,a1
 																	//	movea.l 0x4,a6
 																	//	jsr -408(a6)
-	a1=d0;															//	move.l d0,a1
-	setCustom_l(COP1LCH,a1+38);										//	move.l 38(a1),COP1LCH(a5)
-	setCustom_w(COPJMP1,0);											//	clr.w COPJMP1(a5)
+																	//	move.l d0,a1
+																	//	move.l 38(a1),COP1LCH(a5)
+																	//	clr.w COPJMP1(a5)
 																	//	jsr -414(a6)
 
 //Rétablir le système
@@ -674,14 +630,6 @@ bool initScreen()
 int main()
 {
 	int ret = 3;
-
-	bltSrcBM.BytesPerRow = 320 / 8;
-	bltSrcBM.Rows = 200;
-	bltSrcBM.Depth = 3;
-
-	bltDstBM.BytesPerRow = 320 / 8;
-	bltDstBM.Rows = 200;
-	bltDstBM.Depth = 3;
 
 	if (open_libs()==FALSE)
 	{
