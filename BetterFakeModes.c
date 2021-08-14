@@ -88,23 +88,6 @@ bool monitor = false;
 
 int num_of_open_screens = 0;
 
-void show_newScreenInfo(const struct NewScreen * newScreen)
-{
-	char stdTXT[256];
-
-	sprintf(stdTXT, "Width %d, Height %d, Depth %d, Type %d, CustomBitMap %08x, DefaultTitle %08x, Font %08x, ViewModes %08x",
-		newScreen -> Width,
-		newScreen -> Height,
-		newScreen -> Depth,
-		newScreen -> Type,
-		newScreen -> CustomBitMap,
-		newScreen -> DefaultTitle,
-		newScreen -> Font,
-		newScreen -> ViewModes );
-
-	FPrintf( output, "%s\n",stdTXT);
-}
-
 
 void fix_asl_tags( struct TagItem * tagList )
 {

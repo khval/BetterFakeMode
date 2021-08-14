@@ -1,6 +1,9 @@
 
 
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/layers.h>
@@ -159,7 +162,7 @@ void print_tag(struct debug_tag_info *nameList, ULONG tag, LONG value )
 	return;
 }
 
-void dump_tags( const struct TagItem * tagList , struct debug_tag_info **nameList)
+void dump_tags( const struct TagItem * tagList , struct debug_tag_info *nameList)
 {
 	const struct TagItem * tag;
 
@@ -167,6 +170,23 @@ void dump_tags( const struct TagItem * tagList , struct debug_tag_info **nameLis
 	{
 		print_tag(nameList, tag -> ti_Tag , tag -> ti_Data );
 	}
+}
+
+void show_newScreenInfo(const struct NewScreen * newScreen)
+{
+	char stdTXT[256];
+
+	sprintf(stdTXT, "Width %d, Height %d, Depth %d, Type %d, CustomBitMap %08x, DefaultTitle %08x, Font %08x, ViewModes %08x",
+		newScreen -> Width,
+		newScreen -> Height,
+		newScreen -> Depth,
+		newScreen -> Type,
+		(unsigned int) newScreen -> CustomBitMap,
+		(unsigned int) newScreen -> DefaultTitle,
+		(unsigned int) newScreen -> Font,
+		newScreen -> ViewModes );
+
+	FPrintf( output, "%s\n",stdTXT);
 }
 
 
